@@ -22,6 +22,13 @@ PINNED_DIR = os.path.join(BASE_DIR, "pinned_qr_codes")
 os.makedirs(QR_DIR, exist_ok=True)
 os.makedirs(PINNED_DIR, exist_ok=True)
 
+ERROR_CORRECTION_MAP = {
+    "L (7%)": qrcode.constants.ERROR_CORRECT_L,
+    "M (15%)": qrcode.constants.ERROR_CORRECT_M,
+    "Q (25%)": qrcode.constants.ERROR_CORRECT_Q,
+    "H (30%)": qrcode.constants.ERROR_CORRECT_H,
+}
+
 def relative_luminance(hex_color):
     hex_color = hex_color.lstrip("#")
     r, g, b = [int(hex_color[i:i+2], 16) / 255 for i in (0, 2, 4)]
@@ -58,6 +65,8 @@ def get_pictures_folder() -> str:
 
         else:  # macOS or unknown
             return str(Path.home() / "Pictures")
+
+BREAKPOINT = 700
 
 class QRCodes:
     def __init__(self, page, input,all_view,regular_view,pinned_view):    
@@ -128,7 +137,7 @@ class QRCodes:
         output_time = str(initial_time.tm_year)+str(initial_time.tm_mon)+str(initial_time.tm_mday)+str(initial_time.tm_hour)+str(initial_time.tm_min)+str(initial_time.tm_sec)
         return output_time
     
-    def display_qr(self):
+    def display_qr(self, prepend=True):
         qr = Image(src=os.path.join(QR_DIR, f"{self.qr_id}.png"), border_radius=10, width=50, height=50)
         self.qr_size= self.get_qr_size(self.qr_id)
         self.qr_date = self.get_qr_date(self.qr_id)
@@ -145,14 +154,14 @@ class QRCodes:
         
         self.main_container = Container(on_click=lambda e:self.display_details_bottomsheet(),content=self.qr_row,padding=10, border_radius=20,bgcolor=Colors.SECONDARY_CONTAINER)
         
-        self.all_view.controls.append(self.main_container)
-        self.regular_view.controls.append(self.main_container)
+        if prepend:
+            self.all_view.controls.insert(0, self.main_container)
+            self.regular_view.controls.insert(0, self.main_container)
+        else:
+            self.all_view.controls.append(self.main_container)
+            self.regular_view.controls.append(self.main_container)
   
-        #if self.date[0:10] == time.strftime("%Y-%m-%d",time.localtime()):
-        #    self.home_view.controls.append(self.main_container)
-        #self.page.update()
-    
-    def display_pinned_qr(self):
+    def display_pinned_qr(self, prepend=True):
         qr = Image(src=os.path.join(PINNED_DIR, f"{self.qr_id}.png"), border_radius=10, width=50, height=50)
         self.qr_size= self.get_qr_size(self.qr_id)
         self.qr_date = self.get_qr_date(self.qr_id)
@@ -172,12 +181,12 @@ class QRCodes:
         
         self.main_container = Container(on_click=lambda e:self.display_details_bottomsheet(),content=self.qr_row,padding=10, border_radius=20,bgcolor=Colors.SECONDARY_CONTAINER)
         
-        self.all_view.controls.append(self.main_container)
-        self.pinned_view.controls.append(self.main_container)
-  
-        #if self.date[0:10] == time.strftime("%Y-%m-%d",time.localtime()):
-        #    self.home_view.controls.append(self.main_container)
-        #self.page.update()
+        if prepend:
+            self.all_view.controls.insert(0, self.main_container)
+            self.regular_view.controls.insert(0, self.main_container)
+        else:
+            self.all_view.controls.append(self.main_container)
+            self.regular_view.controls.append(self.main_container)
 
     def delete_qr_action(self, e):
         delete_dialog = AlertDialog(
@@ -478,7 +487,7 @@ class QRCodes:
         
 def main(page: Page):
     page.title = "QuickeR"
-    page.scroll = ScrollMode.ADAPTIVE
+    #page.scroll = ScrollMode.ADAPTIVE
     preview_qr = ""
     last_qr_image = {"img": None}
     _debounce_task = {"task": None}
@@ -492,11 +501,12 @@ def main(page: Page):
         "Header":"/GoogleSansFlex(2).ttf"
     }
 
-    def display_preview_qr(url, qr_color_primary,qr_color_secondary):
+    def display_preview_qr(url, qr_color_primary,qr_color_secondary,error_correct):
         preview_qr_area.controls.clear()
-        prev_qr = qrcode.QRCode()
+        prev_qr = qrcode.QRCode(error_correction=error_correct)
         prev_qr.add_data(str(url))
-        pil_img = prev_qr.make_image(fill_color=qr_color_primary, back_color=qr_color_secondary)
+        prev_qr.make(fit=True)
+        pil_img = prev_qr.make_image(fill_color=qr_color_primary, back_color=qr_color_secondary,)
         pil_img = pil_img.convert("RGB")
         last_qr_image["img"] = pil_img
         archivo_temporal_ram = BytesIO()
@@ -505,7 +515,7 @@ def main(page: Page):
             "utf-8"
         )
         uri_base64 = f"data:image/png;base64,{base64_puro}"
-        preview_qr = ft.Image(src=uri_base64, width=200, height=200)
+        preview_qr = ft.Image(src=uri_base64, width=200, height=200, border_radius=10)
         preview_qr_area.controls.append(preview_qr)
         page.update()
 
@@ -625,31 +635,28 @@ def main(page: Page):
              print("flet_permission_handler not available to open settings.")
     
     def load_qrs():
-        if os.path.exists(PINNED_DIR):
-            for file in os.listdir(PINNED_DIR):
-                if file.endswith(".png"):
-                    qr_id = file[:-4]
-                    image = cv2.imread(os.path.join(PINNED_DIR, file))
-                    detector = cv2.QRCodeDetector()
-                    data, bbox, straight_qrcode = detector.detectAndDecode(image)
-                    qr = QRCodes(page, data, all_view, regular_view, pinned_view)
-                    qr.qr_id = qr_id
-                    qr.date = qr.get_qr_date(qr_id)
-                    qr.url = data
-                    qr.display_pinned_qr()
+        files_with_meta = []
+        for directory, is_pinned in [(PINNED_DIR, True), (QR_DIR, False)]:
+            if os.path.exists(directory):
+                for f in os.listdir(directory):
+                    if f.endswith(".png"):
+                        path = os.path.join(directory, f)
+                        files_with_meta.append((path, f[:-4], is_pinned, os.path.getctime(path)))
 
-        if os.path.exists(QR_DIR):
-            for file in os.listdir(QR_DIR):
-                if file.endswith(".png"):
-                    qr_id = file[:-4]
-                    image = cv2.imread(os.path.join(QR_DIR, file))
-                    detector = cv2.QRCodeDetector()
-                    data, bbox, straight_qrcode = detector.detectAndDecode(image)
-                    qr = QRCodes(page, data, all_view, regular_view, pinned_view)
-                    qr.qr_id = qr_id
-                    qr.date = qr.get_qr_date(qr_id)
-                    qr.url = data
-                    qr.display_qr()
+        files_with_meta.sort(key=lambda x: x[3], reverse=True)  # más reciente primero
+
+        for path, qr_id, is_pinned, _ in files_with_meta:
+            image = cv2.imread(path)
+            detector = cv2.QRCodeDetector()
+            data, bbox, _ = detector.detectAndDecode(image)
+            qr = QRCodes(page, data, all_view, regular_view, pinned_view)
+            qr.qr_id = qr_id
+            qr.date = qr.get_qr_date(qr_id)
+            qr.url = data
+            if is_pinned:
+                qr.display_pinned_qr(prepend=False)
+            else:
+                qr.display_qr(prepend=False)
 
     def qr_creator_open():
         create_layout.open = True
@@ -770,7 +777,7 @@ def main(page: Page):
         ]),
     ])
 
-    preview_qr_area= Row(controls=[], alignment=ft.MainAxisAlignment.CENTER,expand=False)
+    preview_qr_area= Row(controls=[], alignment=ft.MainAxisAlignment.CENTER,expand=False, tight=True)
     
     def clear_dialog():
         delete_dialog = AlertDialog(
@@ -799,64 +806,66 @@ def main(page: Page):
         ])
     
     qr_url_input_field = TextField(label="Enter URL or text",on_change=lambda e: prop_changed())
-
+    error_correction_dropdown = Dropdown(value="M (15%)",on_select=lambda e: prop_changed(),options=[
+        DropdownOption(text="L (7%)"),
+        DropdownOption(text="M (15%)"),
+        DropdownOption(text="Q (25%)"),
+        DropdownOption(text="H (30%)"),
+        ])
     qr_color_scheme_primary = MaterialPicker(on_color_change=lambda e:prop_changed(),color="black")
     qr_color_scheme_secondary = MaterialPicker(on_color_change=lambda e:prop_changed(),color="white")
 
     create_layout= BottomSheet(draggable=False,use_safe_area=True,scrollable=False,fullscreen=True,open=False,on_dismiss=lambda e: clean_create_bs_up(),content=
-            Stack(controls=[
-                Column(horizontal_alignment="center",scroll=ScrollMode.AUTO,controls=[
-                    Container(bgcolor=Colors.PRIMARY,border_radius=30,expand=False,content=preview_qr_area,padding=20,margin=Margin.only(left=20, right=20, top=20, bottom=5)),
-                    Container(bgcolor=Colors.SECONDARY_CONTAINER,border_radius=30,margin=Margin.only(left=20, right=20, top=5, bottom=5),padding=20,content=
-                        Row(alignment="center",controls=[
-                            IconButton(
-                                icon=Icons.CLOSE,
-                                expand=True, 
-                                on_click=lambda e: clear_dialog(),    
-                                style=ButtonStyle(
-                                    shape=RoundedRectangleBorder(radius=12),
-                                    bgcolor={"": Colors.RED_900}, 
-                                )
-                            ),
-                            IconButton(
-                                icon=Icons.CHECK,
-                                expand=True,
-                                on_click=lambda e: qr_create_triggered(), 
-                                style=ButtonStyle(
-                                    shape=RoundedRectangleBorder(radius=12),
-                                    bgcolor={"": Colors.PRIMARY_CONTAINER}, 
-                                )
-                            ),
-                        ])
+        Column(horizontal_alignment="center",scroll=ScrollMode.AUTO,controls=[
+            Container(bgcolor=Colors.PRIMARY,border_radius=30,expand=False,content=preview_qr_area,padding=20,),
+            Container(bgcolor=Colors.SECONDARY_CONTAINER,border_radius=30,margin=Margin.only(left=20, right=20, top=5, bottom=5),padding=20,content=
+                Row(alignment="center",controls=[
+                    IconButton(
+                        icon=Icons.CLOSE,
+                        expand=True, 
+                        on_click=lambda e: clear_dialog(),    
+                        style=ButtonStyle(
+                            shape=RoundedRectangleBorder(radius=12),
+                            bgcolor={"": Colors.RED_900}, 
+                        )
                     ),
+                    IconButton(
+                        icon=Icons.CHECK,
+                        expand=True,
+                        on_click=lambda e: qr_create_triggered(), 
+                        style=ButtonStyle(
+                            shape=RoundedRectangleBorder(radius=12),
+                            bgcolor={"": Colors.PRIMARY_CONTAINER}, 
+                        )
+                    ),
+                ])
+            ),
+            Container(bgcolor=Colors.GREY_800,border_radius=30,margin=Margin.only(left=20, right=20, top=5, bottom=5),padding=20,content=
+                Column(controls=[
+                    qr_type_dropdown,
+                    Row(controls=[url_protocol_dropdown,qr_url_input_field]),
                     
-                    Container(bgcolor=Colors.GREY_800,border_radius=30,margin=Margin.only(left=20, right=20, top=5, bottom=5),padding=20,content=
-                        Column(controls=[
-                            qr_type_dropdown,
-                            Row(controls=[url_protocol_dropdown,qr_url_input_field]),
-                            
+            
+                    #branding_checkbox,       
+                ])
+            ),
+            Text(value="Customization", size=18,color=Colors.PRIMARY),
+            Container(bgcolor=Colors.GREY_800,border_radius=30,margin=Margin.only(left=20, right=20, top=5, bottom=5),padding=20,content=
+                Column(controls=[
+                    Row(controls=[Text(value=("Custom branding?: "))]),
+                    Divider(),
+                    Text(value=("Custom branding image path: ")),
+                    Divider(),
+                    Text(value=("Colors: ")),
+                ])
+            ),
 
-                            #branding_checkbox,       
-                        ])
-                    ),
-                    Text(value="Customization", size=18,color=Colors.PRIMARY),
-                    Container(bgcolor=Colors.GREY_800,border_radius=30,margin=Margin.only(left=20, right=20, top=5, bottom=5),padding=20,content=
-                        Column(controls=[
-                            Row(controls=[Text(value=("Custom branding?: "))]),
-                            Divider(),
-                            Text(value=("Custom branding image path: ")),
-                            Divider(),
-                            Text(value=("Colors: ")),
-                        ])
-                    ),
-
-                    #selected_color,
-                    ExpansionTile(title="Select a color:",controls=qr_color_scheme_primary),
-                    ExpansionTile(title="Select a color:",controls=qr_color_scheme_secondary),
-                    Container(height=50)
-                ]),
-                #Container(border_radius=20,content=Row(controls=[IconButton(icon=Icons.CLOSE,bgcolor=Colors.ON_SECONDARY, on_click=lambda e: clean_create_bs_up())])),
-            ])
+            #selected_color,
+            error_correction_dropdown,
+            ExpansionTile(title="Select a color:",controls=qr_color_scheme_primary),
+            ExpansionTile(title="Select a color:",controls=qr_color_scheme_secondary),
+            Container(height=50)
+        ]),
     )
     def prop_changed():
         if _debounce_task["task"] is not None:
@@ -876,8 +885,10 @@ def main(page: Page):
             color_rgb_2 = "#" + color_raw_2[3:] 
         else:
             color_rgb_2 = color_raw_2
-        display_preview_qr(qr_url_input_field.value, color_rgb_1, color_rgb_2)
-        display_preview_qr(qr_url_input_field.value, color_rgb_1, color_rgb_2)
+
+        error_correction = ERROR_CORRECTION_MAP.get(error_correction_dropdown.value, qrcode.constants.ERROR_CORRECT_M)
+        
+        display_preview_qr(qr_url_input_field.value, color_rgb_1, color_rgb_2,error_correction)
 
     def type_trigger(e):
         selected = e.control.value 
@@ -990,21 +1001,52 @@ def main(page: Page):
         ]
     )
     
-    page.navigation_bar = ft.NavigationBar(on_change=lambda e: on_tab_change(e),
+    nav_bar = ft.NavigationBar(on_change=lambda e: on_tab_change(e),
     destinations=[
         NavigationBarDestination(icon=Icons.CLEAR_ALL, label="All QR Codes"),
         NavigationBarDestination(icon=Icons.SETTINGS, label="Settings"),],)
+    nav_rail = ft.NavigationRail(
+        selected_index=0,
+        bgcolor=Colors.SURFACE_CONTAINER,
+        on_change=lambda e: on_tab_change(e),
+        expand=True,
+        destinations=[
+            ft.NavigationRailDestination(icon=Icons.CLEAR_ALL, label="All QR Codes"),
+            ft.NavigationRailDestination(icon=Icons.SETTINGS, label="Settings"),
+        ],
+    )
+    nav_rail_wrapper = Container(content=nav_rail, expand=False, height=page.height, border_radius=20)
 
     view = Column(expand=True,controls=[overview],horizontal_alignment=ft.CrossAxisAlignment.STRETCH)
     safearea= ft.SafeArea(content=view,expand=True)
     page.floating_action_button = ft.FloatingActionButton(icon=Icons.ADD, on_click=qr_creator_open)
     page.overlay.append(create_layout)
+
+    root_row = Row(controls=[safearea], expand=True, vertical_alignment=ft.CrossAxisAlignment.STRETCH)
+    page.add(root_row)
+
+    def on_resize(e):
+        is_wide = page.width >= BREAKPOINT
+        if is_wide:
+            page.navigation_bar = None
+            page.navigation_rail = nav_rail_wrapper
+            if nav_rail_wrapper not in root_row.controls:
+                root_row.controls.insert(0, nav_rail_wrapper)
+        else:
+            page.navigation_rail = None
+            page.navigation_bar = nav_bar
+            if nav_rail_wrapper in root_row.controls:
+                root_row.controls.remove(nav_rail_wrapper)
+        page.update()
+
+    page.on_resize = on_resize
     
-    page.add(safearea)
+    on_resize(None)
+
     load_qrs()
     page.run_task(get_permission_status)
     theme_loader()
     appearance_loader()
-    display_preview_qr("","black","white")
+    display_preview_qr("","black","white",ERROR_CORRECTION_MAP["M (15%)"])
 
 ft.run(main)
