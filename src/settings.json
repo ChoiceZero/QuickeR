@@ -1,4 +1,5 @@
 {
-    "Theme_color": "GREY_100",
-    "Appearance": "Dark"
+    "Theme_color": "GREEN_600",
+    "Appearance": "Light",
+    "AppVersion": "Beta 0.0.3"
 }

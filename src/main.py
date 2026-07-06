@@ -1,9 +1,10 @@
+from importlib.resources import files
 import os
 import qrcode
 import cv2 
 import time 
 import flet as ft
-from flet import SnackBar,ExpansionTile,Dropdown,DropdownOption,SegmentedButton,Segment,ThemeMode,Theme,Page,RoundedRectangleBorder,ButtonStyle,Divider,Stack,BottomSheet,Border,Margin,Icon,Icons, IconButton, NavigationBarDestination, Checkbox, VerticalDivider, Container, Image, TextField, Text, Row, Column, Colors, ScrollMode, AlertDialog, FilePicker, TextButton, Alignment, Button, IconButton
+from flet import Tooltip,SnackBar,ExpansionTile,Dropdown,DropdownOption,SegmentedButton,Segment,ThemeMode,Theme,Page,RoundedRectangleBorder,ButtonStyle,Divider,Stack,BottomSheet,Border,Margin,Icon,Icons, IconButton, NavigationBarDestination, Checkbox, VerticalDivider, Container, Image, TextField, Text, Row, Column, Colors, ScrollMode, AlertDialog, FilePicker, TextButton, Alignment, Button, IconButton
 from flet_color_pickers import MaterialPicker,ColorPicker
 from pathlib import Path
 import platform
@@ -13,10 +14,12 @@ import base64
 from io import BytesIO  
 import asyncio
 import subprocess
+import PIL 
+from itertools import groupby
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ASSET_DIR = os.path.join(BASE_DIR, "assets")
 QR_DIR = os.path.join(BASE_DIR, "qr_codes")
-print(f"QR_DIR: {QR_DIR}")
 PINNED_DIR = os.path.join(BASE_DIR, "pinned_qr_codes")
 
 os.makedirs(QR_DIR, exist_ok=True)
@@ -28,6 +31,53 @@ ERROR_CORRECTION_MAP = {
     "Q (25%)": qrcode.constants.ERROR_CORRECT_Q,
     "H (30%)": qrcode.constants.ERROR_CORRECT_H,
 }
+
+os.path.join(ASSET_DIR,"github-white-icon.webp")
+
+def get_github_icon_by_mode():
+    with open(os.path.join(BASE_DIR, "settings.json"), "r", encoding="utf-8") as file:
+        data = json.load(file)
+
+    if data["Appearance"] == "System":
+        brightness = platform.system()
+        if brightness == "Dark":
+            return os.path.join(ASSET_DIR,"github-white-icon.webp")
+        else:
+            return os.path.join(ASSET_DIR,"github_black_icon.png")
+    elif data["Appearance"] == "Dark":
+        return os.path.join(ASSET_DIR,"github-white-icon.webp")
+    elif data["Appearance"] == "Light":
+        return os.path.join(ASSET_DIR,"github_black_icon.png")
+
+def get_container_color_by_mode():
+    with open(os.path.join(BASE_DIR, "settings.json"), "r", encoding="utf-8") as file:
+        data = json.load(file)
+
+    if data["Appearance"] == "System":
+        brightness = platform.system()
+        if brightness == "Dark":
+            return Colors.GREY_800
+        else:
+            return Colors.GREY_300
+    elif data["Appearance"] == "Dark":
+        return Colors.GREY_800
+    elif data["Appearance"] == "Light":
+        return Colors.GREY_300
+    
+def get_option_color_by_mode():
+    with open(os.path.join(BASE_DIR, "settings.json"), "r", encoding="utf-8") as file:
+        data = json.load(file)
+
+    if data["Appearance"] == "System":
+        brightness = platform.system()
+        if brightness == "Dark":
+            return Colors.GREY_700
+        else:
+            return Colors.GREY_400
+    elif data["Appearance"] == "Dark":
+        return Colors.GREY_700
+    elif data["Appearance"] == "Light":
+        return Colors.GREY_400
 
 def relative_luminance(hex_color):
     hex_color = hex_color.lstrip("#")
@@ -68,6 +118,17 @@ def get_pictures_folder() -> str:
 
 BREAKPOINT = 700
 
+class LogoPicker:
+    def __init__(self, page):
+        self.page = page
+        self.file_picker = FilePicker()
+        page.services.append(self.file_picker)
+        page.update()
+
+    async def pick(self, allowed_extensions=None):
+        files = await self.file_picker.pick_files(allowed_extensions=allowed_extensions)
+        return files[0].path if files else None
+
 class QRCodes:
     def __init__(self, page, input,all_view,regular_view,pinned_view):    
         self.all_view = all_view
@@ -90,6 +151,8 @@ class QRCodes:
         self.share = ft.Share()
         self.status = ft.Text()
         self.result_raw = ft.Text()
+        self.primary_hex = None
+        self.bg_hex = None
 
     def get_qr_date(self, qr_id):
         if os.path.exists(os.path.join(QR_DIR, f"{qr_id}.png")):
@@ -152,7 +215,7 @@ class QRCodes:
                 ]),      
         ])])
         
-        self.main_container = Container(on_click=lambda e:self.display_details_bottomsheet(),content=self.qr_row,padding=10, border_radius=20,bgcolor=Colors.SECONDARY_CONTAINER)
+        self.main_container = Container(on_click=lambda e:self.display_details_bottomsheet(),on_hover=lambda e: self.on_hover(e),content=self.qr_row,padding=10, border_radius=20,bgcolor=Colors.SECONDARY_CONTAINER)
         
         if prepend:
             self.all_view.controls.insert(0, self.main_container)
@@ -179,14 +242,20 @@ class QRCodes:
             Icon(icon=Icons.PUSH_PIN_ROUNDED)
         ])
         
-        self.main_container = Container(on_click=lambda e:self.display_details_bottomsheet(),content=self.qr_row,padding=10, border_radius=20,bgcolor=Colors.SECONDARY_CONTAINER)
+        self.main_container = Container(on_click=lambda e:self.display_details_bottomsheet(),on_hover=lambda e: self.on_hover(e),content=self.qr_row,padding=10, border_radius=20,bgcolor=Colors.SECONDARY_CONTAINER)
         
         if prepend:
             self.all_view.controls.insert(0, self.main_container)
-            self.regular_view.controls.insert(0, self.main_container)
+            self.pinned_view.controls.insert(0, self.main_container)
         else:
             self.all_view.controls.append(self.main_container)
-            self.regular_view.controls.append(self.main_container)
+            self.pinned_view.controls.append(self.main_container)
+
+    def on_hover(self,e):
+        if e.data == True:
+            self.main_container.bgcolor=Colors.SECONDARY_FIXED_DIM
+        else:
+            self.main_container.bgcolor=Colors.SECONDARY_CONTAINER
 
     def delete_qr_action(self, e):
         delete_dialog = AlertDialog(
@@ -341,7 +410,7 @@ class QRCodes:
             self.unpin_qr_action()
 
     def pin_qr_action(self):
-        self.pin_button.bgcolor = Colors.PINK_900
+        self.pin_button.bgcolor = Colors.PINK_500
         self.pin_button.icon = Icons.PUSH_PIN
         shutil.move(os.path.join(QR_DIR, f"{self.qr_id}.png"), os.path.join(PINNED_DIR, f"{self.qr_id}.png"))
         self.regular_view.controls.remove(self.main_container)
@@ -349,7 +418,7 @@ class QRCodes:
         self.display_pinned_qr()
 
     def unpin_qr_action(self):
-        self.pin_button.bgcolor = Colors.PURPLE_900
+        self.pin_button.bgcolor = Colors.PURPLE_500
         self.pin_button.icon = Icons.PUSH_PIN_OUTLINED
         try:
             shutil.move(os.path.join(PINNED_DIR, f"{self.qr_id}.png"), os.path.join(QR_DIR, f"{self.qr_id}.png"))
@@ -367,85 +436,63 @@ class QRCodes:
             qrpath = qr_path
             qr = Image(src=qr_path, border_radius=10, width=250, height=250)
             self.pin_button = IconButton(icon=Icons.PUSH_PIN_OUTLINED, on_click=self.pin_triggered, expand=True,
-                style=ButtonStyle(shape=RoundedRectangleBorder(radius=12), bgcolor={"": Colors.PURPLE_900}))
+                style=ButtonStyle(shape=RoundedRectangleBorder(radius=12), bgcolor={"": Colors.PURPLE_500}))
         elif os.path.exists(pinned_path):
             qrpath = pinned_path
             qr = Image(src=pinned_path, border_radius=10, width=250, height=250)
             self.pin_button = IconButton(icon=Icons.PUSH_PIN, on_click=self.pin_triggered, expand=True,
-                style=ButtonStyle(shape=RoundedRectangleBorder(radius=12), bgcolor={"": Colors.PINK_900}))
-        elif os.path.exists(os.path.join(PINNED_DIR, f"{self.qr_id}.png")):
-            qrpath=os.path.join(PINNED_DIR, f"{self.qr_id}.png")
-            qr = Image(src=os.path.join(PINNED_DIR, f"{self.qr_id}.png"),border_radius=10,width=250,height=250)
-            self.pin_button = IconButton(
-                icon=Icons.PUSH_PIN,
-                on_click=self.pin_triggered,
-                expand=True, 
-                style=ButtonStyle(
-                    shape=RoundedRectangleBorder(radius=12),
-                    bgcolor={"": Colors.PINK_900}, 
-                ))         
+                style=ButtonStyle(shape=RoundedRectangleBorder(radius=12), bgcolor={"": Colors.PINK_500}))        
         
         self.details_bs = BottomSheet(draggable=True,show_drag_handle=True,use_safe_area=True,scrollable=False,fullscreen=True,open=False,on_dismiss=lambda e: self.clean_bs_up(),content=
-            Stack(controls=[
-                Column(horizontal_alignment="center",scroll=ScrollMode.AUTO,controls=[
-                    Container(bgcolor=Colors.PRIMARY,border_radius=30,content=qr,padding=20,margin=Margin.only(left=20, right=20, bottom=5)),
-                    Container(bgcolor=Colors.SECONDARY_CONTAINER,border_radius=30,margin=Margin.only(left=20, right=20, top=5, bottom=5),padding=20,content=
-                        Row(alignment="center",controls=[
-                            IconButton(
-                                icon=Icons.DOWNLOAD,
-                                expand=True,
-                                on_click=lambda e: self.download_qr_action(),
-                                style=ButtonStyle(
-                                    shape=RoundedRectangleBorder(radius=12),
-                                    bgcolor={"": Colors.GREEN_900}, 
-                                )
-                            ),
-                            IconButton(
-                                icon=Icons.SHARE,
-                                expand=True,
-                                on_click=lambda e: asyncio.ensure_future(self.do_share_files_from_paths()), 
-                                style=ButtonStyle(
-                                    shape=RoundedRectangleBorder(radius=12),
-                                    bgcolor={"": Colors.GREEN_900}, 
-                                )
-                            ),
-                            IconButton(
-                                icon=Icons.EDIT,
-                                expand=True, 
-                                style=ButtonStyle(
-                                    shape=RoundedRectangleBorder(radius=12),
-                                    bgcolor={"": Colors.BLUE_900}, 
-                                )
-                            ),
-                            self.pin_button,
-                            IconButton(icon=Icons.DELETE,expand=True,on_click=lambda e: self.delete_qr_action(e), style=ButtonStyle(shape=RoundedRectangleBorder(radius=12),bgcolor={"": Colors.RED_900},)),
-                        ])
-                    ),
-                    Text(value="General", size=18,color=Colors.PRIMARY),
-                    Container(bgcolor=Colors.GREY_800,border_radius=30,margin=Margin.only(left=20, right=20, top=5, bottom=5),padding=20,content=
-                        Column(controls=[
-                            Row(controls=[Icon(icon=Icons.INSERT_LINK_ROUNDED),Column(spacing=-3,controls=[Text(value=("Url/text"), size=16),Text(value=(self.url),size=11)])]),
-                            Divider(),
-                            Row(controls=[Icon(icon=Icons.CALENDAR_MONTH_ROUNDED),Column(spacing=-3,controls=[Text(value=("Creation date"), size=16),Text(value=(self.qr_date),size=11)])]),
-                            Divider(),
-                            Row(controls=[Icon(icon=Icons.FOLDER_COPY_ROUNDED),Column(spacing=-3,controls=[Text(value=("Internal path"), size=16),Text(value=(qrpath),size=11)])]), 
-                            Divider(),
-                            Row(controls=[Icon(icon=Icons.INSERT_DRIVE_FILE_ROUNDED),Column(spacing=-3,controls=[Text(value=("Filesize"), size=16),Text(value=(self.qr_size),size=11)]),]),
-                        ])
-                    ),
-                    Text(value="Customization", size=18,color=Colors.PRIMARY),
-                    Container(bgcolor=Colors.GREY_800,border_radius=30,margin=Margin.only(left=20, right=20, top=5, bottom=5),padding=20,content=
-                        Column(controls=[
-                            Row(controls=[Text(value=("Custom branding?: "))]),
-                            Divider(),
-                            Text(value=("Custom branding image path: ")),
-                            Divider(),
-                            Text(value=("Colors: ")),
-                        ])
-                    ),
-                    Container(height=50)
-                ]),
-            ])
+            Column(horizontal_alignment="center",scroll=ScrollMode.AUTO,controls=[
+                Container(bgcolor=Colors.INVERSE_PRIMARY,border_radius=30,content=qr,padding=20,margin=Margin.only(left=20, right=20, bottom=5)),
+                Container(bgcolor=Colors.SECONDARY_CONTAINER,border_radius=30,margin=Margin.only(left=20, right=20, top=5, bottom=5),padding=20,content=
+                    Row(alignment="center",controls=[
+                        IconButton(
+                            icon=Icons.DOWNLOAD,
+                            expand=True,
+                            on_click=lambda e: self.download_qr_action(),
+                            style=ButtonStyle(
+                                shape=RoundedRectangleBorder(radius=12),
+                                bgcolor={"": Colors.BLUE_500}, 
+                            )
+                        ),
+                        IconButton(
+                            icon=Icons.SHARE,
+                            expand=True,
+                            on_click=lambda e: asyncio.ensure_future(self.do_share_files_from_paths()), 
+                            style=ButtonStyle(
+                                shape=RoundedRectangleBorder(radius=12),
+                                bgcolor={"": Colors.GREEN_500}, 
+                            )
+                        ),
+                        self.pin_button,
+                        IconButton(icon=Icons.DELETE,expand=True,on_click=lambda e: self.delete_qr_action(e), style=ButtonStyle(shape=RoundedRectangleBorder(radius=12),bgcolor={"": Colors.RED_500},)),
+                    ])
+                ),
+                Text(value="General", size=18,color=Colors.PRIMARY),
+                Container(bgcolor=get_container_color_by_mode(),border_radius=30,margin=Margin.only(left=20, right=20, top=5, bottom=5),padding=20,content=
+                    Column(controls=[
+                        Row(controls=[Icon(icon=Icons.INSERT_LINK_ROUNDED),Column(spacing=-3,controls=[Text(value=("Url/text"), size=16),Text(value=(self.url),size=11)])]),
+                        Divider(color="grey"),
+                        Row(controls=[Icon(icon=Icons.CALENDAR_MONTH_ROUNDED),Column(spacing=-3,controls=[Text(value=("Creation date"), size=16),Text(value=(self.qr_date),size=11)])]),
+                        Divider(color="grey"),
+                        Row(controls=[Icon(icon=Icons.FOLDER_COPY_ROUNDED),Column(spacing=-3,controls=[Text(value=("Internal path"), size=16),Text(value=(qrpath),size=11)])]), 
+                        Divider(color="grey"),
+                        Row(controls=[Icon(icon=Icons.INSERT_DRIVE_FILE_ROUNDED),Column(spacing=-3,controls=[Text(value=("Filesize"), size=16),Text(value=(self.qr_size),size=11)]),]),
+                    ])
+                ),
+                Text(value="Customization", size=18,color=Colors.PRIMARY),
+                Container(bgcolor=get_container_color_by_mode(),border_radius=30,margin=Margin.only(left=20, right=20, top=5, bottom=5),padding=20,content=
+                    Column(controls=[
+                        Row(controls=[Icon(icon=Icons.COLOR_LENS_ROUNDED),Column(spacing=-3,controls=Text(value=("Colors"), size=16))]),
+                        Row(controls=[Text(value=("Primary: ")),Container(expand=True),Text(value=self.fill_color or "Error")]),
+                        Divider(color="grey"),
+                        Row(controls=[Text(value=("Background: ")),Container(expand=True),Text(value=self.back_color or "Error")]),
+                    ])
+                ),
+                Container(height=50)
+            ]),
         )
         self.page.overlay.append(self.details_bs)
         self.details_bs.open = True
@@ -491,6 +538,7 @@ def main(page: Page):
     preview_qr = ""
     last_qr_image = {"img": None}
     _debounce_task = {"task": None}
+    logo_image_path = {"path": None}
 
     date_list=[]
 
@@ -506,7 +554,17 @@ def main(page: Page):
         prev_qr = qrcode.QRCode(error_correction=error_correct)
         prev_qr.add_data(str(url))
         prev_qr.make(fit=True)
-        pil_img = prev_qr.make_image(fill_color=qr_color_primary, back_color=qr_color_secondary,)
+        pil_img = prev_qr.make_image(fill_color=qr_color_primary, back_color=qr_color_secondary)
+        pil_img = pil_img.convert("RGBA")
+
+        if logo_image_path["path"]:
+            logo = PIL.Image.open(logo_image_path["path"]).convert("RGBA")
+            qr_w, qr_h = pil_img.size
+            logo_size = qr_w // 4
+            logo = logo.resize((logo_size, logo_size))
+            pos = ((qr_w - logo_size) // 2, (qr_h - logo_size) // 2)
+            pil_img.paste(logo, pos, logo)
+
         pil_img = pil_img.convert("RGB")
         last_qr_image["img"] = pil_img
         archivo_temporal_ram = BytesIO()
@@ -582,14 +640,17 @@ def main(page: Page):
         read_data = json_reader()
         appearance = read_data["Appearance"]
         if appearance == "System":
+            appearance_setting.selected=["1"]
             brightness = page.platform_brightness
             if brightness == ft.Brightness.DARK:
                 page.theme_mode = ThemeMode.DARK
             elif brightness == ft.Brightness.LIGHT:
                 page.theme_mode= ThemeMode.LIGHT
         elif appearance == "Dark":
+            appearance_setting.selected=["3"]
             page.theme_mode = ThemeMode.DARK
         elif appearance == "Light":
+            appearance_setting.selected=["2"]
             page.theme_mode = ThemeMode.LIGHT
         page.update()
 
@@ -643,13 +704,20 @@ def main(page: Page):
                         path = os.path.join(directory, f)
                         files_with_meta.append((path, f[:-4], is_pinned, os.path.getctime(path)))
 
-        files_with_meta.sort(key=lambda x: x[3], reverse=True)  # más reciente primero
+        files_with_meta.sort(key=lambda x: x[3], reverse=True)
 
-        for path, qr_id, is_pinned, _ in files_with_meta:
+        last_date = None
+        for path, qr_id, is_pinned, ctime in files_with_meta:
+            date_str = time.strftime("%Y-%m-%d", time.localtime(ctime))
+            if date_str != last_date:
+                all_view.controls.append(Text(value=date_str, size=16, color=Colors.GREY_400))
+                last_date = date_str
+
             image = cv2.imread(path)
             detector = cv2.QRCodeDetector()
             data, bbox, _ = detector.detectAndDecode(image)
             qr = QRCodes(page, data, all_view, regular_view, pinned_view)
+            qr.fill_color, qr.back_color = get_qr_colors(path)
             qr.qr_id = qr_id
             qr.date = qr.get_qr_date(qr_id)
             qr.url = data
@@ -662,16 +730,17 @@ def main(page: Page):
         create_layout.open = True
         page.update() 
     
-    def qr_create_triggered(color_rgb_1, color_rgb_2):
-        if contrast_ratio(color_rgb_1, color_rgb_2) < 4.5: 
-            AlertDialog(
-                title=Text("Contrast too low"),
-                alignment=Alignment.CENTER,
-                content=Text("The contrast between the two colors is too low. The qr may be unreadable."),
-                actions=[TextButton("Cancel", on_click=lambda e: page.pop_dialog()),TextButton("Create", on_click=lambda e: create_qr_action())],
-                open=True)
-        else:
-            create_qr_action()
+    def qr_create_triggered():
+        #if contrast_ratio(color_rgb_1, color_rgb_2) < 4.5: 
+        #    AlertDialog(
+        #        title=Text("Contrast too low"),
+        #        alignment=Alignment.CENTER,
+        #        content=Text("The contrast between the two colors is too low. The qr may be unreadable."),
+        #        actions=[TextButton("Cancel", on_click=lambda e: page.pop_dialog()),TextButton("Create", on_click=lambda e: create_qr_action())],
+        #        open=True)
+        #else:
+        #    create_qr_action()
+        create_qr_action()
 
     def create_qr_action():
             if qr_type_dropdown.value == "URL/Link":
@@ -682,6 +751,7 @@ def main(page: Page):
             else:
                 create_info = qr_url_input_field.value
             new_qr = QRCodes(page, create_info, all_view, regular_view,pinned_view)
+            new_qr.fill_color, new_qr.back_color = qr_color_scheme_primary.color,qr_color_scheme_secondary.color
             if last_qr_image["img"]==None:
                 print("image can't be Nonetype!")
             else:
@@ -725,6 +795,7 @@ def main(page: Page):
             elif all_view in overview.controls:
                 overview.controls.remove(all_view)
             overview.controls.append(pinned_view)
+        page.update()
 
     def on_tab_change(e):
         if e.control.selected_index == 0:
@@ -733,28 +804,27 @@ def main(page: Page):
         elif e.control.selected_index == 1:
             view.controls.clear()
             view.controls.append(settings_view)
-    
-    branding_checkbox = Checkbox(label="Use a custom logo?")
 
-    save_folder = TextField(hint_text="Enter path", width=400)
-    
-    #Settings page
-    support_me = Container(bgcolor=Colors.SECONDARY_CONTAINER,border_radius=30,padding=30,content=Column(wrap=True,horizontal_alignment=ft.CrossAxisAlignment.STRETCH,controls=[
-        Text(value="Support me!", weight=5, size=30),
-        Text(value="If you like this app, consider supporting me by donating, sharing the app, contributing code or give it a star in github.",overflow=ft.TextOverflow.ELLIPSIS),
-        Row(wrap=True,controls=[Button(icon=Icons.STAR,content="Star on github"),Button(icon=Icons.COFFEE,content="Buy me a coffee")],)
-        ]))
-    bug_report = Container(bgcolor=Colors.PRIMARY_CONTAINER,border_radius=30,padding=30,content=Column(wrap=True,controls=[
-        Text(value="Bugs", weight=5, size=30),
-        Text(value="Found any bugs, issues or errors? Report them on the github 'Issues' tab."+"\n"+"Please check if the same bug has been already reportedif you can! "),
-        Row(controls=[Button(icon=Icons.BUG_REPORT,content="Github Issues")],)
-        ]))
-    settings_container = Container(bgcolor=Colors.TERTIARY_CONTAINER,border_radius=30,padding=30,content=Column(wrap=True,controls=[
-        Text(value="Settings", weight=5, size=30),
-        Text(value="Save folder", weight=5, size=20),
-        Text(value="The path where the images are saved to whenever the respctive button is pressed."),
-        Row(controls=[save_folder,Text(value="or"),Button(icon=Icons.FOLDER,content="Select folder")],)
-        ]))
+    logo_picker = LogoPicker(page)
+
+    async def pick_logo():
+        path = await logo_picker.pick(["png", "jpg", "jpeg"])
+        if path:
+            logo_image_path["path"] = path
+            prop_changed()
+
+    def remove_logo():
+        logo_image_path["path"] = None
+        prop_changed()
+
+    def get_qr_colors(image_path):
+        img = PIL.Image.open(image_path).convert("RGB")
+        colors = img.getcolors(maxcolors=1000000)
+        colors.sort(key=lambda c: c[0], reverse=True)
+        back_color = '#%02x%02x%02x' % colors[0][1]  
+        fill_color = '#%02x%02x%02x' % colors[1][1]  
+        return fill_color, back_color
+
     themes_row = Container(padding=5,bgcolor=Colors.SECONDARY_CONTAINER,border=Border.all(width=1,color=Colors.PRIMARY),border_radius=30,content=Row(spacing=-10,scroll=ScrollMode.AUTO,controls=[
         IconButton(icon=Icons.CIRCLE, icon_color="blue", on_click=lambda e: theme_changer(1), icon_size=50),
         IconButton(icon=Icons.CIRCLE, icon_color="green", on_click=lambda e: theme_changer(2), icon_size=50),
@@ -767,15 +837,11 @@ def main(page: Page):
         IconButton(icon=Icons.CIRCLE, icon_color="white", on_click=lambda e: theme_changer(9), icon_size=50),
     ]))
 
-    appearance_setting = Column(controls=[
-        Row(controls=[
-            SegmentedButton(selected=["1"],on_change=lambda e: on_mode_change(e),show_selected_icon=True,segments=[
+    appearance_setting = SegmentedButton(selected=["1"],on_change=lambda e: on_mode_change(e),show_selected_icon=True,segments=[
                 Segment(value="1",label=Text("System"),icon=Icon(Icons.MONITOR)),
                 Segment(value="2",label=Text("Light"),icon=Icon(Icons.WB_SUNNY_ROUNDED)),
                 Segment(value="3",label=Text("Dark"),icon=Icon(Icons.DARK_MODE_ROUNDED)),
-            ]),
-        ]),
-    ])
+            ])
 
     preview_qr_area= Row(controls=[], alignment=ft.MainAxisAlignment.CENTER,expand=False, tight=True)
     
@@ -794,19 +860,19 @@ def main(page: Page):
         qr_url_input_field.value = ""
         page.update()   
     
-    qr_type_dropdown = Dropdown(on_select=lambda e: type_trigger(e),value="URL/Link",options=[
+    qr_type_dropdown = Dropdown(on_select=lambda e: type_trigger(e),border_width=0,value="URL/Link",options=[
         DropdownOption(text="WIFI",leading_icon=Icons.WIFI_ROUNDED),
         DropdownOption(text="URL/Link",leading_icon=Icons.LINK_ROUNDED),
         DropdownOption(text="Text",leading_icon=Icons.TEXT_FIELDS_ROUNDED),
         ])
     
-    url_protocol_dropdown = Dropdown(value="https://",options=[
+    url_protocol_dropdown = Dropdown(value="https://",border_width=0,options=[
         DropdownOption(text="https://"),
         DropdownOption(text="http://"),
         ])
     
-    qr_url_input_field = TextField(label="Enter URL or text",on_change=lambda e: prop_changed())
-    error_correction_dropdown = Dropdown(value="M (15%)",on_select=lambda e: prop_changed(),options=[
+    qr_url_input_field = TextField(expand=True,border_width=0,label="Enter URL or text",on_change=lambda e: prop_changed())
+    error_correction_dropdown = Dropdown(value="M (15%)",border_width=0,on_select=lambda e: prop_changed(),options=[
         DropdownOption(text="L (7%)"),
         DropdownOption(text="M (15%)"),
         DropdownOption(text="Q (25%)"),
@@ -817,7 +883,7 @@ def main(page: Page):
 
     create_layout= BottomSheet(draggable=False,use_safe_area=True,scrollable=False,fullscreen=True,open=False,on_dismiss=lambda e: clean_create_bs_up(),content=
         Column(horizontal_alignment="center",scroll=ScrollMode.AUTO,controls=[
-            Container(bgcolor=Colors.PRIMARY,border_radius=30,expand=False,content=preview_qr_area,padding=20,),
+            Container(bgcolor=Colors.INVERSE_PRIMARY,border_radius=30,expand=False,content=preview_qr_area,padding=20,),
             Container(bgcolor=Colors.SECONDARY_CONTAINER,border_radius=30,margin=Margin.only(left=20, right=20, top=5, bottom=5),padding=20,content=
                 Row(alignment="center",controls=[
                     IconButton(
@@ -826,7 +892,7 @@ def main(page: Page):
                         on_click=lambda e: clear_dialog(),    
                         style=ButtonStyle(
                             shape=RoundedRectangleBorder(radius=12),
-                            bgcolor={"": Colors.RED_900}, 
+                            bgcolor={"": Colors.RED_500}, 
                         )
                     ),
                     IconButton(
@@ -835,38 +901,54 @@ def main(page: Page):
                         on_click=lambda e: qr_create_triggered(), 
                         style=ButtonStyle(
                             shape=RoundedRectangleBorder(radius=12),
-                            bgcolor={"": Colors.PRIMARY_CONTAINER}, 
+                            bgcolor={"": Colors.INVERSE_PRIMARY}, 
                         )
                     ),
                 ])
             ),
-            Container(bgcolor=Colors.GREY_800,border_radius=30,margin=Margin.only(left=20, right=20, top=5, bottom=5),padding=20,content=
+            Container(bgcolor=get_container_color_by_mode(),border_radius=30,margin=Margin.only(left=20, right=20, top=5, bottom=5),padding=20,content=
                 Column(controls=[
-                    qr_type_dropdown,
-                    Row(controls=[url_protocol_dropdown,qr_url_input_field]),
-                    
-            
-                    #branding_checkbox,       
+                    Row(controls=[Icon(icon=Icons.ARROW_DROP_DOWN_CIRCLE_OUTLINED),Text(value=("QR Type"), size=20),Container(expand=True),Container(border_radius=50,bgcolor=get_option_color_by_mode(),content=qr_type_dropdown)]),
+                    Divider(color="grey"),
+                    Row(controls=[Icon(icon=Icons.SHORT_TEXT_ROUNDED),Text(value=("Content"), size=20)]),
+                    Row(controls=[Container(border_radius=50,bgcolor=get_option_color_by_mode(),content=url_protocol_dropdown),Container(border_radius=10,expand=True,bgcolor=get_option_color_by_mode(),content=qr_url_input_field)]),
+                    Divider(color="grey"),
+                    Row(controls=[Icon(icon=Icons.CHECK_CIRCLE_OUTLINE_ROUNDED),Text(value=("Error correction level"), size=20),Container(expand=True),Container(border_radius=50,bgcolor=get_option_color_by_mode(),content=error_correction_dropdown)]), 
                 ])
             ),
             Text(value="Customization", size=18,color=Colors.PRIMARY),
-            Container(bgcolor=Colors.GREY_800,border_radius=30,margin=Margin.only(left=20, right=20, top=5, bottom=5),padding=20,content=
+            Container(bgcolor=get_container_color_by_mode(),border_radius=30,margin=Margin.only(left=20, right=20, top=5, bottom=5),padding=20,content=
                 Column(controls=[
-                    Row(controls=[Text(value=("Custom branding?: "))]),
-                    Divider(),
-                    Text(value=("Custom branding image path: ")),
-                    Divider(),
-                    Text(value=("Colors: ")),
+                    Row(controls=[Icon(icon=Icons.ADD_PHOTO_ALTERNATE_ROUNDED),Text(value=("Logo/Branding"), size=20)]),
+                    Container(
+                        content=Row(controls=[
+                            Icon(icon=Icons.ERROR_OUTLINE_ROUNDED,color=Colors.WHITE),
+                            Container(expand=True,content=Text(
+                                value="As logos take up a big chunk of the QR's area, scanability may be greatly reduced. Thus, it is highly reccomended that H level error correction is used.",
+                                size=16,
+                                color=Colors.WHITE
+                            )),
+                            ],
+                        ),
+                        padding=15,
+                        bgcolor=Colors.RED_500,border_radius=30,
+                        margin=Margin.only(left=0, right=0, top=5, bottom=5,)
+                    ),
+                    Row(controls=[
+                    Button(content="Pick image from folder",icon=Icons.FOLDER_COPY_ROUNDED, on_click=lambda e: asyncio.ensure_future(pick_logo())),
+                    Container(expand=True),
+                    Button(content="Remove logo",icon=Icons.DELETE_ROUNDED, on_click=lambda e: remove_logo()),
+                    ]),
+                    Divider(color="grey"),
+                    Text(value=("Color scheme"), size=20, color=Colors.PRIMARY),
+                    ExpansionTile(title="Primary color:",controls=qr_color_scheme_primary),
+                    ExpansionTile(title="Background color:",controls=qr_color_scheme_secondary),
                 ])
             ),
-
-            #selected_color,
-            error_correction_dropdown,
-            ExpansionTile(title="Select a color:",controls=qr_color_scheme_primary),
-            ExpansionTile(title="Select a color:",controls=qr_color_scheme_secondary),
             Container(height=50)
         ]),
     )
+
     def prop_changed():
         if _debounce_task["task"] is not None:
             _debounce_task["task"].cancel()
@@ -890,6 +972,20 @@ def main(page: Page):
         
         display_preview_qr(qr_url_input_field.value, color_rgb_1, color_rgb_2,error_correction)
 
+    def color_correction():
+        color_raw_1 = qr_color_scheme_primary.color  
+        if color_raw_1 and color_raw_1.startswith("#") and len(color_raw_1) == 9:
+            color_rgb_1 = "#" + color_raw_1[3:] 
+        else:
+            color_rgb_1 = color_raw_1
+
+        color_raw_2 = qr_color_scheme_secondary.color  
+        if color_raw_2 and color_raw_2.startswith("#") and len(color_raw_2) == 9:
+            color_rgb_2 = "#" + color_raw_2[3:] 
+        else:
+            color_rgb_2 = color_raw_2
+            return color_rgb_1, color_rgb_2
+
     def type_trigger(e):
         selected = e.control.value 
         url_protocol_dropdown.visible = False
@@ -907,26 +1003,45 @@ def main(page: Page):
             qr_url_input_field.label = "Enter text"
         page.update()
 
-    home_view = Column(controls=[], scroll=ScrollMode.AUTO, expand=True,horizontal_alignment=ft.CrossAxisAlignment.STRETCH)
-    create_view = Column(controls=[create_layout])
-
     all_view=Column(scroll=ScrollMode.AUTO,expand=True,horizontal_alignment=ft.CrossAxisAlignment.STRETCH,controls=[])
     regular_view=Column(scroll=ScrollMode.AUTO,expand=True,horizontal_alignment=ft.CrossAxisAlignment.STRETCH,controls=[])
     pinned_view =Column(scroll=ScrollMode.AUTO,expand=True,horizontal_alignment=ft.CrossAxisAlignment.STRETCH,controls=[])
     
     overview = Column(scroll=ScrollMode.AUTO,expand=True,horizontal_alignment=ft.CrossAxisAlignment.STRETCH,controls=[
-        Row(controls=[Column(controls=[
-            Container(content=Text(value="QuickeR",size=40), margin=Margin(bottom=15,top=15)),
-            Text(value="All QR codes",size=20, margin=Margin(bottom=-10)),
-            Text(value="Tap the + icon to create a QR, and tap the row to see its details!",size=10),
-            SegmentedButton(selected=["1"],on_change=lambda e: on_filter_change(e),margin=Margin.only(left=0, right=0, top=0, bottom=20),show_selected_icon=True,segments=[
-                Segment(value="1",label=Text("All"),icon=Icon(Icons.CLEAR_ALL)),
-                Segment(value="2",label=Text("Unpinned"),icon=Icon(Icons.PUSH_PIN_OUTLINED)),
-                Segment(value="3",label=Text("Pinned"),icon=Icon(Icons.PUSH_PIN_ROUNDED)),
-                ])]),
+        Container(content=Text(value="QuickeR",size=40), margin=Margin(bottom=15,top=15)),
+        Row(margin=Margin(left=20),controls=[
+            IconButton(icon=Icons.INFO_OUTLINE_ROUNDED, tooltip=Tooltip(message="Tap the + icon to create a QR, and tap the rows to see details!")),
+            Text(value="All QR codes",size=30,margin=Margin(left=-10),)
+        ]),
+        Divider(color="grey"),
+        Container(padding=20,bgcolor=get_container_color_by_mode(),border_radius=20,margin=Margin(left=20,right=20),content=    
+            ExpansionTile(title="Filters:",controls=[
+                SegmentedButton(selected=["1"],on_change=lambda e: on_filter_change(e),margin=Margin.only(left=0, right=0, top=0, bottom=20),show_selected_icon=True,segments=[
+                    Segment(value="1",label=Text("All"),icon=Icon(Icons.CLEAR_ALL)),
+                    Segment(value="2",label=Text("Unpinned"),icon=Icon(Icons.PUSH_PIN_OUTLINED)),
+                    Segment(value="3",label=Text("Pinned"),icon=Icon(Icons.PUSH_PIN_ROUNDED)),
+                ]),
             ]),
-            all_view,
-        ])
+        ),
+        
+        all_view,    
+    ])
+
+    #Settings page
+    support_me = Container(bgcolor=Colors.SECONDARY_CONTAINER,border_radius=30,padding=30,margin=Margin.only(left=20, right=20, top=5, bottom=5),content=Column(controls=[
+        Text(value="Support me!", weight=5, size=30),
+        Container(
+            content=Text(
+                value="If you like this app, consider supporting me by donating, sharing the app, contributing code or give it a star in github.",
+            ),
+        ),
+        Row(wrap=True,controls=[Button(icon=Icons.STAR,content="Star on github",on_click=lambda e:asyncio.ensure_future(open_url("https://github.com/ChoiceZero/QuickeR","BLANK")),height=80),Button(icon=Icons.COFFEE,content="Buy me a coffee")],)
+        ]))
+    bug_report = Container(bgcolor=Colors.PRIMARY_CONTAINER,border_radius=30,padding=30,content=Column(wrap=True,controls=[
+        Text(value="Bugs", weight=5, size=30),
+        Text(value="Found any bugs, issues or errors? Report them on the github 'Issues' tab."+"\n"+"Please check if the same bug has been already reportedif you can! "),
+        Row(controls=[Button(icon=Icons.BUG_REPORT,content="Github Issues")],)
+        ]))
     
     settings_view = Column(
         expand=True,
@@ -938,7 +1053,7 @@ def main(page: Page):
             Text(value="Check the project's about section!",size=10),
             Row(alignment="center",controls=Text(value="Customization", size=18, color=Colors.PRIMARY)),
             Container(
-                bgcolor=Colors.GREY_800,
+                bgcolor=get_container_color_by_mode(),
                 border_radius=30,
                 margin=Margin.only(left=20, right=20, top=5, bottom=5),
                 padding=20,
@@ -951,7 +1066,7 @@ def main(page: Page):
                         ])
                     ]),
                     appearance_setting,
-                    Divider(),
+                    Divider(color="grey"),
                     Row(controls=[
                         Icon(icon=Icons.COLOR_LENS_ROUNDED, size=40, color=Colors.PRIMARY),
                         Column(spacing=-3, controls=[
@@ -962,41 +1077,13 @@ def main(page: Page):
                     themes_row,
                 ])),
                 
-            Row(alignment="center",controls=Text(value="General", size=18, color=Colors.PRIMARY)),
-            Container(
-                bgcolor=Colors.GREY_800,
-                border_radius=30,
-                margin=Margin.only(left=20, right=20, top=5, bottom=5),
-                padding=20,
-                content=Column(controls=[
-                    Row(controls=[
-                        Icon(icon=Icons.WB_SUNNY_ROUNDED, size=40, color=Colors.PRIMARY),
-                        Column(spacing=-3, controls=[
-                            Text(value=("Appearance"), size=20, color=Colors.PRIMARY),
-                            Text(value=("Select the color mode of the app."), size=13)
-                        ])
-                    ]),
-                    appearance_setting,
-                    Divider(),
-                    Row(controls=[
-                        Icon(icon=Icons.COLOR_LENS_ROUNDED, size=40, color=Colors.PRIMARY),
-                        Column(spacing=-3, controls=[
-                            Text(value=("Color theme"), size=20, color=Colors.PRIMARY),
-                            Text(value=("Select the color mode of the app."), size=13)
-                        ])
-                    ]),
-                    themes_row,
-                    Divider(),
-                    Row(controls=[
-                        Icon(icon=Icons.FOLDER_COPY_ROUNDED),
-                        Column(spacing=-3, controls=[Text(value=("Internal path"), size=16), Text(value=("qrpath"), size=11)])
-                    ]),
-                    Divider(),
-                    Row(controls=[
-                        Icon(icon=Icons.INSERT_DRIVE_FILE_ROUNDED),
-                        Column(spacing=-3, controls=[Text(value=("Filesize"), size=16), Text(value=("self.qr_size"), size=11)])
-                    ]),
-                ])),
+            Row(alignment="center",controls=Text(value="About", size=18, color=Colors.PRIMARY)),
+            support_me,
+            Container(bgcolor=get_container_color_by_mode(),border_radius=30,padding=30,margin=Margin.only(left=20, right=20, top=5, bottom=5),content=Column(controls=[
+                Text(value="Developed by Unax Martinez Llorente (aka ChoiceZero)"),
+                Text(value="Made in Spain"),
+                Text(value="Version number: Beta 0.0.3"),
+            ])),
             
         ]
     )
@@ -1007,19 +1094,32 @@ def main(page: Page):
         NavigationBarDestination(icon=Icons.SETTINGS, label="Settings"),],)
     nav_rail = ft.NavigationRail(
         selected_index=0,
-        bgcolor=Colors.SURFACE_CONTAINER,
         on_change=lambda e: on_tab_change(e),
-        expand=True,
+        bgcolor=Colors.SURFACE_CONTAINER,
+        height=100,
         destinations=[
             ft.NavigationRailDestination(icon=Icons.CLEAR_ALL, label="All QR Codes"),
             ft.NavigationRailDestination(icon=Icons.SETTINGS, label="Settings"),
         ],
     )
-    nav_rail_wrapper = Container(content=nav_rail, expand=False, height=page.height, border_radius=20)
+    
+    add_button = ft.FloatingActionButton(icon=Icons.ADD, on_click=qr_creator_open)
+    
+    nav_rail_wrapper = Container(content=Column(controls=[
+        Container(content=add_button, padding=19,width=nav_rail.width,margin=Margin(bottom=-40)),
+        Divider(color=Colors.SECONDARY,thickness=1),
+        nav_rail,
+        Container(expand=True),
+        Container(content=IconButton(icon=Image(get_github_icon_by_mode(),width=40,height=40),on_click=lambda e:asyncio.ensure_future(open_url("https://github.com/ChoiceZero/QuickeR","BLANK"))),padding=19)
+    ]),
+    bgcolor=Colors.SURFACE_CONTAINER,expand=False, height=page.height, border_radius=20)
 
-    view = Column(expand=True,controls=[overview],horizontal_alignment=ft.CrossAxisAlignment.STRETCH)
+    async def open_url(url_to_open,target: ft.UrlTarget):
+        url = url_to_open
+        await ft.UrlLauncher().launch_url(ft.Url(url=url, target=target))
+
+    view = Column(width=100,controls=[overview],horizontal_alignment=ft.CrossAxisAlignment.STRETCH)
     safearea= ft.SafeArea(content=view,expand=True)
-    page.floating_action_button = ft.FloatingActionButton(icon=Icons.ADD, on_click=qr_creator_open)
     page.overlay.append(create_layout)
 
     root_row = Row(controls=[safearea], expand=True, vertical_alignment=ft.CrossAxisAlignment.STRETCH)
@@ -1029,11 +1129,13 @@ def main(page: Page):
         is_wide = page.width >= BREAKPOINT
         if is_wide:
             page.navigation_bar = None
+            page.floating_action_button = None
             page.navigation_rail = nav_rail_wrapper
             if nav_rail_wrapper not in root_row.controls:
                 root_row.controls.insert(0, nav_rail_wrapper)
         else:
             page.navigation_rail = None
+            page.floating_action_button = add_button
             page.navigation_bar = nav_bar
             if nav_rail_wrapper in root_row.controls:
                 root_row.controls.remove(nav_rail_wrapper)

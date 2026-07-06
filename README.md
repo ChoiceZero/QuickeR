@@ -1,4 +1,6 @@
-# PhoneApp app
+# QuickeR
+
+## Capture
 
 ## Run the app
 
