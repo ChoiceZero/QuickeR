@@ -15,6 +15,8 @@ from io import BytesIO
 import asyncio
 import subprocess
 import PIL 
+import urllib.parse
+import numpy as np
 from itertools import groupby
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -41,13 +43,13 @@ def get_github_icon_by_mode():
     if data["Appearance"] == "System":
         brightness = platform.system()
         if brightness == "Dark":
-            return os.path.join(ASSET_DIR,"github-white-icon.webp")
+            return "white"
         else:
-            return os.path.join(ASSET_DIR,"github_black_icon.png")
+            return "black"
     elif data["Appearance"] == "Dark":
-        return os.path.join(ASSET_DIR,"github-white-icon.webp")
+        return "white"
     elif data["Appearance"] == "Light":
-        return os.path.join(ASSET_DIR,"github_black_icon.png")
+        return "black"
 
 def get_container_color_by_mode():
     with open(os.path.join(BASE_DIR, "settings.json"), "r", encoding="utf-8") as file:
@@ -78,6 +80,62 @@ def get_option_color_by_mode():
         return Colors.GREY_700
     elif data["Appearance"] == "Light":
         return Colors.GREY_400
+    
+def try_decode_with_preprocessing(image):
+    detector = cv2.QRCodeDetector()
+
+    data, _, _ = detector.detectAndDecode(image)
+    if data:
+        return data
+
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    thresh_bgr = cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR)
+    data, _, _ = detector.detectAndDecode(thresh_bgr)
+    if data:
+        return data
+
+    _, thresh_inv = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    thresh_inv_bgr = cv2.cvtColor(thresh_inv, cv2.COLOR_GRAY2BGR)
+    data, _, _ = detector.detectAndDecode(thresh_inv_bgr)
+    if data:
+        return data
+
+    adaptive = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+    adaptive_bgr = cv2.cvtColor(adaptive, cv2.COLOR_GRAY2BGR)
+    data, _, _ = detector.detectAndDecode(adaptive_bgr)
+    return data
+
+def add_logo_aligned_to_grid(pil_img, logo_path, qr_obj, max_module_ratio=0.25):
+    box_size = qr_obj.box_size
+    border = qr_obj.border
+    modules_count = len(qr_obj.get_matrix())  # número de módulos por lado (sin contar borde)
+
+    # cuántos módulos puede cubrir el logo como máximo, sin pasarse del ratio permitido
+    max_logo_modules = int(modules_count * max_module_ratio)
+    # forzar número impar para que quede perfectamente centrado en un módulo central
+    if max_logo_modules % 2 == 0:
+        max_logo_modules -= 1
+    max_logo_modules = max(max_logo_modules, 1)
+
+    logo_size_px = max_logo_modules * box_size
+
+    logo = PIL.Image.open(logo_path).convert("RGBA")
+    logo = logo.resize((logo_size_px, logo_size_px))
+
+    qr_w, qr_h = pil_img.size
+
+    # posición alineada a la cuadrícula: calculamos en unidades de módulo, no en píxeles sueltos
+    total_modules_with_border = modules_count + border * 2
+    center_module = total_modules_with_border // 2
+    start_module = center_module - max_logo_modules // 2
+
+    pos_x = start_module * box_size
+    pos_y = start_module * box_size
+
+    pil_img.paste(logo, (pos_x, pos_y), logo)
+    return pil_img
+
 
 def relative_luminance(hex_color):
     hex_color = hex_color.lstrip("#")
@@ -113,10 +171,8 @@ def get_pictures_folder() -> str:
         elif system == "Android":
             return "/storage/emulated/0/Pictures"
 
-        else:  # macOS or unknown
+        else:  
             return str(Path.home() / "Pictures")
-
-BREAKPOINT = 700
 
 class LogoPicker:
     def __init__(self, page):
@@ -193,15 +249,18 @@ class QRCodes:
             self.url = self.initial_input
             self.img= image
             self.img.save(os.path.join(QR_DIR, f"{self.qr_id}.png"))  
-            self.display_qr()
+            self.display_qr(False)
 
     def id_assigner(self):
         initial_time = time.localtime()
         output_time = str(initial_time.tm_year)+str(initial_time.tm_mon)+str(initial_time.tm_mday)+str(initial_time.tm_hour)+str(initial_time.tm_min)+str(initial_time.tm_sec)
         return output_time
     
-    def display_qr(self, prepend=True):
-        qr = Image(src=os.path.join(QR_DIR, f"{self.qr_id}.png"), border_radius=10, width=50, height=50)
+    def display_qr(self,pinned, prepend=True):
+        if pinned:
+            qr = Image(src=os.path.join(PINNED_DIR, f"{self.qr_id}.png"), border_radius=10, width=50, height=50)
+        else:
+            qr = Image(src=os.path.join(QR_DIR, f"{self.qr_id}.png"), border_radius=10, width=50, height=50)
         self.qr_size= self.get_qr_size(self.qr_id)
         self.qr_date = self.get_qr_date(self.qr_id)
         self.qr_row = Row(controls=[
@@ -219,13 +278,26 @@ class QRCodes:
         
         if prepend:
             self.all_view.controls.insert(0, self.main_container)
-            self.regular_view.controls.insert(0, self.main_container)
+            if pinned:
+                self.qr_row.controls.append(Container(expand=True))
+                self.qr_row.controls.append(Icon(icon=Icons.PUSH_PIN_ROUNDED))
+                self.pinned_view.controls.insert(0, self.main_container)
+            else:    
+                self.regular_view.controls.insert(0, self.main_container)
         else:
             self.all_view.controls.append(self.main_container)
-            self.regular_view.controls.append(self.main_container)
-  
-    def display_pinned_qr(self, prepend=True):
-        qr = Image(src=os.path.join(PINNED_DIR, f"{self.qr_id}.png"), border_radius=10, width=50, height=50)
+            if pinned:
+                self.qr_row.controls.append(Container(expand=True))
+                self.qr_row.controls.append(Icon(icon=Icons.PUSH_PIN_ROUNDED))
+                self.pinned_view.controls.append(self.main_container)
+            else:    
+                self.regular_view.controls.append(self.main_container)
+
+    def display_grid_qr(self,pinned, prepend=True):
+        if pinned:
+            qr = Image(src=os.path.join(PINNED_DIR, f"{self.qr_id}.png"), border_radius=10, width=50, height=50)
+        else:
+            qr = Image(src=os.path.join(QR_DIR, f"{self.qr_id}.png"), border_radius=10, width=50, height=50)
         self.qr_size= self.get_qr_size(self.qr_id)
         self.qr_date = self.get_qr_date(self.qr_id)
         self.qr_row = Row(controls=[
@@ -237,19 +309,23 @@ class QRCodes:
                     Container(padding=5,bgcolor=Colors.TERTIARY_CONTAINER,border_radius=5, border=Border.all(width=1, color=Colors.TERTIARY_FIXED_DIM),content=Text(value=str(self.qr_size), size=10)),
                     Text(italic=True,color=Colors.GREY_400,value=self.qr_id+".png"),
                 ]),      
-            ]),
-            Container(expand=True),
-            Icon(icon=Icons.PUSH_PIN_ROUNDED)
-        ])
+        ])])
         
         self.main_container = Container(on_click=lambda e:self.display_details_bottomsheet(),on_hover=lambda e: self.on_hover(e),content=self.qr_row,padding=10, border_radius=20,bgcolor=Colors.SECONDARY_CONTAINER)
         
         if prepend:
             self.all_view.controls.insert(0, self.main_container)
-            self.pinned_view.controls.insert(0, self.main_container)
+            if pinned:
+                self.pinned_view.controls.insert(0, self.main_container)
+            else:    
+                self.regular_view.controls.insert(0, self.main_container)
         else:
             self.all_view.controls.append(self.main_container)
-            self.pinned_view.controls.append(self.main_container)
+            if pinned:
+                self.pinned_view.controls.append(self.main_container)
+            else:    
+                self.regular_view.controls.append(self.main_container)
+      
 
     def on_hover(self,e):
         if e.data == True:
@@ -285,6 +361,7 @@ class QRCodes:
         self.filetext=TextField(hint_text="Enter filename here",expand=True,label="Rename QR")
         download_dialog = AlertDialog(
             title=Text("Export Options"),
+            on_dismiss=lambda e: self.handle_download_dialog_dismissed(),
             alignment=Alignment.CENTER,
             actions=[
                 Row(expand=True,alignment="center",controls=self.filetext),
@@ -294,6 +371,10 @@ class QRCodes:
             ],
         )
         self.page.show_dialog(download_dialog)
+
+    def handle_download_dialog_dismissed(self):
+        self.filetext.value = ""
+
 
     async def export_to_gallery(self):
         folder_path = get_pictures_folder()
@@ -311,7 +392,6 @@ class QRCodes:
             self.page.show_dialog(SnackBar(content=Text(f"QR exported to {folder_path}")))
         except Exception as ex:
             self.page.show_dialog(SnackBar(content=Text(f"Error: {ex}")))
-        self.filetext.value = ""
 
     async def export_to_folder(self):
         if platform.system() == "Android":
@@ -341,7 +421,6 @@ class QRCodes:
             self.page.show_dialog(SnackBar(content=Text(f"QR exported to {folder_path}")))
         except Exception as ex:
             self.page.show_dialog(SnackBar(content=Text(f"Error: {ex}")))
-        self.filetext.value = ""
 
     def set_filetext(self, e):
         self.filetext = str(e.control.value)
@@ -415,7 +494,7 @@ class QRCodes:
         shutil.move(os.path.join(QR_DIR, f"{self.qr_id}.png"), os.path.join(PINNED_DIR, f"{self.qr_id}.png"))
         self.regular_view.controls.remove(self.main_container)
         self.all_view.controls.remove(self.main_container)
-        self.display_pinned_qr()
+        self.display_qr(True)
 
     def unpin_qr_action(self):
         self.pin_button.bgcolor = Colors.PURPLE_500
@@ -427,7 +506,7 @@ class QRCodes:
             shutil.move(os.path.join(PINNED_DIR, f"{self.qr_id}.png"), os.path.join(QR_DIR, f"{self.qr_id}.png"))
         self.pinned_view.controls.remove(self.main_container)
         self.all_view.controls.remove(self.main_container)
-        self.display_qr()
+        self.display_qr(False)
 
     def display_details_bottomsheet(self):
         qr_path = os.path.join(QR_DIR, f"{self.qr_id}.png")
@@ -495,6 +574,7 @@ class QRCodes:
             ]),
         )
         self.page.overlay.append(self.details_bs)
+        self.page.update()
         self.details_bs.open = True
         self.page.update()
             
@@ -539,39 +619,53 @@ def main(page: Page):
     last_qr_image = {"img": None}
     _debounce_task = {"task": None}
     logo_image_path = {"path": None}
-
-    date_list=[]
-
-    # "#769CDF",
+    logo_picker_ref = {"instance": None}
 
     page.fonts = {
         "AndroidDefault": "/GoogleSansFlex(1).ttf",
         "Header":"/GoogleSansFlex(2).ttf"
     }
 
-    def display_preview_qr(url, qr_color_primary,qr_color_secondary,error_correct):
+    def display_preview_qr(url, qr_color_primary, qr_color_secondary, error_correct):
         preview_qr_area.controls.clear()
-        prev_qr = qrcode.QRCode(error_correction=error_correct)
-        prev_qr.add_data(str(url))
-        prev_qr.make(fit=True)
-        pil_img = prev_qr.make_image(fill_color=qr_color_primary, back_color=qr_color_secondary)
-        pil_img = pil_img.convert("RGBA")
 
         if logo_image_path["path"]:
-            logo = PIL.Image.open(logo_image_path["path"]).convert("RGBA")
-            qr_w, qr_h = pil_img.size
-            logo_size = qr_w // 4
-            logo = logo.resize((logo_size, logo_size))
-            pos = ((qr_w - logo_size) // 2, (qr_h - logo_size) // 2)
-            pil_img.paste(logo, pos, logo)
+            error_correct = qrcode.constants.ERROR_CORRECT_H
+
+        def build_qr(fill, back):
+            q = qrcode.QRCode(error_correction=error_correct, box_size=10, border=4)
+            q.add_data(str(url))
+            q.make(fit=True)
+            img = q.make_image(fill_color=fill, back_color=back).convert("RGBA")
+            return q, img
+
+        def is_readable(img):
+            arr = np.array(img.convert("RGB"), dtype=np.uint8)
+            arr = cv2.cvtColor(arr, cv2.COLOR_RGB2BGR)
+            if arr.ndim != 3 or arr.shape[2] != 3:
+                return False
+            data, _, _ = cv2.QRCodeDetector().detectAndDecode(arr)
+            return bool(data)
+
+        fill_color, back_color = qr_color_primary, qr_color_secondary
+        qr_obj, pil_img = build_qr(fill_color, back_color)
+
+        if not is_readable(pil_img) and str(url):
+            fill_color, back_color = back_color, fill_color
+            qr_obj, pil_img = build_qr(fill_color, back_color)
+
+            if not is_readable(pil_img):
+                fill_color, back_color = "black", "white"
+                qr_obj, pil_img = build_qr(fill_color, back_color)
+
+        if logo_image_path["path"]:
+            pil_img = add_logo_aligned_to_grid(pil_img, logo_image_path["path"], qr_obj, max_module_ratio=0.22)
 
         pil_img = pil_img.convert("RGB")
         last_qr_image["img"] = pil_img
         archivo_temporal_ram = BytesIO()
         pil_img.save(archivo_temporal_ram, format="PNG")
-        base64_puro = base64.b64encode(archivo_temporal_ram.getvalue()).decode(
-            "utf-8"
-        )
+        base64_puro = base64.b64encode(archivo_temporal_ram.getvalue()).decode("utf-8")
         uri_base64 = f"data:image/png;base64,{base64_puro}"
         preview_qr = ft.Image(src=uri_base64, width=200, height=200, border_radius=10)
         preview_qr_area.controls.append(preview_qr)
@@ -711,24 +805,36 @@ def main(page: Page):
             date_str = time.strftime("%Y-%m-%d", time.localtime(ctime))
             if date_str != last_date:
                 all_view.controls.append(Text(value=date_str, size=16, color=Colors.GREY_400))
+                if is_pinned:
+                    pinned_view.controls.append(Text(value=date_str, size=16, color=Colors.GREY_400))
+                else:
+                    regular_view.controls.append(Text(value=date_str, size=16, color=Colors.GREY_400))
                 last_date = date_str
 
             image = cv2.imread(path)
-            detector = cv2.QRCodeDetector()
-            data, bbox, _ = detector.detectAndDecode(image)
+            data = try_decode_with_preprocessing(image)
+            if not data:
+                continue
+
             qr = QRCodes(page, data, all_view, regular_view, pinned_view)
             qr.fill_color, qr.back_color = get_qr_colors(path)
             qr.qr_id = qr_id
             qr.date = qr.get_qr_date(qr_id)
             qr.url = data
             if is_pinned:
-                qr.display_pinned_qr(prepend=False)
+                qr.display_qr(True, prepend=False)
             else:
-                qr.display_qr(prepend=False)
+                qr.display_qr(False, prepend=False)
 
     def qr_creator_open():
-        create_layout.open = True
-        page.update() 
+        async def _open():
+            if create_layout not in page.overlay:
+                page.overlay.append(create_layout)
+                page.update()
+                await asyncio.sleep(0.05)
+            create_layout.open = True
+            page.update()
+        page.run_task(_open)
     
     def qr_create_triggered():
         #if contrast_ratio(color_rgb_1, color_rgb_2) < 4.5: 
@@ -743,13 +849,7 @@ def main(page: Page):
         create_qr_action()
 
     def create_qr_action():
-            if qr_type_dropdown.value == "URL/Link":
-                if url_protocol_dropdown.value == "https://":
-                    create_info = "https://"+qr_url_input_field.value
-                else:
-                    create_info = "http://"+qr_url_input_field.value
-            else:
-                create_info = qr_url_input_field.value
+            create_info = qr_url_input_field.value
             new_qr = QRCodes(page, create_info, all_view, regular_view,pinned_view)
             new_qr.fill_color, new_qr.back_color = qr_color_scheme_primary.color,qr_color_scheme_secondary.color
             if last_qr_image["img"]==None:
@@ -808,7 +908,11 @@ def main(page: Page):
     logo_picker = LogoPicker(page)
 
     async def pick_logo():
-        path = await logo_picker.pick(["png", "jpg", "jpeg"])
+        if logo_picker_ref["instance"] is None:
+            logo_picker_ref["instance"] = LogoPicker(page)
+            page.update()
+            await asyncio.sleep(0.2)
+        path = await logo_picker_ref["instance"].pick(["png", "jpg", "jpeg"])
         if path:
             logo_image_path["path"] = path
             prop_changed()
@@ -861,15 +965,245 @@ def main(page: Page):
         page.update()   
     
     qr_type_dropdown = Dropdown(on_select=lambda e: type_trigger(e),border_width=0,value="URL/Link",options=[
-        DropdownOption(text="WIFI",leading_icon=Icons.WIFI_ROUNDED),
         DropdownOption(text="URL/Link",leading_icon=Icons.LINK_ROUNDED),
         DropdownOption(text="Text",leading_icon=Icons.TEXT_FIELDS_ROUNDED),
-        ])
+        DropdownOption(text="WIFI",leading_icon=Icons.WIFI_ROUNDED),
+        DropdownOption(text="Email",leading_icon=Icons.MAIL_OUTLINE_ROUNDED),
+        DropdownOption(text="Phone",leading_icon=Icons.PHONE_ANDROID_ROUNDED),
+        DropdownOption(text="Location",leading_icon=Icons.PIN_DROP_ROUNDED),
+        DropdownOption(text="SMS",leading_icon=Icons.MESSAGE_ROUNDED),
+        DropdownOption(text="Event",leading_icon=Icons.STAR_BORDER_ROUNDED),
+    ])
     
     url_protocol_dropdown = Dropdown(value="https://",border_width=0,options=[
         DropdownOption(text="https://"),
         DropdownOption(text="http://"),
         ])
+
+    wifi_name= TextField(
+        expand=True,
+        border_width=0,
+        label="Enter network name",
+        on_change=lambda e: prop_changed()
+    )
+
+    wifi_protocol_dropdown = Dropdown(value="WPA2",border_width=0,on_select=lambda e: wifi_protocol_changed(e),options=[
+        DropdownOption(text="WPA2"),
+        DropdownOption(text="WPA"),
+        DropdownOption(text="WEP"),
+        DropdownOption(text="No password"),
+    ])
+
+    def wifi_protocol_changed(e):
+        selected = e.control.value 
+        if selected == "No password":
+            wifi_password_setting.visible = False
+        else:
+            wifi_password_setting.visible = True
+        prop_changed()
+
+    wifi_password= TextField(
+        expand=True,
+        border_width=0,
+        label="Enter network password",
+        on_change=lambda e: prop_changed()
+    )
+
+    wifi_password_setting= Column(visible=True,controls=[
+        Divider(color="grey"),
+        Row(controls=[
+            Icon(icon=Icons.PASSWORD_ROUNDED),
+            Text(value=("WIFI password"), size=20),
+            Container(expand=True),
+        ]),
+        Container(border_radius=10,bgcolor=get_option_color_by_mode(),content=wifi_password),
+    ])
+
+    wifi_area = Column(visible=False,controls=[
+        Row(controls=[
+            Icon(icon=Icons.TEXT_FIELDS_ROUNDED),
+            Text(value=("Network name"), size=20),
+            Container(expand=True)
+        ]),
+        Container(border_radius=10,
+            bgcolor=get_option_color_by_mode(),
+            content=wifi_name
+        ),
+        Divider(color="grey"),
+        Container(
+            content=Row(controls=[
+                Icon(icon=Icons.INFO_OUTLINE_ROUNDED,color=Colors.WHITE),
+                Container(expand=True,content=Text(
+                    value="If your network has no password, select it here!",
+                    size=16,
+                    color=Colors.WHITE
+                )),
+                ],
+            ),
+            padding=15,
+            bgcolor=Colors.INVERSE_PRIMARY,border_radius=30,
+            margin=Margin.only(left=0, right=0, top=5, bottom=5,)
+        ),
+        Row(controls=[
+            Icon(icon=Icons.SHIELD),
+            Text(value=("WIFI security protocol"), size=20),
+            Container(expand=True),
+            Container(border_radius=50,bgcolor=get_option_color_by_mode(),content=wifi_protocol_dropdown)
+        ]),
+        wifi_password_setting
+    ])
+
+    #EMAIL QR TYPE------------------------------------------------------------------------------
+    #General elements
+
+    email_address = TextField(expand=True,border_width=0,label="Enter address",hint_text="Enter address",on_change=lambda e: prop_changed())
+    email_adv_checkbox = ft.Switch(value=False, on_change=lambda e: email_checkbox_changed())
+
+    email_general_content=Column(visible=False,controls=[
+        Row(controls=[
+            Icon(icon=Icons.MAIL_ROUNDED),
+            Text(value=("Address"), size=20),
+            Container(expand=True)
+        ]),
+        Container(border_radius=10,
+            bgcolor=get_option_color_by_mode(),
+            content=email_address
+        ),
+        Divider(color="grey"),
+        Row(controls=[
+            Icon(icon=Icons.TEXT_FIELDS_ROUNDED),
+            Text(value=("Advanced options"), size=20),
+            Container(expand=True),
+            Container(border_radius=50,bgcolor=get_option_color_by_mode(),content=email_adv_checkbox)
+        ]),
+    ])
+
+    #On checkbox changed
+    def email_checkbox_changed():
+        if email_adv_checkbox.value:
+            email_adv_content.visible = True
+        else:
+            email_adv_content.visible = False
+        prop_changed()
+
+    email_subject = TextField(expand=True, border_width=0, label="Subject", on_change=lambda e: prop_changed())
+    email_body = TextField(expand=True, border_width=0, label="Body", multiline=True, on_change=lambda e: prop_changed())
+
+    email_adv_content = Column(visible=False, controls=[
+        Row(controls=[Icon(icon=Icons.SUBJECT_ROUNDED), Text(value="Subject", size=20), Container(expand=True)]),
+        Container(border_radius=10, bgcolor=get_option_color_by_mode(), content=email_subject),
+        Divider(color="grey"),
+        Row(controls=[Icon(icon=Icons.TEXT_FIELDS_ROUNDED), Text(value="Body", size=20), Container(expand=True)]),
+        Container(border_radius=10, bgcolor=get_option_color_by_mode(), content=email_body),
+    ])
+
+    #PHONE QR TYPE------------------------------------------------------------------------------
+    #General elements
+
+    phone_number = TextField(
+        expand=True,
+        border_width=0,
+        label="Enter address",
+        hint_text="",
+        keyboard_type=ft.KeyboardType.NUMBER,
+        on_change=lambda e: prop_changed())
+    
+    phone_prefix = TextField(
+        border_width=0,
+        label="",
+        hint_text="",
+        width=80,
+        max_length=4,
+        counter=Container(),
+        keyboard_type=ft.KeyboardType.NUMBER,
+        on_change=lambda e: prop_changed())
+
+    phone_general_content=Column(visible=False,controls=[
+        Row(controls=[
+            Icon(icon=Icons.CALL_ROUNDED),
+            Text(value=("Phone number"), size=20),
+            Container(expand=True)
+        ]),
+        Row(
+            expand=True,
+            controls=[
+            Container(
+                border_radius=10,
+                bgcolor=get_option_color_by_mode(),
+                content=Row(controls=[
+                    Text("+",margin=Margin(left=15),size=15),
+                    phone_prefix
+                ])
+            ),
+            Container(
+                expand=True,
+                border_radius=10,
+                bgcolor=get_option_color_by_mode(),
+                content=phone_number
+            ),
+        ])
+    ]) 
+
+    # SMS
+    sms_prefix = TextField(
+        border_width=0,
+        label="",
+        hint_text="",
+        width=80,
+        max_length=4,
+        counter=Container(),
+        keyboard_type=ft.KeyboardType.NUMBER,
+        on_change=lambda e: prop_changed()
+    )
+
+    sms_number = TextField(expand=True, border_width=0, label="Enter phone number", keyboard_type=ft.KeyboardType.NUMBER, on_change=lambda e: prop_changed())
+    sms_message = TextField(expand=True, border_width=0, label="Enter message", multiline=True, on_change=lambda e: prop_changed())
+
+    sms_general_content = Column(visible=False, controls=[
+        Row(controls=[Icon(icon=Icons.SMS_ROUNDED), Text(value="Phone number", size=20), Container(expand=True)]),
+        Row(controls=[
+            Container(
+                border_radius=10,
+                bgcolor=get_option_color_by_mode(),
+                content=Row(controls=[Text("+", margin=Margin(left=15), size=15), sms_prefix])
+            ),
+            Container(border_radius=10, expand=True, bgcolor=get_option_color_by_mode(), content=sms_number),
+        ]),
+        Divider(color="grey"),
+        Row(controls=[Icon(icon=Icons.MESSAGE_ROUNDED), Text(value="Message", size=20), Container(expand=True)]),
+        Container(border_radius=10, bgcolor=get_option_color_by_mode(), content=sms_message),
+    ])
+
+    # Location
+    location_lat = TextField(expand=True, border_width=0, label="Latitude", keyboard_type=ft.KeyboardType.NUMBER, on_change=lambda e: prop_changed())
+    location_lng = TextField(expand=True, border_width=0, label="Longitude", keyboard_type=ft.KeyboardType.NUMBER, on_change=lambda e: prop_changed())
+
+    location_general_content = Column(visible=False, controls=[
+        Row(controls=[Icon(icon=Icons.PIN_DROP_ROUNDED), Text(value="Coordinates", size=20), Container(expand=True)]),
+        Row(controls=[
+            Container(border_radius=10, expand=True, bgcolor=get_option_color_by_mode(), content=location_lat),
+            Container(border_radius=10, expand=True, bgcolor=get_option_color_by_mode(), content=location_lng),
+        ]),
+    ])
+
+    # Event (vCalendar/iCal básico)
+    event_title = TextField(expand=True, border_width=0, label="Event title", on_change=lambda e: prop_changed())
+    event_location = TextField(expand=True, border_width=0, label="Location", on_change=lambda e: prop_changed())
+    event_start = TextField(expand=True, border_width=0, label="Start (YYYYMMDDTHHMMSS)", hint_text="20260101T120000", on_change=lambda e: prop_changed())
+    event_end = TextField(expand=True, border_width=0, label="End (YYYYMMDDTHHMMSS)", hint_text="20260101T130000", on_change=lambda e: prop_changed())
+
+    event_general_content = Column(visible=False, controls=[
+        Row(controls=[Icon(icon=Icons.STAR_BORDER_ROUNDED), Text(value="Event title", size=20), Container(expand=True)]),
+        Container(border_radius=10, bgcolor=get_option_color_by_mode(), content=event_title),
+        Divider(color="grey"),
+        Row(controls=[Icon(icon=Icons.PIN_DROP_ROUNDED), Text(value="Location", size=20), Container(expand=True)]),
+        Container(border_radius=10, bgcolor=get_option_color_by_mode(), content=event_location),
+        Divider(color="grey"),
+        Row(controls=[
+            Container(border_radius=10, expand=True, bgcolor=get_option_color_by_mode(), content=event_start),
+            Container(border_radius=10, expand=True, bgcolor=get_option_color_by_mode(), content=event_end),
+        ]),
+    ])
     
     qr_url_input_field = TextField(expand=True,border_width=0,label="Enter URL or text",on_change=lambda e: prop_changed())
     error_correction_dropdown = Dropdown(value="M (15%)",border_width=0,on_select=lambda e: prop_changed(),options=[
@@ -881,6 +1215,8 @@ def main(page: Page):
     qr_color_scheme_primary = MaterialPicker(on_color_change=lambda e:prop_changed(),color="black")
     qr_color_scheme_secondary = MaterialPicker(on_color_change=lambda e:prop_changed(),color="white")
 
+    input_row = Column(controls=[Row(controls=[Icon(icon=Icons.SHORT_TEXT_ROUNDED),Text(value=("Content"), size=20)]),Row(visible=True,controls=[Container(border_radius=50,bgcolor=get_option_color_by_mode(),content=url_protocol_dropdown),Container(border_radius=10,expand=True,bgcolor=get_option_color_by_mode(),content=qr_url_input_field)]),
+    ])
     create_layout= BottomSheet(draggable=False,use_safe_area=True,scrollable=False,fullscreen=True,open=False,on_dismiss=lambda e: clean_create_bs_up(),content=
         Column(horizontal_alignment="center",scroll=ScrollMode.AUTO,controls=[
             Container(bgcolor=Colors.INVERSE_PRIMARY,border_radius=30,expand=False,content=preview_qr_area,padding=20,),
@@ -910,8 +1246,14 @@ def main(page: Page):
                 Column(controls=[
                     Row(controls=[Icon(icon=Icons.ARROW_DROP_DOWN_CIRCLE_OUTLINED),Text(value=("QR Type"), size=20),Container(expand=True),Container(border_radius=50,bgcolor=get_option_color_by_mode(),content=qr_type_dropdown)]),
                     Divider(color="grey"),
-                    Row(controls=[Icon(icon=Icons.SHORT_TEXT_ROUNDED),Text(value=("Content"), size=20)]),
-                    Row(controls=[Container(border_radius=50,bgcolor=get_option_color_by_mode(),content=url_protocol_dropdown),Container(border_radius=10,expand=True,bgcolor=get_option_color_by_mode(),content=qr_url_input_field)]),
+                    wifi_area,
+                    input_row,
+                    email_general_content,
+                    email_adv_content,
+                    phone_general_content,
+                    sms_general_content,
+                    location_general_content,
+                    event_general_content,
                     Divider(color="grey"),
                     Row(controls=[Icon(icon=Icons.CHECK_CIRCLE_OUTLINE_ROUNDED),Text(value=("Error correction level"), size=20),Container(expand=True),Container(border_radius=50,bgcolor=get_option_color_by_mode(),content=error_correction_dropdown)]), 
                 ])
@@ -948,7 +1290,7 @@ def main(page: Page):
             Container(height=50)
         ]),
     )
-
+    
     def prop_changed():
         if _debounce_task["task"] is not None:
             _debounce_task["task"].cancel()
@@ -969,9 +1311,57 @@ def main(page: Page):
             color_rgb_2 = color_raw_2
 
         error_correction = ERROR_CORRECTION_MAP.get(error_correction_dropdown.value, qrcode.constants.ERROR_CORRECT_M)
-        
-        display_preview_qr(qr_url_input_field.value, color_rgb_1, color_rgb_2,error_correction)
 
+        if qr_type_dropdown.value == "WIFI":
+            if wifi_protocol_dropdown.value != "No password":
+                qr_url_input_field.value = f"WIFI:S:{wifi_name.value};T:{wifi_protocol_dropdown.value};P:{wifi_password.value};;"
+            else:
+                qr_url_input_field.value = f"WIFI:S:{wifi_name.value};T:nopass;;"
+            display_preview_qr(qr_url_input_field.value, color_rgb_1, color_rgb_2,error_correction)
+        elif qr_type_dropdown.value == "URL/Link":
+                if url_protocol_dropdown.value == "https://":
+                    create_val = "https://"+qr_url_input_field.value
+                else:
+                    create_val = "http://"+qr_url_input_field.value
+                display_preview_qr(create_val, color_rgb_1, color_rgb_2,error_correction)
+        elif qr_type_dropdown.value == "Email":
+            if email_adv_checkbox.value:
+                params = []
+                if email_subject.value:
+                    params.append(f"subject={urllib.parse.quote(email_subject.value)}")
+                if email_body.value:
+                    params.append(f"body={urllib.parse.quote(email_body.value)}")
+                query = "&".join(params)
+                qr_url_input_field.value = f"mailto:{email_address.value}" + (f"?{query}" if query else "")
+            else:
+                qr_url_input_field.value = f"mailto:{email_address.value}"
+            display_preview_qr(qr_url_input_field.value, color_rgb_1, color_rgb_2, error_correction)
+
+        elif qr_type_dropdown.value == "Phone":
+            qr_url_input_field.value = f"tel:+{phone_prefix.value}{phone_number.value}"
+            display_preview_qr(qr_url_input_field.value, color_rgb_1, color_rgb_2,error_correction)
+
+        elif qr_type_dropdown.value == "SMS":
+            qr_url_input_field.value = f"SMSTO:{sms_number.value}:{sms_message.value}"
+            display_preview_qr(qr_url_input_field.value, color_rgb_1, color_rgb_2, error_correction)
+
+        elif qr_type_dropdown.value == "Location":
+            qr_url_input_field.value = f"geo:{location_lat.value},{location_lng.value}"
+            display_preview_qr(qr_url_input_field.value, color_rgb_1, color_rgb_2, error_correction)
+
+        elif qr_type_dropdown.value == "Event":
+            qr_url_input_field.value = (
+                f"BEGIN:VEVENT\n"
+                f"SUMMARY:{event_title.value}\n"
+                f"LOCATION:{event_location.value}\n"
+                f"DTSTART:{event_start.value}\n"
+                f"DTEND:{event_end.value}\n"
+                f"END:VEVENT"
+            )
+            display_preview_qr(qr_url_input_field.value, color_rgb_1, color_rgb_2, error_correction)
+        else:
+            display_preview_qr(qr_url_input_field.value, color_rgb_1, color_rgb_2,error_correction)
+            
     def color_correction():
         color_raw_1 = qr_color_scheme_primary.color  
         if color_raw_1 and color_raw_1.startswith("#") and len(color_raw_1) == 9:
@@ -988,19 +1378,55 @@ def main(page: Page):
 
     def type_trigger(e):
         selected = e.control.value 
-        url_protocol_dropdown.visible = False
+        qr_url_input_field.value=""
+
+        #Hide everything
+        for area in [
+            wifi_area, input_row, url_protocol_dropdown, email_general_content, email_adv_content,
+            phone_general_content, sms_general_content, location_general_content,
+            event_general_content,]:
+            
+            area.visible = False
+
+        #Empty everything
+        for field in [
+            wifi_name, wifi_password, email_address, email_subject, email_body,
+            phone_prefix, phone_number, sms_prefix, sms_number, sms_message,
+            location_lat, location_lng, event_title, event_location, event_start, event_end,]:
+            
+            field.value = ""    
+
         if selected == "WIFI":
-            #print("selected WIFI")
-            qr_url_input_field.hint_text = "Enter WIFI here"
-            qr_url_input_field.label = "Enter WIFI"
+            wifi_area.visible=True
+
         elif selected == "URL/Link":
-            #print("selected URL")
+
+            input_row.visible=True 
             url_protocol_dropdown.visible = True
             qr_url_input_field.hint_text = "Enter URL here"
             qr_url_input_field.label = "Enter URL"
+
         elif selected == "Text":
+            input_row.visible=True 
             qr_url_input_field.hint_text = "Enter text here"
             qr_url_input_field.label = "Enter text"
+
+        elif selected == "Email":
+            email_general_content.visible=True 
+
+        elif selected == "Phone":
+            phone_general_content.visible=True 
+
+        elif selected == "SMS":
+            sms_general_content.visible=True
+
+        elif selected == "Location":
+            location_general_content.visible=True
+
+        elif selected == "Event":
+            event_general_content.visible=True
+
+        prop_changed()
         page.update()
 
     all_view=Column(scroll=ScrollMode.AUTO,expand=True,horizontal_alignment=ft.CrossAxisAlignment.STRETCH,controls=[])
@@ -1008,19 +1434,17 @@ def main(page: Page):
     pinned_view =Column(scroll=ScrollMode.AUTO,expand=True,horizontal_alignment=ft.CrossAxisAlignment.STRETCH,controls=[])
     
     overview = Column(scroll=ScrollMode.AUTO,expand=True,horizontal_alignment=ft.CrossAxisAlignment.STRETCH,controls=[
-        Container(content=Text(value="QuickeR",size=40), margin=Margin(bottom=15,top=15)),
-        Row(margin=Margin(left=20),controls=[
+        #Container(content=Image(os.path.join(ASSET_DIR,"QuickeR_horizontal_logo.png")),height=150,padding=0, bgcolor=get_container_color_by_mode(), border_radius=30),
+        Row(controls=[
             IconButton(icon=Icons.INFO_OUTLINE_ROUNDED, tooltip=Tooltip(message="Tap the + icon to create a QR, and tap the rows to see details!")),
             Text(value="All QR codes",size=30,margin=Margin(left=-10),)
         ]),
         Divider(color="grey"),
-        Container(padding=20,bgcolor=get_container_color_by_mode(),border_radius=20,margin=Margin(left=20,right=20),content=    
-            ExpansionTile(title="Filters:",controls=[
-                SegmentedButton(selected=["1"],on_change=lambda e: on_filter_change(e),margin=Margin.only(left=0, right=0, top=0, bottom=20),show_selected_icon=True,segments=[
-                    Segment(value="1",label=Text("All"),icon=Icon(Icons.CLEAR_ALL)),
-                    Segment(value="2",label=Text("Unpinned"),icon=Icon(Icons.PUSH_PIN_OUTLINED)),
-                    Segment(value="3",label=Text("Pinned"),icon=Icon(Icons.PUSH_PIN_ROUNDED)),
-                ]),
+        Container(padding=20,bgcolor=get_container_color_by_mode(),border_radius=20,content=    
+            SegmentedButton(selected=["1"],on_change=lambda e: on_filter_change(e),show_selected_icon=True,segments=[
+                Segment(value="1",label=Text("All"),icon=Icon(Icons.CLEAR_ALL)),
+                Segment(value="2",label=Text("Unpinned"),icon=Icon(Icons.PUSH_PIN_OUTLINED)),
+                Segment(value="3",label=Text("Pinned"),icon=Icon(Icons.PUSH_PIN_ROUNDED)),
             ]),
         ),
         
@@ -1110,7 +1534,7 @@ def main(page: Page):
         Divider(color=Colors.SECONDARY,thickness=1),
         nav_rail,
         Container(expand=True),
-        Container(content=IconButton(icon=Image(get_github_icon_by_mode(),width=40,height=40),on_click=lambda e:asyncio.ensure_future(open_url("https://github.com/ChoiceZero/QuickeR","BLANK"))),padding=19)
+        Container(content=IconButton(icon=Image(os.path.join(ASSET_DIR,"github-white-icon.webp"),color=get_github_icon_by_mode(),width=40,height=40),on_click=lambda e:asyncio.ensure_future(open_url("https://github.com/ChoiceZero/QuickeR","BLANK"))),padding=19)
     ]),
     bgcolor=Colors.SURFACE_CONTAINER,expand=False, height=page.height, border_radius=20)
 
@@ -1126,8 +1550,12 @@ def main(page: Page):
     page.add(root_row)
 
     def on_resize(e):
-        is_wide = page.width >= BREAKPOINT
-        if is_wide:
+        #if page.width >= 1200:
+        #    page.navigation_bar = None
+        #    page.floating_action_button = None
+        #    page.navigation_rail = None
+        #    root_row.append()
+        if page.width >= 700:
             page.navigation_bar = None
             page.floating_action_button = None
             page.navigation_rail = nav_rail_wrapper

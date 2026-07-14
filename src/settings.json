@@ -1,5 +1,6 @@
 {
     "Theme_color": "GREEN_600",
-    "Appearance": "Light",
+    "Appearance": "Dark",
+    "GridMode": "True",
     "AppVersion": "Beta 0.0.3"
 }

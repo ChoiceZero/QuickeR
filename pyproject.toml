@@ -1,14 +1,37 @@
 [project]
-name = "phone-app"
-version = "0.1.0"
+name = "QuickeR"
+version = "Beta 0.0.4"
+license = { text = "MIT" }
 description = ""
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [
-    { name = "Flet developer", email = "you@example.com" }
+    { name = "Unax Martinez Llorente (ChoiceZero)", email = "unaxmarti2009@gmail.com" }
 ]
 dependencies = [
-    "flet>=0.85.2"
+    "flet>=0.85.2",
+    "asarPy>=1.0",
+    "certifi==2026.6.17",
+    "chardet==5.2.0",
+    "charset-normalizer==3.4.7",
+    "flet-color-pickers==0.85.3",
+    "flet-permission-handler==0.85.3",
+    "idna==3.18",
+    "msgpack",
+    "numpy",
+    "oauthlib",
+    "opencv-python",
+    "packaging",
+    "pillow",
+    "python-dateutil",
+    "python-dotenv",
+    "PyYAML",
+    "qrcode",
+    "requests",
+    "six",
+    "typing_extensions",
+    "urllib3",
+    "websockets",
 ]
 
 [dependency-groups]
@@ -16,14 +39,30 @@ dev = [
     "flet-cli>=0.85.2",
     "flet-desktop>=0.85.2",
     "flet-web>=0.85.2",
+    #"watchdog>=4.0.0"
 ]
 
 [tool.flet]
 desktop_flavor = "light"    # Change to "full" to use flet-audio and flet-video
 org = "com.mycompany"
-product = "phone-app"
-company = "Flet"
-copyright = "Copyright (C) 2023-2026 by Flet"
+product = "quicker"
+company = "Unax Martinez Llorente"
+copyright = "MIT License"
 
 [tool.flet.app]
 path = "src"
+
+[tool.flet.package]
+exclude = [
+    ".venv",          
+    "venv",
+    "__pycache__",    
+    "*.pyc",
+    "tests",         
+    "documentos",  
+    "README.md",
+    ".gitignore",   
+    ".git",
+    "src/pinned_qr_codes",  
+    "src/qr_codes"           
+]
