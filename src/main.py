@@ -5,7 +5,7 @@ import cv2
 import time 
 import flet as ft
 from flet import Tooltip,SnackBar,ExpansionTile,Dropdown,DropdownOption,SegmentedButton,Segment,ThemeMode,Theme,Page,RoundedRectangleBorder,ButtonStyle,Divider,Stack,BottomSheet,Border,Margin,Icon,Icons, IconButton, NavigationBarDestination, Checkbox, VerticalDivider, Container, Image, TextField, Text, Row, Column, Colors, ScrollMode, AlertDialog, FilePicker, TextButton, Alignment, Button, IconButton
-from flet_color_pickers import MaterialPicker,ColorPicker
+from flet_color_pickers import MaterialPicker
 from pathlib import Path
 import platform
 import shutil
@@ -748,47 +748,6 @@ def main(page: Page):
             page.theme_mode = ThemeMode.LIGHT
         page.update()
 
-    async def get_permission_status():
-        if platform.system() == "Android":
-            try:
-                import flet_permission_handler as fph            
-                global ph 
-                ph = fph.PermissionHandler()
-                page.overlay.append(ph)
-                page.update()
-                status = await ph.get_status(fph.Permission.STORAGE)
-                if status == fph.PermissionStatus.DENIED:
-                    show_permissions_dialog()
-                    await ph.request(fph.Permission.STORAGE)
-            except ImportError:
-                print("flet_permission_handler not found. Skipping permission check.")
-    
-    def show_permissions_dialog():
-        error_dialog = AlertDialog(
-            title=Text("Permissions needed"),
-            alignment=Alignment.CENTER,
-            content=Text("Some permissions are required to use this app. Please, grant them."),
-            actions=[TextButton("Close App", on_click=lambda e: ft.app().close()),TextButton("Open Settings", on_click=lambda e: open_settings),],
-            open=True)
-        page.show_dialog(error_dialog)
-
-    async def open_settings():
-        try:
-            import flet_permission_handler as fph
-            global ph
-            # Attempt to reopen settings context if needed
-            if 'ph' not in globals() or ph is None:
-                ph = fph.PermissionHandler()
-                page.overlay.append(ph)
-                page.update()
-            await ph.open_app_settings()
-            page.pop_dialog()
-            get_permission_status()
-            await ph.open_app_settings()
-            page.pop_dialog()
-        except ImportError:
-             print("flet_permission_handler not available to open settings.")
-    
     def load_qrs():
         files_with_meta = []
         for directory, is_pinned in [(PINNED_DIR, True), (QR_DIR, False)]:
@@ -1574,7 +1533,6 @@ def main(page: Page):
     on_resize(None)
 
     load_qrs()
-    page.run_task(get_permission_status)
     theme_loader()
     appearance_loader()
     display_preview_qr("","black","white",ERROR_CORRECTION_MAP["M (15%)"])
