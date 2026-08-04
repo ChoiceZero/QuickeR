@@ -10,28 +10,12 @@ authors = [
 ]
 dependencies = [
     "flet>=0.85.2",
-    "asarPy>=1.0",
-    "certifi==2026.6.17",
-    "chardet==5.2.0",
-    "charset-normalizer==3.4.7",
     "flet-color-pickers==0.85.3",
     "flet-permission-handler==0.85.3",
-    "idna==3.18",
-    "msgpack",
     "numpy",
-    "oauthlib",
     "opencv-python",
-    "packaging",
     "pillow",
-    "python-dateutil",
-    "python-dotenv",
-    "PyYAML",
-    "qrcode",
-    "requests",
-    "six",
-    "typing_extensions",
-    "urllib3",
-    "websockets",
+    "qrcode"
 ]
 
 [dependency-groups]
