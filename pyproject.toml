@@ -1,6 +1,6 @@
 [project]
 name = "QuickeR"
-version = "Beta 0.0.4"
+version = "0.0.4"
 license = { text = "MIT" }
 description = ""
 readme = "README.md"
