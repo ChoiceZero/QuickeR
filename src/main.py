@@ -1915,7 +1915,7 @@ def main(page: ft.Page):
                                 ft.Icon(icon=ft.Icons.FILE_UPLOAD_ROUNDED, color=ft.Colors.INVERSE_SURFACE),
                                 ft.Text(value="Export", size=25, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
                             ]),
-                            ft.Text(value="If you want to support the project, you can do so by donating via Buy Me a Coffee or GitHub Sponsors.", size=15, color=ft.Colors.INVERSE_SURFACE),
+                            ft.Text(value="Export your QR code library to a .ZIP file.", size=15, color=ft.Colors.INVERSE_SURFACE),
                             ft.Button(
                                 content=ft.Text(value="Export Library", color=ft.Colors.SURFACE, size=16), icon_color=ft.Colors.BLACK, icon=ft.Icons.FOLDER_ZIP_ROUNDED,
                                 #on_click=lambda e: clear_app_data(),
