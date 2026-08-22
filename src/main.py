@@ -16,6 +16,7 @@ import PIL
 import urllib.parse
 import datetime
 import numpy as np
+import zipfile
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ASSET_DIR = os.path.join(BASE_DIR, "assets")
@@ -549,13 +550,32 @@ class QRCodes:
         if not self.filetext.value:
             self.page.show_dialog(ft.AlertDialog(content=ft.Text("Please enter a filename first"), title=ft.Text("Filename required"), actions=[ft.TextButton("OK", on_click=lambda e: self.page.pop_dialog())]))
             return
+
+        self.page.pop_dialog()
+        load_dialog = self.progress_dialog("Exporting QR...")
+        self.page.show_dialog(load_dialog)
+        self.page.update()
+    
+        await asyncio.sleep(0.1)
+        
         try:
             shutil.copy(src, f"{folder_path}/{self.filetext.value}.png")
-            self.page.pop_dialog()
-            self.page.show_dialog(ft.AlertDialog(content=ft.Text(f"QR exported to {folder_path}"), title=ft.Text("Success"), actions=[ft.TextButton("OK", on_click=lambda e: self.page.pop_dialog())]))
+
+            load_dialog.title.value = "Export Complete!"
+            load_dialog.content.controls[0] = ft.IconButton(icon=ft.Icons.CHECK, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.SECONDARY_CONTAINER, icon_color=ft.Colors.PRIMARY))
+            load_dialog.content.controls[1] = ft.Text(value="Success!", size=16, color=ft.Colors.PRIMARY)
+            load_dialog.content.controls[2] = ft.Text(value=f"QR exported to {folder_path}", size=14, color=ft.Colors.GREY_600)
+            load_dialog.actions[0].visible = True
+            load_dialog.modal = False
+            self.page.update()
+
         except Exception as ex:
-            self.page.pop_dialog()
-            self.page.show_dialog(ft.AlertDialog(content=ft.Text(f"Error: {ex}"), title=ft.Text("Error"), actions=[ft.TextButton("OK", on_click=lambda e: self.page.pop_dialog())]))
+            load_dialog.title.value = "Error"
+            load_dialog.content.controls[0] = ft.IconButton(icon=ft.Icons.CLOSE, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.RED_200, icon_color=ft.Colors.RED_600))
+            load_dialog.content.controls[1] = ft.Text(value="Error: "+str(ex), size=16, color=ft.Colors.RED_600)
+            load_dialog.actions[0].visible = True
+            load_dialog.modal = False
+            self.page.update()
 
     async def export_to_folder(self):
         default_dir = "/storage/emulated/0/Pictures" if platform.system() == "Android" else str(Path.home())
@@ -574,13 +594,30 @@ class QRCodes:
         if not folder_path:
             return
 
+        self.page.pop_dialog() 
+        load_dialog = self.progress_dialog("Exporting QR...")
+        self.page.show_dialog(load_dialog)
+        self.page.update()
+    
+        await asyncio.sleep(0.1)
+
         try:
             shutil.copy(src, f"{folder_path}/{self.filetext.value}.png")
-            self.page.pop_dialog()
-            self.page.show_dialog(ft.AlertDialog(content=ft.Text(f"QR exported to {folder_path}"), title=ft.Text("Success"), actions=[ft.TextButton("OK", on_click=lambda e: self.page.pop_dialog())]))
+
+            load_dialog.title.value = "Export Complete!"
+            load_dialog.content.controls[0] = ft.IconButton(icon=ft.Icons.CHECK, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.SECONDARY_CONTAINER, icon_color=ft.Colors.PRIMARY))
+            load_dialog.content.controls[1] = ft.Text(value="Success!", size=16, color=ft.Colors.PRIMARY)
+            load_dialog.content.controls[2] = ft.Text(value=f"QR exported to {folder_path}", size=14, color=ft.Colors.GREY_600)
+            load_dialog.actions[0].visible = True
+            load_dialog.modal = False
+            self.page.update()
         except Exception as ex:
-            self.page.pop_dialog()
-            self.page.show_dialog(ft.AlertDialog(content=ft.Text(f"Error: {ex}"), title=ft.Text("Error"), actions=[ft.TextButton("OK", on_click=lambda e: self.page.pop_dialog())]))
+            load_dialog.title.value = "Error"
+            load_dialog.content.controls[0] = ft.IconButton(icon=ft.Icons.CLOSE, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.RED_200, icon_color=ft.Colors.RED_600))
+            load_dialog.content.controls[1] = ft.Text(value="Error: "+str(ex), size=16, color=ft.Colors.RED_600)
+            load_dialog.actions[0].visible = True
+            load_dialog.modal = False
+            self.page.update()
 
     async def export_to_stl(self):
         if not self.filetext.value:
@@ -607,6 +644,25 @@ class QRCodes:
         self.page.pop_dialog()
         asyncio.ensure_future(self._pick_folder_and_export_stl())
 
+
+    def progress_dialog(self,title):
+        dialog = ft.AlertDialog(
+            title=ft.Text(title),
+            modal=True,
+            content=ft.Column(
+                horizontal_alignment="center",
+                tight=True,
+                controls=[
+                    ft.Text(value="Please hang tight, it may take a few seconds.\nDon't close the app.", size=13, color=ft.Colors.GREY_500,margin=ft.Margin.only(bottom=10)),
+                    ft.ProgressRing(),
+                    ft.Container(visible=False),
+                ]
+            ),
+            actions=[ft.TextButton("Close", on_click=lambda e: self.page.pop_dialog(), visible=False)],
+        )
+
+        return dialog
+
     async def _pick_folder_and_export_stl(self):
         default_dir = "/storage/emulated/0/Pictures" if platform.system() == "Android" else str(Path.home())
 
@@ -616,15 +672,34 @@ class QRCodes:
         if not folder_path:
             return
 
+        self.page.pop_dialog()
+        load_dialog = self.progress_dialog("Exporting STL...")
+        self.page.show_dialog(load_dialog)
+        self.page.update()
+
+        await asyncio.sleep(0.1)
+
         filename = self.filetext.value if self.filetext.value.endswith(".stl") else f"{self.filetext.value}.stl"
         destination_path = os.path.join(folder_path, filename)
 
         try:
             builder = StlBuilder(self.qr_id, invert=self.stl_invert)
             builder.generate_stl(destination_path)
-            self.page.show_dialog(ft.AlertDialog(content=ft.Text(f"STL exported to {destination_path}"), title=ft.Text("Success"), actions=[ft.TextButton("OK", on_click=lambda e: self.page.pop_dialog())]))
+
+            load_dialog.title.value = "STL Complete!"
+            load_dialog.content.controls[0] = ft.IconButton(icon=ft.Icons.CHECK, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.SECONDARY_CONTAINER, icon_color=ft.Colors.PRIMARY))
+            load_dialog.content.controls[1] = ft.Text(value="Success!", size=16, color=ft.Colors.PRIMARY)
+            load_dialog.content.controls[2] = ft.Text(value=f"STL exported to {destination_path}", size=14, color=ft.Colors.GREY_600)
+            load_dialog.actions[0].visible = True
+            load_dialog.modal = False
+            self.page.update()
         except Exception as ex:
-            self.page.show_dialog(ft.AlertDialog(content=ft.Text(f"Error generating STL: {ex}"), title=ft.Text("Error"), actions=[ft.TextButton("OK", on_click=lambda e: self.page.pop_dialog())]))
+            load_dialog.title.value = "Error"
+            load_dialog.content.controls[0] = ft.IconButton(icon=ft.Icons.CLOSE, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.RED_200, icon_color=ft.Colors.RED_600))
+            load_dialog.content.controls[1] = ft.Text(value="Error: "+str(ex), size=16, color=ft.Colors.RED_600)
+            load_dialog.actions[0].visible = True
+            load_dialog.modal = False
+            self.page.update()
 
     def pin_triggered(self):
         pinned_path = os.path.join(PINNED_DIR, f"{self.qr_id}.png")
@@ -812,6 +887,24 @@ def main(page: ft.Page):
     # Utilidades generales
     # -------------------------------------------------------------
 
+    def progress_dialog(title):
+        dialog = ft.AlertDialog(
+            title=ft.Text(title),
+            modal=True,
+            content=ft.Column(
+                horizontal_alignment="center",
+                tight=True,
+                controls=[
+                    ft.Text(value="Please hang tight, it may take a few seconds.\nDon't close the app.", size=13, color=ft.Colors.GREY_500,margin=ft.Margin.only(bottom=10)),
+                    ft.ProgressRing(),
+                    ft.Container(visible=False),
+                ]
+            ),
+            actions=[ft.TextButton("Close", on_click=lambda e: page.pop_dialog(), visible=False)],
+        )
+
+        return dialog
+
     def json_reader():
         json_path = os.path.join(BASE_DIR, "settings.json")
         try:
@@ -915,26 +1008,92 @@ def main(page: ft.Page):
             open=True,
         ))
 
-    #async def export_library_to_zip():
-    #    default_dir = "/storage/emulated/0/Pictures" if platform.system() == "Android" else str(Path.home())
-    #    folder_path = await ft.FilePicker().get_directory_path(
-    #        dialog_title="Select folder to export library", initial_directory=default_dir
-    #    )
-    #    if not folder_path:
-    #        return
-#
-    #    zip_filename = os.path.join(folder_path, "QuickeR_Library.zip")
-    #    with zipfile.ZipFile(zip_filename, 'w') as zipf:
-    #        for root, dirs, files in os.walk(QR_DIR):
-    #            for file in files:
-    #                if file.endswith(".png"):
-    #                    zipf.write(os.path.join(root, file), arcname=file)
-    #        for root, dirs, files in os.walk(PINNED_DIR):
-    #            for file in files:
-    #                if file.endswith(".png"):
-    #                    zipf.write(os.path.join(root, file), arcname=file)
-#
-    #    page.show_dialog(ft.AlertDialog(content=ft.Text(f"Library exported to {zip_filename}"), title=ft.Text("Success"), actions=[ft.TextButton("OK", on_click=lambda e: page.pop_dialog())]))
+    async def export_library_to_zip():
+        default_dir = "/storage/emulated/0/Pictures" if platform.system() == "Android" else str(Path.home())
+        folder_path = await ft.FilePicker().get_directory_path(
+            dialog_title="Select folder to export library", initial_directory=default_dir
+        )
+        if not folder_path:
+            return
+
+        load_dialog = progress_dialog("Exporting codes...")
+        page.show_dialog(load_dialog)
+        
+        await asyncio.sleep(0.1)
+
+        zip_path = os.path.join(folder_path, "QuickeR_Library.zip")
+
+        try:
+            with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+                for directory, arc_folder in [(QR_DIR, "qr_codes"), (PINNED_DIR, "pinned_qr_codes")]:
+                    if os.path.exists(directory):
+                        for f in os.listdir(directory):
+                            if f.endswith(".png"):
+                                zipf.write(os.path.join(directory, f), arcname=f"{arc_folder}/{f}")
+
+            load_dialog.title.value = "Export Complete!"
+            load_dialog.content.controls[0] = ft.IconButton(icon=ft.Icons.CHECK, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.SECONDARY_CONTAINER, icon_color=ft.Colors.PRIMARY))
+            load_dialog.content.controls[1] = ft.Text(value="Success!", size=16, color=ft.Colors.PRIMARY)
+            load_dialog.content.controls[2] = ft.Text(value=f"Library exported to {zip_path}", size=16,color=ft.Colors.GREY_600)
+            load_dialog.actions[0].visible = True
+            load_dialog.modal = False
+            page.update()
+
+        except Exception as ex:
+            load_dialog.title.value = "Error"
+            load_dialog.content.controls[0] = ft.IconButton(icon=ft.Icons.CLOSE, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.RED_200, icon_color=ft.Colors.RED_600))
+            load_dialog.content.controls[1] = ft.Text(value="Error: "+str(ex), size=16, color=ft.Colors.RED_600)
+            load_dialog.actions[0].visible = True
+            load_dialog.modal = False
+            page.update()
+
+    async def import_library_from_zip():
+        files = await ft.FilePicker().pick_files(allowed_extensions=["zip"])
+        if not files:
+            return
+
+        load_dialog = progress_dialog("Importing codes...")
+        page.show_dialog(load_dialog)
+
+        await asyncio.sleep(0.1)
+
+        with zipfile.ZipFile(files[0].path, "r") as zipf:
+            for name in zipf.namelist():
+                if not name.endswith(".png"):
+                    continue
+                target_dir = PINNED_DIR if name.startswith("pinned_qr_codes/") else QR_DIR
+                #os.makedirs(target_dir, exist_ok=True)
+
+                base_name = os.path.basename(name)[:-4] 
+                dest_path = os.path.join(target_dir, f"{base_name}.png")
+
+                counter = 1
+                while os.path.exists(dest_path):
+                    dest_path = os.path.join(target_dir, f"{base_name}_{counter}.png")
+                    counter += 1
+                try:
+                    with zipf.open(name) as src, open(dest_path, "wb") as dst:
+                        dst.write(src.read())
+
+                    all_view.controls.clear()
+                    pinned_view.controls.clear()
+                    regular_view.controls.clear()
+                    load_qrs()
+
+                    load_dialog.title.value = "Import Complete!"
+                    load_dialog.content.controls[0] = ft.IconButton(icon=ft.Icons.CHECK, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.SECONDARY_CONTAINER, icon_color=ft.Colors.PRIMARY))
+                    load_dialog.content.controls[1] = ft.Text(value="Success!", size=16, color=ft.Colors.PRIMARY)
+                    load_dialog.actions[0].visible = True
+                    load_dialog.modal = False
+                    page.update()
+
+                except Exception as ex:
+                    load_dialog.title.value = "Error"
+                    load_dialog.content.controls[0] = ft.IconButton(icon=ft.Icons.CLOSE, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.RED_200, icon_color=ft.Colors.RED_600))
+                    load_dialog.content.controls[1] = ft.Text(value="Error: "+str(ex), size=16, color=ft.Colors.RED_600)
+                    load_dialog.actions[0].visible = True
+                    load_dialog.modal = False
+                    page.update()
 
     # -------------------------------------------------------------
     # Vista general (Todos / Fijados / No fijados) + orden
@@ -1918,7 +2077,7 @@ def main(page: ft.Page):
                             ft.Text(value="Export your QR code library to a .ZIP file.", size=15, color=ft.Colors.INVERSE_SURFACE),
                             ft.Button(
                                 content=ft.Text(value="Export Library", color=ft.Colors.SURFACE, size=16), icon_color=ft.Colors.BLACK, icon=ft.Icons.FOLDER_ZIP_ROUNDED,
-                                #on_click=lambda e: clear_app_data(),
+                                on_click=lambda e: asyncio.ensure_future(export_library_to_zip()),
                                 style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=20, icon_size=20, bgcolor=ft.Colors.PRIMARY, color=ft.Colors.INVERSE_SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER),
                             ),
                         ]),
@@ -1928,10 +2087,10 @@ def main(page: ft.Page):
                         content=ft.Column(
                             controls=[
                             ft.Row(controls=[ft.Icon(icon=ft.Icons.SAVE_ALT_ROUNDED, color=ft.Colors.INVERSE_SURFACE), ft.Text(value="Import", size=25, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD))]),
-                            ft.Text(value="Select a .ZIP file to import. The containing QR codes will be added to your library, not replace the existing ones.", size=15, color=ft.Colors.INVERSE_SURFACE),
+                            ft.Text(value="Select a .ZIP file to import. The containing QR codes will be added to your library, not replace the existing ones. If you want to add your own codes, they have to be .PNG files.", size=15, color=ft.Colors.INVERSE_SURFACE),
                             ft.Button(
                                 content=ft.Text(value="Import Library", color=ft.Colors.SURFACE, size=16), icon_color=ft.Colors.BLACK, icon=ft.Icons.CREATE_NEW_FOLDER_ROUNDED,
-                                #on_click=lambda e: clear_app_data(),
+                                on_click=lambda e: asyncio.ensure_future(import_library_from_zip()),
                                 style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=20, icon_size=20, bgcolor=ft.Colors.SECONDARY, color=ft.Colors.INVERSE_SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER),
                             ),
                         ]),

@@ -167,3 +167,4 @@ storage/
 qr_codes/
 pinned_qr_codes/
 program_variants/
+test.py
