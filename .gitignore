@@ -163,8 +163,9 @@ cython_debug/
 storage/
 .continue/
 
-#Stored folders
+#Stored
 qr_codes/
 pinned_qr_codes/
 program_variants/
 test.py
+src/settings.json

@@ -130,7 +130,6 @@ jobs:
     name: Publish to Releases
     needs: [build-linux, build-windows, build-android]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     permissions:
       contents: write
     steps:
