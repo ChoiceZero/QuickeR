@@ -18,6 +18,7 @@ jobs:
   build-linux:
     name: Build Linux
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -46,6 +47,7 @@ jobs:
   build-windows:
     name: Build Windows
     runs-on: windows-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -74,6 +76,7 @@ jobs:
   build-android:
     name: Build Android
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
 
@@ -95,13 +98,29 @@ jobs:
         with:
           distribution: "temurin"
           java-version: "17"
+
+      - name: Accept Android SDK licenses
+        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
       - name: Cache Flutter SDK
         uses: actions/cache@v4
         with:
           path: ~/flutter
           key: flutter-android-${{ runner.os }}
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*') }}
+
       - name: Build APK
         run: uv run flet build apk --yes --verbose --no-rich-output
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.parallel=false"
+
       - uses: actions/upload-artifact@v4
         with:
           name: android-build
