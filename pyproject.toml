@@ -11,7 +11,6 @@ authors = [
 dependencies = [
     "flet>=0.85.2",
     "flet-color-pickers==0.85.3",
-    "flet-permission-handler==0.85.3",
     "numpy",
     "opencv-python",
     "pillow",

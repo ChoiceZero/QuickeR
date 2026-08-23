@@ -30,7 +30,7 @@ if not os.path.exists(os.path.join(BASE_DIR, "settings.json")):
     with open(os.path.join(BASE_DIR, "settings.json"), "w") as f:
         DEFAULT_SETTINGS = {
             "Theme_color": "#ff1e88e5",
-            "Appearance": "Dark",
+            "Appearance": "System",
             "GridMode": "True"
         }
         
@@ -306,11 +306,12 @@ class LogoPicker:
 # ---------------------------------------------------------------------------
 
 class QRCodes:
-    def __init__(self, page, input, all_view, regular_view, pinned_view):
+    def __init__(self, page, input, all_view, regular_view, pinned_view,details_main_page_view):
         self.all_view = all_view
         self.regular_view = regular_view
         self.pinned_view = pinned_view
         self.page = page
+        self.details_main_page_view = details_main_page_view
         self.date = ""
         self.url = ""
         self.filetext = ""
@@ -328,6 +329,7 @@ class QRCodes:
         self.status = ft.Text()
         self.result_raw = ft.Text()
         self.stl_invert = False
+        self.details_bs = None
 
     def get_qr_date(self, qr_id):
         img_path = get_qr_image_path(qr_id)
@@ -479,6 +481,8 @@ class QRCodes:
             if self.main_container in self.regular_view.controls:
                 self.regular_view.controls.remove(self.main_container)
         self.clean_bs_up()
+        self.details_main_page_view.controls.clear()
+        self.details_main_page_view.controls.append(ft.Text(value="Click on an item to view details!",font_family="MaterialRoundedBold",size=16,color=ft.Colors.GREY_500))
         self.page.pop_dialog()
         self.page.update()
 
@@ -765,10 +769,10 @@ class QRCodes:
         fill_text = self.fill_color or "Unknown"
         back_text = self.back_color or "Unknown"
 
-        self.details_bs = ft.BottomSheet(
-            draggable=True, show_drag_handle=True, use_safe_area=True, scrollable=False, fullscreen=True,
-            open=False, on_dismiss=lambda e: self.clean_bs_up(),
-            content=ft.Column(horizontal_alignment="center", scroll=ft.ScrollMode.AUTO, controls=[
+        self.about_content = ft.Column(
+            horizontal_alignment="center", 
+            scroll=ft.ScrollMode.AUTO, 
+            controls=[
                 ft.Text(value=self.display_name, size=20, weight="bold", font_family="MaterialRounded", text_align="center",overflow="ELLIPSIS"),
                 ft.Container(
                     bgcolor=ft.Colors.INVERSE_PRIMARY, border_radius=30, content=qr, padding=20,
@@ -842,18 +846,30 @@ class QRCodes:
                         ft.Row(controls=[ft.Text(value="Primary:"), ft.Container(expand=True), ft.Text(value=fill_text)]),
                         ft.Row(controls=[ft.Text(value="Background:"), ft.Container(expand=True), ft.Text(value=back_text)]),
                     ]),
-                ),
-            ]),
-        )
-        if self.details_bs not in self.page.overlay:
-            self.page.overlay.append(self.details_bs)
-        self.page.update()
-        self.details_bs.open = True
-        self.page.update()
+                )
+            ]
+        )    
+
+        if self.page.width < 900:
+            self.details_bs = ft.BottomSheet(
+                draggable=True, show_drag_handle=True, use_safe_area=True, scrollable=False, fullscreen=True,
+                open=False, on_dismiss=lambda e: self.clean_bs_up(),
+                content= self.about_content
+            )
+            if self.details_bs not in self.page.overlay:
+                self.page.overlay.append(self.details_bs)
+            self.page.update()
+            self.details_bs.open = True
+            self.page.update()
+        else:
+            self.details_main_page_view.controls.clear()
+            self.details_main_page_view.controls.append(self.about_content)
+            self.page.update()
 
     def clean_bs_up(self):
-        self.details_bs.open = False
-        self.page.update()
+        if self.details_bs and self.details_bs in self.page.overlay:
+            self.details_bs.open = False
+            self.page.update()
 
     async def do_share_files_from_paths(self):
         if self.page.web:
@@ -896,6 +912,17 @@ def main(page: ft.Page):
     # -------------------------------------------------------------
     # General utilities
     # -------------------------------------------------------------
+    def on_reorder():
+        if order_toggle_button.icon == ft.Icons.ARROW_DOWNWARD_ROUNDED:
+            order_toggle_button.icon = ft.Icons.ARROW_UPWARD_ROUNDED
+        else:
+            order_toggle_button.icon = ft.Icons.ARROW_DOWNWARD_ROUNDED
+
+    def on_resize():
+        if page.width > 900:
+            details_main_page_view.visible = True
+        else:
+            details_main_page_view.visible = False
 
     def progress_dialog(title):
         dialog = ft.AlertDialog(
@@ -928,6 +955,20 @@ def main(page: ft.Page):
         json_path = os.path.join(BASE_DIR, "settings.json")
         with open(json_path, "w", encoding="utf-8") as file:
             json.dump(data, file, indent=4, ensure_ascii=False)
+
+    def autocollapse_expansion_tiles(e):
+        pass
+        #for control in e.control.parent.controls:
+        #    if isinstance(control, ft.ExpansionTile) and control != e.control and control.expanded == True:
+        #        control.expanded = False
+        #e.control.expanded = True
+        #page.update()
+
+    def autocollapse_expansion_tiles_all():
+        for control in settings_view.content.controls[0].controls:
+            if isinstance(control, ft.ExpansionTile) and  control.expanded == True:
+                control.expanded = False
+        page.update()
 
     def theme_init_loader():
         read_data = json_reader()
@@ -1003,6 +1044,8 @@ def main(page: ft.Page):
             all_view.controls.clear()
             pinned_view.controls.clear()
             regular_view.controls.clear()
+            details_main_page_view.controls.clear()
+            details_main_page_view.controls.append(ft.Text(value="Click on an item to view details!",font_family="MaterialRoundedBold",size=16,color=ft.Colors.GREY_500))
             page.update()
             page.pop_dialog()
             page.show_dialog(ft.SnackBar(content=ft.Text("All data cleared successfully.")))
@@ -1115,22 +1158,22 @@ def main(page: ft.Page):
                 return
             if pin_filter_buttongroup.controls[0] == e.control:
                 for v in (regular_view, pinned_view):
-                    if v in overview.controls:
-                        overview.controls.remove(v)
-                if all_view not in overview.controls:
-                    overview.controls.append(all_view)
+                    if v in overview.controls[-1].controls:
+                        overview.controls[-1].controls.remove(v)
+                if all_view not in overview.controls[-1].controls:
+                    overview.controls[-1].controls.insert(0, all_view)
             elif pin_filter_buttongroup.controls[1] == e.control:
                 for v in (regular_view, all_view):
-                    if v in overview.controls:
-                        overview.controls.remove(v)
-                if pinned_view not in overview.controls:
-                    overview.controls.append(pinned_view)
+                    if v in overview.controls[-1].controls:
+                        overview.controls[-1].controls.remove(v)
+                if pinned_view not in overview.controls[-1].controls:
+                    overview.controls[-1].controls.insert(0, pinned_view)
             elif pin_filter_buttongroup.controls[2] == e.control:
                 for v in (all_view, pinned_view):
-                    if v in overview.controls:
-                        overview.controls.remove(v)
-                if regular_view not in overview.controls:
-                    overview.controls.append(regular_view)
+                    if v in overview.controls[-1].controls:
+                        overview.controls[-1].controls.remove(v)
+                if regular_view not in overview.controls[-1].controls:
+                    overview.controls[-1].controls.insert(0, regular_view)
             page.update()
 
         perform_action()
@@ -1155,6 +1198,8 @@ def main(page: ft.Page):
             page.update()
         else:
             settings_view.offset = ft.Offset(1.1, 0)
+            asyncio.ensure_future(settings_view.content.controls[0].scroll_to(offset=0, duration=0))
+            autocollapse_expansion_tiles_all()
             page.update()
 
     # -------------------------------------------------------------
@@ -1195,7 +1240,7 @@ def main(page: ft.Page):
             if not data:
                 continue
 
-            qr = QRCodes(page, data, all_view, regular_view, pinned_view)
+            qr = QRCodes(page, data, all_view, regular_view, pinned_view,details_main_page_view)
             qr.fill_color, qr.back_color = get_qr_colors(path)
             qr.qr_id = qr_id
             qr.date = qr.get_qr_date(qr_id)
@@ -1291,7 +1336,7 @@ def main(page: ft.Page):
 
     def create_qr_action():
         create_info = qr_url_input_field.value
-        new_qr = QRCodes(page, create_info, all_view, regular_view, pinned_view)
+        new_qr = QRCodes(page, create_info, all_view, regular_view, pinned_view,details_main_page_view)
         new_qr.fill_color, new_qr.back_color = qr_color_scheme_primary.color, qr_color_scheme_secondary.color
         if last_qr_image["img"] is None:
             print("image can't be Nonetype!")
@@ -1824,6 +1869,17 @@ def main(page: ft.Page):
     order_toggle_button = ft.IconButton(
         icon=ft.Icons.ARROW_DOWNWARD_ROUNDED,
         style=ft.ButtonStyle(shape=ft.CircleBorder(), padding=10, bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST, icon_color=ft.Colors.INVERSE_SURFACE, icon_size=20),
+        on_click=lambda e: on_reorder()
+    )
+
+    details_main_page_view = ft.Column(
+        controls=[ft.Text(value="Click on an item to view details!",font_family="MaterialRoundedBold",size=16,color=ft.Colors.GREY_500)], 
+        visible=False, 
+        expand=True,
+        margin=ft.Margin.only(left=10, right=10, top=20),
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER, 
+        scroll=ft.ScrollMode.AUTO, 
+        alignment=ft.MainAxisAlignment.CENTER
     )
 
     overview = ft.Column(expand=True, horizontal_alignment=ft.CrossAxisAlignment.STRETCH, controls=[
@@ -1851,7 +1907,7 @@ def main(page: ft.Page):
             pin_filter_buttongroup,
         ]),
         ft.Divider(height=0.1,thickness=0.1, color=ft.Colors.GREY_400),
-        all_view,
+        ft.Row(controls=[all_view,ft.Container(width=0.2,bgcolor=ft.Colors.GREY_500,margin=ft.Margin.only(left=5, right=5, top=-10, bottom=-10)),details_main_page_view], expand=True),
     ])
 
     # -------------------------------------------------------------
@@ -1897,7 +1953,7 @@ def main(page: ft.Page):
                                 tight=True,
                                 controls=[
                                     ft.Icon(icon=ft.Icons.BUILD_CIRCLE_ROUNDED, color=ft.Colors.TERTIARY, size=16), 
-                                    ft.Text(value="v0.1.0", size=12, color=ft.Colors.INVERSE_SURFACE)
+                                    ft.Text(value="v"+APP_VERSION, size=12, color=ft.Colors.INVERSE_SURFACE)
                                 ],
                                 spacing=5,
                             ), 
@@ -1938,8 +1994,9 @@ def main(page: ft.Page):
                     ft.Row(alignment="center", controls=ft.Text(value="Help the project", size=18, color=ft.Colors.PRIMARY),margin=ft.Margin.only(left=0, right=0, top=20)),
                     ft.ExpansionTile(
                         bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, collapsed_bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
-                        margin=ft.Margin.only(left=20, right=20, bottom=5),
+                        margin=ft.Margin.only(bottom=5),
                         width=600,
+                        on_change=lambda e: autocollapse_expansion_tiles(e),
                         align=ft.Alignment.CENTER, 
                         tile_padding=ft.Padding.only(left=20, right=20, top=10, bottom=10),
                         shape=ft.RoundedRectangleBorder(side=ft.BorderSide(style=ft.BorderStyle.NONE), radius=ft.BorderRadius.only(top_left=30, top_right=30, bottom_left=30, bottom_right=30)),
@@ -1971,7 +2028,7 @@ def main(page: ft.Page):
                                         ft.Container(content=ft.Text(value="ONE TIME", size=10, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)), margin=ft.Margin.only(left=5), bgcolor=ft.Colors.TERTIARY_CONTAINER, border=ft.Border.all(width=3, color=ft.Colors.TERTIARY), border_radius=10, padding=5),
                                     ]),
                                     ft.Text(value="If you want to support the project, you can do so by donating via Buy Me a Coffee or GitHub Sponsors.", size=15, color=ft.Colors.INVERSE_SURFACE),
-                                    ft.Row(alignment=ft.MainAxisAlignment.CENTER, controls=ft.Row(wrap=True, controls=[
+                                    ft.Row(wrap=True,alignment="center", controls=ft.Row(wrap=True,tight=True, controls=[
                                         ft.Button(margin=ft.Margin.only(top=10), content=ft.Text(value="Buy Me a Coffee"), icon=ft.Icons.COFFEE_ROUNDED, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=10, bgcolor=ft.Colors.PRIMARY, color=ft.Colors.SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER)),
                                         ft.Button(margin=ft.Margin.only(top=10), content=ft.Text(value="GitHub Sponsors"), icon=ft.CupertinoIcons.HEART_FILL, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=10, bgcolor=ft.Colors.PRIMARY, color=ft.Colors.SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER)),
                                     ])),
@@ -1982,10 +2039,10 @@ def main(page: ft.Page):
                                 content=ft.Column(controls=[
                                     ft.Row(controls=[ft.Icon(icon=ft.Icons.CODE_ROUNDED, color=ft.Colors.INVERSE_SURFACE), ft.Text(value="Contribute", size=25, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD))]),
                                     ft.Text(value="Contribute code or report bugs in order to improve the project as a community effort.", size=15, color=ft.Colors.INVERSE_SURFACE),
-                                    ft.Row(alignment=ft.MainAxisAlignment.CENTER, controls=[
-                                        ft.Button(align=ft.Alignment.CENTER, margin=ft.Margin.only(top=10), content=ft.Text(value="QuickeR-Web"), icon=ft.Image(os.path.join(ASSET_DIR, "github-white-icon.webp"), color=ft.Colors.SURFACE, width=20, height=20), on_click=lambda e: asyncio.ensure_future(open_url("https://github.com/ChoiceZero/QuickeR", "BLANK")), style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=10, bgcolor=ft.Colors.PRIMARY, color=ft.Colors.SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER)),
+                                    ft.Row(wrap=True,alignment="center", controls=ft.Row(wrap=True,tight=True, controls=[
+                                        ft.Button(margin=ft.Margin.only(top=10), content=ft.Text(value="QuickeR-Web"), icon=ft.Image(os.path.join(ASSET_DIR, "github-white-icon.webp"), color=ft.Colors.SURFACE, width=20, height=20), on_click=lambda e: asyncio.ensure_future(open_url("https://github.com/ChoiceZero/QuickeR", "BLANK")), style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=10, bgcolor=ft.Colors.PRIMARY, color=ft.Colors.SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER)),
                                         ft.Button(content=ft.Text(value="Report a bug"), icon=ft.Icons.BUG_REPORT_ROUNDED, margin=ft.Margin.only(top=10), on_click=lambda e: asyncio.ensure_future(open_url("https://github.com/ChoiceZero/QuickeR/issues", "BLANK")), style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=10, bgcolor=ft.Colors.PRIMARY, color=ft.Colors.SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER)),
-                                    ]),
+                                    ])),
                                 ]),
                             ),
                             ft.Container(
@@ -1993,7 +2050,7 @@ def main(page: ft.Page):
                                 content=ft.Column(controls=[
                                     ft.Row(controls=[ft.Icon(icon=ft.Icons.SHARE_ROUNDED, color=ft.Colors.INVERSE_SURFACE), ft.Text(value="Share the app", size=25, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD))]),
                                     ft.Text(value="Help spread the word about the app and recommend it to others. The more users, the more interest in the project!", size=15, color=ft.Colors.INVERSE_SURFACE),
-                                    ft.Button(align=ft.Alignment.CENTER, content=ft.Text(value="Copy link to clipboard"), icon=ft.Icons.COPY_ALL_ROUNDED, margin=ft.Margin.only(top=10), on_click=lambda e: asyncio.ensure_future(copy_text_to_clipboard("https://choicezero.github.io/QuickeR-Web/")), style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=10, bgcolor=ft.Colors.PRIMARY, color=ft.Colors.SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER)),
+                                    ft.Button(content=ft.Text(value="Copy link to clipboard"), icon=ft.Icons.COPY_ALL_ROUNDED, margin=ft.Margin.only(top=10), on_click=lambda e: asyncio.ensure_future(copy_text_to_clipboard("https://choicezero.github.io/QuickeR-Web/")), style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=10, bgcolor=ft.Colors.PRIMARY, color=ft.Colors.SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER)),
                                 ]),
                             ),
                         ])],
@@ -2001,8 +2058,9 @@ def main(page: ft.Page):
                     ft.Row(alignment="center", controls=ft.Text(value="Customization", size=18, color=ft.Colors.PRIMARY)),
                     ft.ExpansionTile(
                         bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, collapsed_bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
-                        margin=ft.Margin.only(left=20, right=20, bottom=5),
+                        margin=ft.Margin.only(bottom=5),
                         width=600,
+                        on_change=lambda e: autocollapse_expansion_tiles(e),
                         align=ft.Alignment.CENTER,
                         controls_padding=ft.Padding.only(left=20, right=20, top=10, bottom=20), 
                         tile_padding=ft.Padding.only(left=20, right=20, top=10, bottom=10),
@@ -2030,8 +2088,9 @@ def main(page: ft.Page):
                     ),
                     ft.ExpansionTile(
                         bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, collapsed_bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
-                        margin=ft.Margin.only(left=20, right=20, bottom=5,top=-12),
+                        margin=ft.Margin.only(bottom=5,top=-12),
                         width=600,
+                        on_change=lambda e: autocollapse_expansion_tiles(e),
                         align=ft.Alignment.CENTER,
                         controls_padding=ft.Padding.only(left=20, right=20, top=10, bottom=20), 
                         tile_padding=ft.Padding.only(left=20, right=20, top=10, bottom=10),
@@ -2060,8 +2119,9 @@ def main(page: ft.Page):
                     ft.Row(alignment="center", controls=ft.Text(value="Technical", size=18, color=ft.Colors.PRIMARY)),
                     ft.ExpansionTile(
                         bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, collapsed_bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
-                        margin=ft.Margin.only(left=20, right=20, bottom=5),
+                        margin=ft.Margin.only(bottom=5),
                         width=600,
+                        on_change=lambda e: autocollapse_expansion_tiles(e),
                         align=ft.Alignment.CENTER, 
                         tile_padding=ft.Padding.only(left=20, right=20, top=10, bottom=10),
                         shape=ft.RoundedRectangleBorder(side=ft.BorderSide(style=ft.BorderStyle.NONE), radius=ft.BorderRadius.only(top_left=30, top_right=30, bottom_left=30, bottom_right=30)),
@@ -2093,9 +2153,9 @@ def main(page: ft.Page):
                                     ]),
                                     ft.Text(value="Export your QR code library to a .ZIP file.", size=15, color=ft.Colors.INVERSE_SURFACE),
                                     ft.Button(
-                                        content=ft.Text(value="Export Library", color=ft.Colors.SURFACE, size=16), icon_color=ft.Colors.BLACK, icon=ft.Icons.FOLDER_ZIP_ROUNDED,
+                                        content=ft.Text(value="Export Library", color=ft.Colors.SURFACE, size=16), color=ft.Colors.SURFACE, icon=ft.Icons.FOLDER_ZIP_ROUNDED,
                                         on_click=lambda e: asyncio.ensure_future(export_library_to_zip()),
-                                        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=20, icon_size=20, bgcolor=ft.Colors.PRIMARY, color=ft.Colors.INVERSE_SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER),
+                                        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=20, icon_size=20, bgcolor=ft.Colors.PRIMARY, icon_color=ft.Colors.SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER),
                                     ),
                                 ]),
                             ),
@@ -2106,9 +2166,9 @@ def main(page: ft.Page):
                                     ft.Row(controls=[ft.Icon(icon=ft.Icons.SAVE_ALT_ROUNDED, color=ft.Colors.INVERSE_SURFACE), ft.Text(value="Import", size=25, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD))]),
                                     ft.Text(value="Select a .ZIP file to import. The containing QR codes will be added to your library, not replace the existing ones. If you want to add your own codes, they have to be .PNG files.", size=15, color=ft.Colors.INVERSE_SURFACE),
                                     ft.Button(
-                                        content=ft.Text(value="Import Library", color=ft.Colors.SURFACE, size=16), icon_color=ft.Colors.BLACK, icon=ft.Icons.CREATE_NEW_FOLDER_ROUNDED,
+                                        content=ft.Text(value="Import Library", color=ft.Colors.SURFACE, size=16), color=ft.Colors.SURFACE, icon=ft.Icons.CREATE_NEW_FOLDER_ROUNDED,
                                         on_click=lambda e: asyncio.ensure_future(import_library_from_zip()),
-                                        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=20, icon_size=20, bgcolor=ft.Colors.SECONDARY, color=ft.Colors.INVERSE_SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER),
+                                        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=20, icon_size=20, bgcolor=ft.Colors.SECONDARY, icon_color=ft.Colors.SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER),
                                     ),
                                 ]),
                             ),
@@ -2119,9 +2179,9 @@ def main(page: ft.Page):
                                     ft.Row(controls=[ft.Icon(icon=ft.Icons.DELETE_ROUNDED, color=ft.Colors.WHITE), ft.Text(value="Clear data", size=25, color=ft.Colors.WHITE, style=ft.TextStyle(weight=ft.FontWeight.BOLD))]),
                                     ft.Text(value="This will clear every QR code stored. This action is irreversible!", size=15, color=ft.Colors.WHITE),
                                     ft.Button(
-                                        content=ft.Text(value="Delete all data", color=ft.Colors.BLACK, size=16), icon_color=ft.Colors.BLACK, icon=ft.Icons.DELETE_ROUNDED,
+                                        content=ft.Text(value="Delete all data", color=ft.Colors.BLACK, size=16), color=ft.Colors.INVERSE_SURFACE, icon=ft.Icons.DELETE_ROUNDED,
                                         on_click=lambda e: clear_app_data(),
-                                        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=50), padding=20, icon_size=20, bgcolor=ft.Colors.RED_100, color=ft.Colors.BLACK, overlay_color=ft.Colors.RED_200),
+                                        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=50), padding=20, icon_size=20, bgcolor=ft.Colors.RED_100, icon_color=ft.Colors.INVERSE_SURFACE, overlay_color=ft.Colors.RED_200),
                                     ),
                                 ]),
                             ),
@@ -2130,7 +2190,7 @@ def main(page: ft.Page):
                     ft.Row(alignment="center", controls=ft.Text(value="About", size=18, color=ft.Colors.PRIMARY)),
                     ft.Container(
                         bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
-                        margin=ft.Margin.only(left=20, right=20, bottom=5),
+                        margin=ft.Margin.only(bottom=5),
                         width=600,
                         on_click=lambda e: asyncio.ensure_future(open_url("https://github.com/ChoiceZero/QuickeR", "BLANK")),
                         align=ft.Alignment.CENTER,
@@ -2159,7 +2219,7 @@ def main(page: ft.Page):
                     ),
                     ft.Container(
                         bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
-                        margin=ft.Margin.only(left=20, right=20, bottom=5,top=-12),
+                        margin=ft.Margin.only(bottom=5,top=-12),
                         width=600,
                         on_click=lambda e: asyncio.ensure_future(open_url("https://github.com/ChoiceZero", "BLANK")),
                         align=ft.Alignment.CENTER,
@@ -2188,8 +2248,9 @@ def main(page: ft.Page):
                     ),
                     ft.ExpansionTile(
                         bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, collapsed_bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
-                        margin=ft.Margin.only(left=20, right=20, bottom=5,top=-12),
+                        margin=ft.Margin.only(bottom=5,top=-12),
                         width=600,
+                        on_change=lambda e: autocollapse_expansion_tiles(e), 
                         align=ft.Alignment.CENTER,
                         controls_padding=ft.Padding.only(left=20, right=20, top=10, bottom=20), 
                         tile_padding=ft.Padding.only(left=20, right=20, top=10, bottom=10),
@@ -2261,6 +2322,9 @@ def main(page: ft.Page):
 
     root_row = ft.Row(controls=[safearea], expand=True, vertical_alignment=ft.CrossAxisAlignment.STRETCH)
     page.add(root_row)
+
+    on_resize()
+    page.on_resize = on_resize
 
     load_qrs()
     theme_init_loader()

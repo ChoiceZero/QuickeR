@@ -1,4 +1,4 @@
-name: Build App (Linux, Android, Windows) + Release
+name: Build App (Linux, Android, Windows, macOS, iOS) + Release
 
 on:
   push:
@@ -28,6 +28,11 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ninja-build libgtk-3-dev clang cmake pkg-config
+      - name: Set app version from pyproject.toml
+        run: |
+          VERSION=$(grep -m1 '^version' pyproject.toml | sed -E 's/version[[:space:]]*=[[:space:]]*"(.*)"/\1/')
+          echo "Detected version: $VERSION"
+          sed -i "s/__VERSION__/$VERSION/g" main.py
       - name: Cache Flutter SDK
         uses: actions/cache@v4
         with:
@@ -56,6 +61,13 @@ jobs:
       - name: Set UTF-8 codepage
         run: chcp 65001
         shell: cmd
+      - name: Set app version from pyproject.toml
+        shell: pwsh
+        run: |
+          $line = Select-String -Path pyproject.toml -Pattern '^version' | Select-Object -First 1
+          $version = ($line.Line -replace 'version\s*=\s*"(.*)"', '$1')
+          Write-Host "Detected version: $version"
+          (Get-Content main.py) -replace '__VERSION__', $version | Set-Content main.py
       - name: Cache Flutter SDK
         uses: actions/cache@v4
         with:
@@ -99,6 +111,12 @@ jobs:
           distribution: "temurin"
           java-version: "17"
 
+      - name: Set app version from pyproject.toml
+        run: |
+          VERSION=$(grep -m1 '^version' pyproject.toml | sed -E 's/version[[:space:]]*=[[:space:]]*"(.*)"/\1/')
+          echo "Detected version: $VERSION"
+          sed -i "s/__VERSION__/$VERSION/g" main.py
+
       - name: Accept Android SDK licenses
         run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
@@ -126,9 +144,69 @@ jobs:
           name: android-build
           path: build/apk/*.apk
 
+  build-macos:
+    name: Build macOS
+    runs-on: macos-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Set app version from pyproject.toml
+        run: |
+          VERSION=$(grep -m1 '^version' pyproject.toml | sed -E 's/version[[:space:]]*=[[:space:]]*"(.*)"/\1/')
+          echo "Detected version: $VERSION"
+          sed -i '' "s/__VERSION__/$VERSION/g" main.py
+      - name: Cache Flutter SDK
+        uses: actions/cache@v4
+        with:
+          path: ~/flutter
+          key: flutter-macos-${{ runner.os }}
+      - name: Build
+        run: uv run flet build macos --yes --verbose --no-rich-output
+      - name: Package
+        run: |
+          cd build/macos
+          zip -r ../../QuickeR-macos.zip .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-build
+          path: QuickeR-macos.zip
+
+  build-ios:
+    name: Build iOS
+    runs-on: macos-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Set app version from pyproject.toml
+        run: |
+          VERSION=$(grep -m1 '^version' pyproject.toml | sed -E 's/version[[:space:]]*=[[:space:]]*"(.*)"/\1/')
+          echo "Detected version: $VERSION"
+          sed -i '' "s/__VERSION__/$VERSION/g" main.py
+      - name: Cache Flutter SDK
+        uses: actions/cache@v4
+        with:
+          path: ~/flutter
+          key: flutter-ios-${{ runner.os }}
+      - name: Build (unsigned)
+        run: uv run flet build ipa --yes --verbose --no-rich-output
+      - name: Package
+        run: |
+          cd build/ipa
+          zip -r ../../QuickeR-ios.zip .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-build
+          path: QuickeR-ios.zip
+
   release:
     name: Publish to Releases
-    needs: [build-linux, build-windows, build-android]
+    needs: [build-linux, build-windows, build-android, build-macos, build-ios]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -149,5 +227,7 @@ jobs:
             artifacts/linux-build/QuickeR-linux.zip
             artifacts/windows-build/QuickeR-windows.zip
             artifacts/android-build/*.apk
+            artifacts/macos-build/QuickeR-macos.zip
+            artifacts/ios-build/QuickeR-ios.zip
           generate_release_notes: true
           fail_on_unmatched_files: true
