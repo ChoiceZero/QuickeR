@@ -65,8 +65,8 @@ def normalize_picker_date(dt):
     return dt.astimezone().date()
 
 def try_decode_with_preprocessing(image):
-    """Intenta decodificar un QR probando varios preprocesados.
-    Devuelve un string vacío si ninguno funciona (nunca None)."""
+    """Tries to decode a QR code by applying several preprocessing steps.
+    Returns an empty string if none of them work (never None)."""
     if image is None:
         return ""
 
@@ -97,8 +97,8 @@ def try_decode_with_preprocessing(image):
 
 
 def add_logo_aligned_to_grid(pil_img, logo_path, qr_obj, max_module_ratio=0.25, bg_color=(255, 255, 255, 255)):
-    """Pega un logo centrado y alineado a la rejilla del QR.
-    `logo_path` es una ruta de archivo (str), no bytes."""
+    """Pastes a logo centered and aligned to the QR grid.
+    `logo_path` is a file path (str), not bytes."""
     box_size = qr_obj.box_size
     modules_count = len(qr_obj.get_matrix())
 
@@ -161,8 +161,8 @@ def get_pictures_folder() -> str:
 
 
 def get_qr_colors(image_path):
-    """Devuelve (fill_color, back_color) en hex. Si no se puede determinar,
-    hace fallback a negro/blanco en vez de reventar."""
+    """Returns (fill_color, back_color) in hex. If they can't be determined,
+    falls back to black/white instead of crashing."""
     try:
         img = PIL.Image.open(image_path).convert("RGB")
         colors = img.getcolors(maxcolors=256 * 256 * 256)
@@ -177,7 +177,7 @@ def get_qr_colors(image_path):
 
 
 def get_qr_image_path(qr_id):
-    """Devuelve la ruta del png de un QR (pinned o normal), o None si no existe."""
+    """Returns the png path of a QR (pinned or normal), or None if it doesn't exist."""
     qr_path = os.path.join(QR_DIR, f"{qr_id}.png")
     pinned_path = os.path.join(PINNED_DIR, f"{qr_id}.png")
     if os.path.exists(qr_path):
@@ -207,7 +207,7 @@ class StlBuilder:
 
         img = PIL.Image.open(img_path).convert("L")
         arr = np.array(img)
-        bw = arr < self.threshold  # True = módulo negro (elevado)
+        bw = arr < self.threshold  # True = black module (raised)
         if self.invert:
             bw = ~bw
         return bw
@@ -292,7 +292,7 @@ class LogoPicker:
 
 
 # ---------------------------------------------------------------------------
-# QRCodes: modelo + UI de una entrada de QR
+# QRCodes: model + UI for a single QR entry
 # ---------------------------------------------------------------------------
 
 class QRCodes:
@@ -355,7 +355,7 @@ class QRCodes:
         return f"{t.tm_year}{t.tm_mon}{t.tm_mday}{t.tm_hour}{t.tm_min}{t.tm_sec}"
 
     def _leading_icon_and_name(self):
-        """Determina icono y nombre a mostrar según el tipo de contenido del QR."""
+        """Determines the icon and name to display based on the QR content type."""
         url = self.url or ""
         if "WIFI:S:" in url:
             name = url.split(":")[2].split(";")[0]
@@ -884,7 +884,7 @@ def main(page: ft.Page):
     }
 
     # -------------------------------------------------------------
-    # Utilidades generales
+    # General utilities
     # -------------------------------------------------------------
 
     def progress_dialog(title):
@@ -1096,7 +1096,7 @@ def main(page: ft.Page):
                     page.update()
 
     # -------------------------------------------------------------
-    # Vista general (Todos / Fijados / No fijados) + orden
+    # Overview view (All / Pinned / Unpinned) + ordering
     # -------------------------------------------------------------
 
     def on_buttongroup_change(e: ft.ControlEvent):
@@ -1148,7 +1148,7 @@ def main(page: ft.Page):
             view.controls.append(overview)
 
     # -------------------------------------------------------------
-    # Carga de QRs existentes
+    # Loading of existing QRs
     # -------------------------------------------------------------
 
     def load_qrs():
@@ -1193,7 +1193,7 @@ def main(page: ft.Page):
             qr.display_qr(is_pinned, prepend=False)
 
     # -------------------------------------------------------------
-    # Creación de QR: preview + formularios por tipo
+    # QR creation: preview + per-type forms
     # -------------------------------------------------------------
 
     def display_preview_qr(url, qr_color_primary, qr_color_secondary, error_correct):
@@ -1434,7 +1434,7 @@ def main(page: ft.Page):
         page.update()
 
     # -------------------------------------------------------------
-    # Debounce de la preview del QR
+    # QR preview debounce
     # -------------------------------------------------------------
 
     def prop_changed():
@@ -1509,7 +1509,7 @@ def main(page: ft.Page):
             display_preview_qr(qr_url_input_field.value, color_rgb_1, color_rgb_2, error_correction)
 
     # -------------------------------------------------------------
-    # Controles de UI
+    # UI controls
     # -------------------------------------------------------------
 
     logo_picker = LogoPicker(page)
@@ -1845,7 +1845,7 @@ def main(page: ft.Page):
     ])
 
     # -------------------------------------------------------------
-    # Vista de ajustes
+    # Settings view
     # -------------------------------------------------------------
 
     settings_view = ft.Column(
