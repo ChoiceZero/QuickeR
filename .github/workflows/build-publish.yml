@@ -1,4 +1,4 @@
-name: Build App (Linux, Android, Windows, macOS, iOS) + Release
+name: Build App (Linux, Android, Windows, macOS) + Release
 
 on:
   push:
@@ -185,48 +185,6 @@ jobs:
         with:
           name: macos-build
           path: QuickeR-macos.zip
-
-  build-ios:
-    name: Build iOS
-    runs-on: macos-latest
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
-        with:
-          enable-cache: true
-      - name: Set app version from pyproject.toml
-        run: |
-          VERSION=$(grep -m1 '^version' pyproject.toml | sed -E 's/version[[:space:]]*=[[:space:]]*"(.*)"/\1/')
-          echo "Detected version: $VERSION"
-          sed -i '' "s/__VERSION__/$VERSION/g" src/main.py
-      - name: Cache Flutter SDK
-        uses: actions/cache@v4
-        with:
-          path: ~/flutter
-          key: flutter-ios-${{ runner.os }}
-      - name: Cache CocoaPods
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/Library/Caches/CocoaPods
-            ~/.cocoapods
-          key: pods-ios-${{ runner.os }}-${{ hashFiles('**/Podfile.lock') }}
-      - name: Cache Flutter pub packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.pub-cache
-          key: pub-ios-${{ runner.os }}
-      - name: Build (unsigned)
-        run: uv run flet build ipa --yes --no-rich-output
-      - name: Package
-        run: |
-          cd build/ipa
-          zip -r ../../QuickeR-ios.zip .
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ios-build
-          path: QuickeR-ios.zip
 
   build-appimage:
     name: Build Linux AppImage
