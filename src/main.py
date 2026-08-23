@@ -20,14 +20,36 @@ import zipfile
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ASSET_DIR = os.path.join(BASE_DIR, "assets")
-QR_DIR = os.path.join(BASE_DIR, "qr_codes")
-PINNED_DIR = os.path.join(BASE_DIR, "pinned_qr_codes")
+
+
+def get_app_storage_dir() -> str:
+    """Returns a writable, persistent directory for app data across platforms.
+
+    - macOS: ~/Library/Application Support/QuickeR. The app bundle dir
+      (BASE_DIR) is read-only once the app is signed/notarized, and under
+      App Sandbox it isn't writable at all, so we never write there.
+    - Android: BASE_DIR is already inside the app's private storage, so it's writable.
+    - Linux/Windows: keep it next to the script, as before.
+    """
+    system = platform.system()
+    if system == "Darwin":
+        path = Path.home() / "Library" / "Application Support" / "QuickeR"
+        path.mkdir(parents=True, exist_ok=True)
+        return str(path)
+    else:
+        return BASE_DIR
+
+
+APP_DATA_DIR = get_app_storage_dir()
+QR_DIR = os.path.join(APP_DATA_DIR, "qr_codes")
+PINNED_DIR = os.path.join(APP_DATA_DIR, "pinned_qr_codes")
+SETTINGS_PATH = os.path.join(APP_DATA_DIR, "settings.json")
 
 os.makedirs(QR_DIR, exist_ok=True)
 os.makedirs(PINNED_DIR, exist_ok=True)
 
-if not os.path.exists(os.path.join(BASE_DIR, "settings.json")):
-    with open(os.path.join(BASE_DIR, "settings.json"), "w") as f:
+if not os.path.exists(SETTINGS_PATH):
+    with open(SETTINGS_PATH, "w") as f:
         DEFAULT_SETTINGS = {
             "Theme_color": "#ff1e88e5",
             "Appearance": "System",
@@ -166,8 +188,24 @@ def get_pictures_folder() -> str:
         return str(Path.home() / "Pictures")
     elif system == "Android":
         return "/storage/emulated/0/Pictures"
+    elif system == "Darwin":
+        # Under App Sandbox this requires the
+        # com.apple.security.files.user-selected.read-write (or
+        # downloads-folder/pictures-folder) entitlement; without sandboxing
+        # (e.g. a notarized, non-App-Store build) no extra entitlement is
+        # needed.
+        return str(Path.home() / "Pictures")
     else:
         return str(Path.home() / "Pictures")
+
+
+def get_default_browse_dir() -> str:
+    """Returns a sensible default directory to open file/folder pickers in."""
+    system = platform.system()
+    if system == "Android":
+        return "/storage/emulated/0/Pictures"
+    else:
+        return str(Path.home())
 
 
 def get_qr_colors(image_path):
@@ -556,7 +594,6 @@ class QRCodes:
         self.filetext.value = ""
 
     async def export_to_gallery(self):
-        folder_path = get_pictures_folder()
         src = get_qr_image_path(self.qr_id)
         if src is None:
             self.page.show_dialog(ft.AlertDialog(content=ft.Text("QR file not found"), title=ft.Text("Error"), actions=[ft.TextButton("OK", on_click=lambda e: self.page.pop_dialog())]))
@@ -566,6 +603,8 @@ class QRCodes:
             return
 
         self.page.pop_dialog()
+
+        folder_path = get_pictures_folder()
         load_dialog = self.progress_dialog("Exporting QR...")
         self.page.show_dialog(load_dialog)
         self.page.update()
@@ -592,7 +631,7 @@ class QRCodes:
             self.page.update()
 
     async def export_to_folder(self):
-        default_dir = "/storage/emulated/0/Pictures" if platform.system() == "Android" else str(Path.home())
+        default_dir = get_default_browse_dir()
     
         src = get_qr_image_path(self.qr_id)
         if src is None:
@@ -678,7 +717,7 @@ class QRCodes:
         return dialog
 
     async def _pick_folder_and_export_stl(self):
-        default_dir = "/storage/emulated/0/Pictures" if platform.system() == "Android" else str(Path.home())
+        default_dir = get_default_browse_dir()
 
         folder_path = await ft.FilePicker().get_directory_path(
             dialog_title="Select folder to export STL", initial_directory=default_dir
@@ -884,7 +923,7 @@ class QRCodes:
         try:
             result = await self.share.share_files(
                 [ft.ShareFile.from_path(os.path.abspath(file_path))],
-                text="Sharing a file from memory",
+                text="Shared via QuickeR: "+self._leading_icon_and_name()[1],
             )
             self.status.value = f"Share status: {result.status}"
         except Exception as ex:
@@ -943,17 +982,15 @@ def main(page: ft.Page):
         return dialog
 
     def json_reader():
-        json_path = os.path.join(BASE_DIR, "settings.json")
         try:
-            with open(json_path, "r", encoding="utf-8") as file:
+            with open(SETTINGS_PATH, "r", encoding="utf-8") as file:
                 return json.load(file)
         except FileNotFoundError:
-            print(f"Error: Could not find the JSON file at {json_path}")
+            print(f"Error: Could not find the JSON file at {SETTINGS_PATH}")
             return None
 
     def json_writer(data):
-        json_path = os.path.join(BASE_DIR, "settings.json")
-        with open(json_path, "w", encoding="utf-8") as file:
+        with open(SETTINGS_PATH, "w", encoding="utf-8") as file:
             json.dump(data, file, indent=4, ensure_ascii=False)
 
     def autocollapse_expansion_tiles(e):
@@ -1062,7 +1099,7 @@ def main(page: ft.Page):
         ))
 
     async def export_library_to_zip():
-        default_dir = "/storage/emulated/0/Pictures" if platform.system() == "Android" else str(Path.home())
+        default_dir = get_default_browse_dir()
         folder_path = await ft.FilePicker().get_directory_path(
             dialog_title="Select folder to export library", initial_directory=default_dir
         )

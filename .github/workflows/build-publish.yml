@@ -147,7 +147,7 @@ jobs:
   build-macos:
     name: Build macOS
     runs-on: macos-latest
-    timeout-minutes: 40
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -163,8 +163,20 @@ jobs:
         with:
           path: ~/flutter
           key: flutter-macos-${{ runner.os }}
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/CocoaPods
+            ~/.cocoapods
+          key: pods-macos-${{ runner.os }}-${{ hashFiles('**/Podfile.lock') }}
+      - name: Cache Flutter pub packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-macos-${{ runner.os }}
       - name: Build
-        run: uv run flet build macos --yes --verbose --no-rich-output
+        run: uv run flet build macos --yes --no-rich-output
       - name: Package
         run: |
           cd build/macos
@@ -177,7 +189,7 @@ jobs:
   build-ios:
     name: Build iOS
     runs-on: macos-latest
-    timeout-minutes: 40
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -193,8 +205,20 @@ jobs:
         with:
           path: ~/flutter
           key: flutter-ios-${{ runner.os }}
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/CocoaPods
+            ~/.cocoapods
+          key: pods-ios-${{ runner.os }}-${{ hashFiles('**/Podfile.lock') }}
+      - name: Cache Flutter pub packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-ios-${{ runner.os }}
       - name: Build (unsigned)
-        run: uv run flet build ipa --yes --verbose --no-rich-output
+        run: uv run flet build ipa --yes --no-rich-output
       - name: Package
         run: |
           cd build/ipa
@@ -204,9 +228,198 @@ jobs:
           name: ios-build
           path: QuickeR-ios.zip
 
+  build-appimage:
+    name: Build Linux AppImage
+    needs: build-linux
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Download Linux build
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-build
+          path: dl
+
+      - name: Cache appimagetool
+        id: cache-appimagetool
+        uses: actions/cache@v4
+        with:
+          path: appimagetool
+          key: appimagetool-x86_64
+
+      - name: Download appimagetool
+        if: steps.cache-appimagetool.outputs.cache-hit != 'true'
+        run: |
+          wget -q -O appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool
+
+      - name: Unpack build
+        run: |
+          mkdir -p build/linux
+          unzip -q dl/QuickeR-linux.zip -d build/linux
+
+      - name: Assemble AppDir
+        run: |
+          set -e
+          APPDIR=QuickeR.AppDir
+          mkdir -p "$APPDIR/usr/bin"
+          cp -r build/linux/* "$APPDIR/usr/bin/"
+
+          BIN_NAME=$(find "$APPDIR/usr/bin" -maxdepth 1 -type f -executable ! -name "*.so*" | head -n1)
+          BIN_NAME=$(basename "$BIN_NAME")
+
+          cat > "$APPDIR/AppRun" <<EOF
+          #!/bin/sh
+          HERE="\$(dirname "\$(readlink -f "\$0")")"
+          exec "\$HERE/usr/bin/$BIN_NAME" "\$@"
+          EOF
+          chmod +x "$APPDIR/AppRun"
+
+          ICON_SRC=$(find "$APPDIR/usr/bin" -iname "*.png" | head -n1 || true)
+          if [ -n "$ICON_SRC" ]; then
+            cp "$ICON_SRC" "$APPDIR/quicker.png"
+          else
+            # appimagetool requires an icon to exist; create a blank fallback
+            python3 -c "from PIL import Image; Image.new('RGBA',(256,256),(30,136,229,255)).save('$APPDIR/quicker.png')" || \
+              touch "$APPDIR/quicker.png"
+          fi
+
+          cat > "$APPDIR/quicker.desktop" <<EOF
+          [Desktop Entry]
+          Name=QuickeR
+          Exec=$BIN_NAME
+          Icon=quicker
+          Type=Application
+          Categories=Utility;
+          EOF
+
+      - name: Build AppImage
+        run: |
+          ./appimagetool QuickeR.AppDir QuickeR-linux.AppImage
+          chmod +x QuickeR-linux.AppImage
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-appimage
+          path: QuickeR-linux.AppImage
+
+  build-windows-installer:
+    name: Build Windows Installer
+    needs: build-windows
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Download Windows build
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-build
+          path: dl
+
+      - name: Unpack build
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path build\windows | Out-Null
+          Expand-Archive -Path dl\QuickeR-windows.zip -DestinationPath build\windows -Force
+
+      - name: Cache Inno Setup installer
+        id: cache-innosetup
+        uses: actions/cache@v4
+        with:
+          path: innosetup-installer.exe
+          key: innosetup-6
+
+      - name: Download Inno Setup
+        if: steps.cache-innosetup.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://jrsoftware.org/download.php/is.exe" -OutFile innosetup-installer.exe
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          Start-Process -FilePath ".\innosetup-installer.exe" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART" -Wait
+
+      - name: Write Inno Setup script
+        shell: pwsh
+        run: |
+          @"
+          [Setup]
+          AppName=QuickeR
+          AppVersion=1.0
+          DefaultDirName={autopf}\QuickeR
+          DefaultGroupName=QuickeR
+          OutputDir=.
+          OutputBaseFilename=QuickeR-windows-setup
+          Compression=lzma2
+          SolidCompression=yes
+
+          [Files]
+          Source: "build\windows\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs
+
+          [Icons]
+          Name: "{group}\QuickeR"; Filename: "{app}\quicker.exe"
+          Name: "{autodesktop}\QuickeR"; Filename: "{app}\quicker.exe"
+          "@ | Out-File -FilePath installer.iss -Encoding ASCII
+
+      - name: Compile installer
+        shell: pwsh
+        run: |
+          & "$Env:ProgramFiles(x86)\Inno Setup 6\ISCC.exe" installer.iss
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: QuickeR-windows-setup.exe
+
+  build-macos-dmg:
+    name: Build macOS DMG
+    needs: build-macos
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - name: Download macOS build
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-build
+          path: dl
+
+      - name: Cache Homebrew (create-dmg)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/Homebrew
+          key: brew-create-dmg-${{ runner.os }}
+
+      - name: Install create-dmg
+        run: brew install create-dmg
+
+      - name: Unpack build
+        run: |
+          mkdir -p build/macos
+          unzip -q dl/QuickeR-macos.zip -d build/macos
+
+      - name: Build DMG
+        run: |
+          APP_PATH=$(find build/macos -maxdepth 2 -name "*.app" | head -n1)
+          create-dmg \
+            --volname "QuickeR" \
+            --window-size 500 300 \
+            --icon-size 100 \
+            --app-drop-link 380 120 \
+            "QuickeR-macos.dmg" \
+            "$APP_PATH" || true
+          # create-dmg returns non-zero on some benign AppleScript Finder
+          # warnings even on success; verify the dmg was actually produced.
+          test -f QuickeR-macos.dmg
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-dmg
+          path: QuickeR-macos.dmg
+
   release:
     name: Publish to Releases
-    needs: [build-linux, build-windows, build-android, build-macos, build-ios]
+    needs: [build-linux, build-windows, build-android, build-macos, build-appimage, build-windows-installer, build-macos-dmg]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -225,9 +438,11 @@ jobs:
           tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('manual-{0}', github.run_number) }}
           files: |
             artifacts/linux-build/QuickeR-linux.zip
+            artifacts/linux-appimage/QuickeR-linux.AppImage
             artifacts/windows-build/QuickeR-windows.zip
+            artifacts/windows-installer/QuickeR-windows-setup.exe
             artifacts/android-build/*.apk
             artifacts/macos-build/QuickeR-macos.zip
-            artifacts/ios-build/QuickeR-ios.zip
+            artifacts/macos-dmg/QuickeR-macos.dmg
           generate_release_notes: true
           fail_on_unmatched_files: true
