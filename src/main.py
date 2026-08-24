@@ -520,6 +520,7 @@ class QRCodes:
                 self.regular_view.controls.remove(self.main_container)
         self.clean_bs_up()
         self.details_main_page_view.controls.clear()
+        self.details_main_page_view.alignment=ft.MainAxisAlignment.CENTER
         self.details_main_page_view.controls.append(ft.Text(value="Click on an item to view details!",font_family="MaterialRoundedBold",size=16,color=ft.Colors.GREY_500))
         self.page.pop_dialog()
         self.page.update()
@@ -818,7 +819,7 @@ class QRCodes:
                     margin=ft.Margin.only(left=20, right=20, bottom=5),
                 ),
                 ft.Row(
-                    alignment="center", margin=ft.Margin.only(left=20, right=20), spacing=3,
+                    alignment="center", margin=ft.Margin.only(left=20, right=20), spacing=3,wrap=True,tight=True,expand=True,
                     controls=[
                         ft.IconButton(
                             icon=ft.Icons.DELETE_ROUNDED,
@@ -828,8 +829,8 @@ class QRCodes:
                                 icon_color=ft.Colors.INVERSE_SURFACE, icon_size=20,
                             ),
                         ),
-                        ft.Container(width=20),
                         ft.Button(
+                            margin=ft.Margin.only(left=15),
                             elevation=0, icon=ft.Icons.DOWNLOAD, content=ft.Text("Export options", size=16),
                             height=50, color=ft.Colors.SURFACE, bgcolor=ft.Colors.PRIMARY,
                             style=ft.ButtonStyle(
@@ -840,6 +841,7 @@ class QRCodes:
                             on_click=lambda e: self.download_qr_action(),
                         ),
                         ft.IconButton(
+                            margin=ft.Margin.only(right=15),
                             icon=ft.Icons.OFFLINE_SHARE, height=50, width=45, alignment=ft.Alignment.CENTER_LEFT,
                             icon_color=ft.Colors.SURFACE, bgcolor=ft.Colors.PRIMARY,
                             style=ft.ButtonStyle(
@@ -849,7 +851,6 @@ class QRCodes:
                             ),
                             on_click=lambda e: asyncio.ensure_future(self.do_share_files_from_paths()),
                         ),
-                        ft.Container(width=20),
                         self.pin_button,
                     ],
                 ),
@@ -862,14 +863,14 @@ class QRCodes:
                     margin=ft.Margin.only(left=20, right=20),
                     shape=ft.RoundedRectangleBorder(side=ft.BorderSide(style=ft.BorderStyle.NONE), radius=20),
                     collapsed_shape=ft.RoundedRectangleBorder(side=ft.BorderSide(style=ft.BorderStyle.NONE), radius=20),
-                    controls=ft.Column(controls=[
-                        ft.Row(controls=[ft.Icon(icon=ft.Icons.INSERT_LINK_ROUNDED), ft.Column(spacing=-3, controls=[ft.Text(value="Raw data", size=16), ft.Text(value=self.url, size=11, overflow="ELLIPSIS")])]),
+                    controls=ft.Column(expand=True, controls=[
+                        ft.Row(controls=[ft.Icon(icon=ft.Icons.INSERT_LINK_ROUNDED), ft.Column(spacing=-3, controls=[ft.Text(value="Raw data", size=16), ft.Text(value=self.url, size=11)])],wrap=True,tight=True,expand=True),
                         ft.Container(height=0.2, bgcolor=ft.Colors.INVERSE_SURFACE, margin=ft.Margin.only(bottom=5, top=0)),
-                        ft.Row(controls=[ft.Icon(icon=ft.Icons.CALENDAR_MONTH_ROUNDED), ft.Column(spacing=-3, controls=[ft.Text(value="Creation date", size=16), ft.Text(value=self.qr_date, size=11, overflow="ELLIPSIS")])]),
+                        ft.Row(controls=[ft.Icon(icon=ft.Icons.CALENDAR_MONTH_ROUNDED), ft.Column(spacing=-3, controls=[ft.Text(value="Creation date", size=16), ft.Text(value=self.qr_date, size=11)])],wrap=True,tight=True,expand=True),
                         ft.Container(height=0.2, bgcolor=ft.Colors.INVERSE_SURFACE, margin=ft.Margin.only(bottom=5, top=0)),
-                        ft.Row(controls=[ft.Icon(icon=ft.Icons.FOLDER_COPY_ROUNDED), ft.Column(spacing=-3, controls=[ft.Text(value="Internal path", size=16), ft.Container(content=ft.Text(value=self.qrpath, size=11, no_wrap=True,overflow="ELLIPSIS"))])]),
+                        ft.Row(controls=[ft.Icon(icon=ft.Icons.FOLDER_COPY_ROUNDED), ft.Column(spacing=-3, controls=[ft.Text(value="Internal path", size=16), ft.Container(content=ft.Text(value=self.qrpath, size=11))])],wrap=True,tight=True,expand=True),
                         ft.Container(height=0.2, bgcolor=ft.Colors.INVERSE_SURFACE, margin=ft.Margin.only(bottom=5, top=0)),
-                        ft.Row(controls=[ft.Icon(icon=ft.Icons.INSERT_DRIVE_FILE_ROUNDED), ft.Column(spacing=-3, controls=[ft.Text(value="Filesize", size=16), ft.Text(value=self.qr_size, size=11, overflow="ELLIPSIS")])]),
+                        ft.Row(controls=[ft.Icon(icon=ft.Icons.INSERT_DRIVE_FILE_ROUNDED), ft.Column(spacing=-3, controls=[ft.Text(value="Filesize", size=16), ft.Text(value=self.qr_size, size=11)])],wrap=True,tight=True,expand=True),
                     ]),
                 ),
                 ft.ExpansionTile(
@@ -880,7 +881,7 @@ class QRCodes:
                     margin=ft.Margin.only(left=20, right=20),
                     shape=ft.RoundedRectangleBorder(side=ft.BorderSide(style=ft.BorderStyle.NONE), radius=20),
                     collapsed_shape=ft.RoundedRectangleBorder(side=ft.BorderSide(style=ft.BorderStyle.NONE), radius=20),
-                    controls=ft.Column(controls=[
+                    controls=ft.Column(expand=True, controls=[
                         ft.Container(height=0.2, bgcolor=ft.Colors.INVERSE_SURFACE, margin=ft.Margin.only(bottom=5, top=0)),
                         ft.Row(controls=[ft.Text(value="Primary:"), ft.Container(expand=True), ft.Text(value=fill_text)]),
                         ft.Row(controls=[ft.Text(value="Background:"), ft.Container(expand=True), ft.Text(value=back_text)]),
@@ -902,6 +903,7 @@ class QRCodes:
             self.page.update()
         else:
             self.details_main_page_view.controls.clear()
+            self.details_main_page_view.alignment=ft.MainAxisAlignment.START
             self.details_main_page_view.controls.append(self.about_content)
             self.page.update()
 
@@ -1085,6 +1087,7 @@ def main(page: ft.Page):
             regular_view.controls.clear()
             details_main_page_view.controls.clear()
             details_main_page_view.controls.append(ft.Text(value="Click on an item to view details!",font_family="MaterialRoundedBold",size=16,color=ft.Colors.GREY_500))
+            details_main_page_view.alignment = ft.MainAxisAlignment.CENTER
             page.update()
             page.pop_dialog()
             page.show_dialog(ft.SnackBar(content=ft.Text("All data cleared successfully.")))
@@ -1381,7 +1384,7 @@ def main(page: ft.Page):
             print("image can't be Nonetype!")
         else:
             new_qr.create_qr(last_qr_image["img"])
-        qr_url_input_field.value = ""
+        clean_create_bs_up(full_reset=True)
 
     def qr_create_triggered():
         if not input_checker():
@@ -1427,21 +1430,17 @@ def main(page: ft.Page):
             page.update()
         page.run_task(_open)
 
-    def clear_dialog():
-        delete_dialog = ft.AlertDialog(
-            title=ft.Text("Discard?"),
-            alignment=ft.Alignment.CENTER,
-            actions=[
-                ft.Button(content="No", on_click=lambda e: page.pop_dialog()),
-                ft.Button(icon=ft.Icons.DELETE, bgcolor=ft.Colors.RED_900, content="Yes", on_click=lambda e: clean_create_bs_up()),
-            ],
-            open=True,
-        )
-        page.show_dialog(delete_dialog)
-
-    def clean_create_bs_up():
-        create_layout.open = False
-        qr_url_input_field.value = ""
+    def clean_create_bs_up(full_reset=False):
+        if create_layout and create_layout.open == True:
+            create_layout.open = False
+        if full_reset and create_layout:
+            for item in [
+                wifi_name, wifi_password, qr_url_input_field, email_address, 
+                email_subject, email_body, phone_prefix, phone_number, sms_prefix, 
+                sms_number, sms_message, location_lat, location_lng, event_title, 
+                event_location, start_time_picker, end_time_picker
+                ]:
+                item.value = ""
         page.update()
 
     def on_mode_change(e):
@@ -1537,6 +1536,8 @@ def main(page: ft.Page):
         _debounce_task["task"] = page.run_task(_debounced_update)
 
     async def _debounced_update():
+        await asyncio.sleep(0.1)
+
         color_raw_1 = qr_color_scheme_primary.color
         color_rgb_1 = ("#" + color_raw_1[3:]) if (color_raw_1 and color_raw_1.startswith("#") and len(color_raw_1) == 9) else color_raw_1
 
@@ -1808,7 +1809,7 @@ def main(page: ft.Page):
                     icon=ft.Icons.CLOSE_ROUNDED, height=50, width=45, alignment=ft.Alignment.CENTER_LEFT,
                     icon_color=ft.Colors.INVERSE_SURFACE, bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST,
                     style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=ft.BorderRadius.only(top_left=25, top_right=50, bottom_left=25, bottom_right=50))),
-                    on_click=lambda e: clear_dialog(),
+                    on_click=lambda e: clean_create_bs_up(),
                 ),
             ]),
             ft.Divider(color=ft.Colors.INVERSE_SURFACE, thickness=0.2, leading_indent=20, trailing_indent=20, height=50),
@@ -1927,7 +1928,7 @@ def main(page: ft.Page):
             ft.Container(expand=True),
             ft.IconButton(
                 icon=ft.Icons.COFFEE_ROUNDED,
-                style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=10, bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, icon_color=ft.Colors.YELLOW_500, icon_size=20),
+                style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=10, bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, icon_color=ft.Colors.INVERSE_SURFACE, icon_size=20),
             ),
             ft.IconButton(
                 icon=ft.Image(os.path.join(ASSET_DIR, "github-white-icon.webp"), color=ft.Colors.INVERSE_SURFACE, width=20, height=20),
@@ -1970,66 +1971,71 @@ def main(page: ft.Page):
                     ]),
                     ft.Text(value="Quick | Simple | Private | Open Source", size=15, align=ft.Alignment.CENTER, color=ft.Colors.GREY_400, style=ft.TextStyle(weight=ft.FontWeight.W_200), margin=ft.Margin.only(left=0, right=0, top=0, bottom=10)),
                     ft.Row(
-                        alignment="center",
-                        #wrap=True, 
-                        controls=[
-                        ft.Container(
-                            content=ft.Row(
-                                tight=True,
-                                controls=[
-                                    ft.Icon(icon=ft.Icons.BALANCE_ROUNDED, color=ft.Colors.TERTIARY, size=16), 
-                                    ft.Text(value="MIT", size=12, color=ft.Colors.INVERSE_SURFACE)
-                                ],
-                                spacing=5,
-                            ), 
-                            padding=10, 
-                            bgcolor=ft.Colors.TERTIARY_CONTAINER, 
-                            border_radius=30, 
-                            margin=ft.Margin.only(left=0, right=0, top=5, bottom=5)
-                        ),
-                        ft.Container(
-                            content=ft.Row(
-                                tight=True,
-                                controls=[
-                                    ft.Icon(icon=ft.Icons.BUILD_CIRCLE_ROUNDED, color=ft.Colors.TERTIARY, size=16), 
-                                    ft.Text(value="v"+APP_VERSION, size=12, color=ft.Colors.INVERSE_SURFACE)
-                                ],
-                                spacing=5,
-                            ), 
-                            padding=10, 
-                            bgcolor=ft.Colors.TERTIARY_CONTAINER, 
-                            border_radius=30, 
-                            margin=ft.Margin.only(left=0, right=0, top=5, bottom=5)
-                        ),
-                        ft.Container(
-                            content=ft.Row(
-                                tight=True,
-                                controls=[
-                                    ft.Icon(icon=ft.Icons.PERSON_ROUNDED, color=ft.Colors.TERTIARY, size=16), 
-                                    ft.Text(value="ChoiceZero", size=12, color=ft.Colors.INVERSE_SURFACE)
-                                ],
-                                spacing=5,
-                            ), 
-                            padding=10, 
-                            bgcolor=ft.Colors.TERTIARY_CONTAINER, 
-                            border_radius=30, 
-                            margin=ft.Margin.only(left=0, right=0, top=5, bottom=5)
-                        ),
-                        ft.Container(
-                            content=ft.Row(
-                                tight=True,
-                                controls=[
-                                    ft.Icon(icon=ft.Icons.COLOR_LENS_ROUNDED, color=ft.Colors.TERTIARY, size=16), 
-                                    ft.Text(value="Material 3", size=12, color=ft.Colors.INVERSE_SURFACE)
-                                ],
-                            spacing=5,
-                            ), 
-                            padding=10, 
-                            bgcolor=ft.Colors.TERTIARY_CONTAINER, 
-                            border_radius=30, 
-                            margin=ft.Margin.only(left=0, right=0, top=5, bottom=5)
-                        ),
-                    ]),
+                        alignment=ft.MainAxisAlignment.CENTER,
+                        controls=ft.Row(
+                            alignment=ft.MainAxisAlignment.CENTER,
+                            wrap=True,
+                            tight=True,
+                            controls=[
+                                ft.Container(
+                                    content=ft.Row(
+                                        tight=True,
+                                        controls=[
+                                            ft.Icon(icon=ft.Icons.BALANCE_ROUNDED, color=ft.Colors.TERTIARY, size=16), 
+                                            ft.Text(value="MIT", size=12, color=ft.Colors.INVERSE_SURFACE)
+                                        ],
+                                        spacing=5,
+                                    ), 
+                                    padding=10, 
+                                    bgcolor=ft.Colors.TERTIARY_CONTAINER, 
+                                    border_radius=30, 
+                                    margin=ft.Margin.only(left=0, right=0, top=5, bottom=5)
+                                ),
+                                ft.Container(
+                                    content=ft.Row(
+                                        tight=True,
+                                        controls=[
+                                            ft.Icon(icon=ft.Icons.BUILD_CIRCLE_ROUNDED, color=ft.Colors.TERTIARY, size=16), 
+                                            ft.Text(value="v"+APP_VERSION, size=12, color=ft.Colors.INVERSE_SURFACE)
+                                        ],
+                                        spacing=5,
+                                    ), 
+                                    padding=10, 
+                                    bgcolor=ft.Colors.TERTIARY_CONTAINER, 
+                                    border_radius=30, 
+                                    margin=ft.Margin.only(left=0, right=0, top=5, bottom=5)
+                                ),
+                                ft.Container(
+                                    content=ft.Row(
+                                        tight=True,
+                                        controls=[
+                                            ft.Icon(icon=ft.Icons.PERSON_ROUNDED, color=ft.Colors.TERTIARY, size=16), 
+                                            ft.Text(value="ChoiceZero", size=12, color=ft.Colors.INVERSE_SURFACE)
+                                        ],
+                                        spacing=5,
+                                    ), 
+                                    padding=10, 
+                                    bgcolor=ft.Colors.TERTIARY_CONTAINER, 
+                                    border_radius=30, 
+                                    margin=ft.Margin.only(left=0, right=0, top=5, bottom=5)
+                                ),
+                                ft.Container(
+                                    content=ft.Row(
+                                        tight=True,
+                                        controls=[
+                                            ft.Icon(icon=ft.Icons.COLOR_LENS_ROUNDED, color=ft.Colors.TERTIARY, size=16), 
+                                            ft.Text(value="Material 3", size=12, color=ft.Colors.INVERSE_SURFACE)
+                                        ],
+                                    spacing=5,
+                                    ), 
+                                    padding=10, 
+                                    bgcolor=ft.Colors.TERTIARY_CONTAINER, 
+                                    border_radius=30, 
+                                    margin=ft.Margin.only(left=0, right=0, top=5, bottom=5)
+                                ),
+                            ]
+                        )
+                    ),
                     ft.Row(alignment="center", controls=ft.Text(value="Help the project", size=18, color=ft.Colors.PRIMARY),margin=ft.Margin.only(left=0, right=0, top=20)),
                     ft.ExpansionTile(
                         bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, collapsed_bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
@@ -2051,9 +2057,9 @@ def main(page: ft.Page):
                                     icon_size=20
                                 )
                             ),
-                            ft.Column(spacing=-3,controls=[
+                            ft.Column(spacing=-3,expand=True,controls=[
                                 ft.Text(value="Support QuickeR", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                ft.Text(value="Support the project and help it grow!", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200),),
+                                ft.Row(controls=ft.Text(value="Support the project and help it grow!", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),wrap=True,tight=True,expand=True),
                             ]
                         ),
                         ]),
@@ -2117,9 +2123,9 @@ def main(page: ft.Page):
                                         icon_size=20
                                     )
                                 ),
-                                ft.Column(spacing=-3,controls=[
+                                ft.Column(spacing=-3,expand=True,controls=[
                                     ft.Text(value="Appearance", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                    ft.Text(value="Select the appearance mode of the app", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200), overflow=ft.TextOverflow.ELLIPSIS, max_lines=1),
+                                    ft.Text(value="Select the appearance mode of the app", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                 ]),
                             ]
                         ),
@@ -2147,9 +2153,9 @@ def main(page: ft.Page):
                                         icon_size=20
                                     )
                                 ),
-                                ft.Column(spacing=-3,controls=[
+                                ft.Column(spacing=-3,expand=True,controls=[
                                     ft.Text(value="Color scheme", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                    ft.Text(value="Select the colors of the app", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200), overflow=ft.TextOverflow.ELLIPSIS, max_lines=1),
+                                    ft.Text(value="Select the colors of the app", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                 ]),
                             ]
                         ),
@@ -2176,7 +2182,7 @@ def main(page: ft.Page):
                                     icon_size=20
                                 )
                             ),
-                            ft.Column(spacing=-3,controls=[
+                            ft.Column(spacing=-3,expand=True,controls=[
                                 ft.Text(value="Import/Export", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
                                 ft.Text(value="Save or upload data", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                             ]
@@ -2247,9 +2253,9 @@ def main(page: ft.Page):
                                         icon_size=20
                                     )
                                 ),
-                                ft.Column(spacing=-3,controls=[
+                                ft.Column(spacing=-3,expand=True,controls=[
                                     ft.Text(value="QuickeR Web", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                    ft.Text(value="Check out the web app!", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200), overflow=ft.TextOverflow.ELLIPSIS, max_lines=1),
+                                    ft.Text(value="Check out the web app!", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                 ]),
                                 ft.Container(expand=True),
                                 ft.Icon(icon=ft.Icons.OPEN_IN_NEW_ROUNDED, color=ft.Colors.INVERSE_SURFACE, size=20),
@@ -2276,11 +2282,10 @@ def main(page: ft.Page):
                                         icon_size=20
                                     )
                                 ),
-                                ft.Column(spacing=-3,controls=[
+                                ft.Column(spacing=-3,expand=True,controls=[
                                     ft.Text(value="Github repository", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                    ft.Text(value="Source code, bugs and release notes", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200), overflow=ft.TextOverflow.ELLIPSIS, max_lines=1),
+                                    ft.Text(value="Source code, bugs and release notes", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                 ]),
-                                ft.Container(expand=True),
                                 ft.Icon(icon=ft.Icons.OPEN_IN_NEW_ROUNDED, color=ft.Colors.INVERSE_SURFACE, size=20),
                             ]
                         ),
@@ -2305,11 +2310,10 @@ def main(page: ft.Page):
                                         icon_size=20
                                     )
                                 ),
-                                ft.Column(spacing=-3,controls=[
+                                ft.Column(spacing=-3,expand=True,controls=[
                                     ft.Text(value="Unax Martinez Llorente", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                    ft.Text(value="Developer (aka ChoiceZero)", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200), overflow=ft.TextOverflow.ELLIPSIS, max_lines=1),
+                                    ft.Text(value="Developer (aka ChoiceZero)", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                 ]),
-                                ft.Container(expand=True),
                                 ft.Icon(icon=ft.Icons.OPEN_IN_NEW_ROUNDED, color=ft.Colors.INVERSE_SURFACE, size=20),
                             ]
                         ),
@@ -2336,9 +2340,9 @@ def main(page: ft.Page):
                                         icon_size=20
                                     )
                                 ),
-                                ft.Column(spacing=-3,controls=[
+                                ft.Column(spacing=-3,expand=True,controls=[
                                     ft.Text(value="Privacy", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                    ft.Text(value="See privacy details", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200), overflow=ft.TextOverflow.ELLIPSIS, max_lines=1),
+                                    ft.Text(value="See privacy details", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                 ]),
                             ]
                         ),
