@@ -376,7 +376,7 @@ jobs:
 
   release:
     name: Publish to Releases
-    needs: [build-linux, build-windows, build-android, build-macos, build-appimage, build-windows-installer, build-macos-dmg]
+    needs: [build-linux, build-windows, build-android, build-macos, build-appimage]
     runs-on: ubuntu-latest
     permissions:
       contents: write
