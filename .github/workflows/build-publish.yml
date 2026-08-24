@@ -284,10 +284,27 @@ jobs:
       - name: Download Inno Setup
         shell: pwsh
         run: |
-          Invoke-WebRequest -Uri "https://jrsoftware.org/download.php/is.exe" -OutFile innosetup-installer.exe -UseBasicParsing
-          $size = (Get-Item innosetup-installer.exe).Length
-          Write-Host "Downloaded size: $size bytes"
-          if ($size -lt 1000000) { throw "Inno Setup download failed or corrupted (too small)" }
+          $urls = @(
+            "https://files.jrsoftware.org/is/6/innosetup-6.3.3.exe",
+            "https://jrsoftware.org/download.php/is.exe"
+          )
+          $ok = $false
+          foreach ($url in $urls) {
+            for ($i = 1; $i -le 3; $i++) {
+              try {
+                Write-Host "Attempt $i from $url"
+                Invoke-WebRequest -Uri $url -OutFile innosetup-installer.exe -UseBasicParsing -UserAgent "Mozilla/5.0"
+                $size = (Get-Item innosetup-installer.exe).Length
+                Write-Host "Downloaded size: $size bytes"
+                if ($size -ge 1000000) { $ok = $true; break }
+              } catch {
+                Write-Host "Failed: $_"
+              }
+              Start-Sleep -Seconds 5
+            }
+            if ($ok) { break }
+          }
+          if (-not $ok) { throw "Inno Setup download failed or corrupted after retries" }
 
       - name: Install Inno Setup
         shell: pwsh
@@ -357,13 +374,22 @@ jobs:
         run: |
           APP_PATH=$(find build/macos -maxdepth 2 -name "*.app" | head -n1)
           echo "App path: $APP_PATH"
+          if [ -z "$APP_PATH" ]; then
+            echo "No .app found under build/macos"
+            find build/macos -maxdepth 3
+            exit 1
+          fi
+          set +e
           create-dmg \
             --volname "QuickeR" \
             --window-size 500 300 \
             --icon-size 100 \
             --app-drop-link 380 120 \
             "QuickeR-macos.dmg" \
-            "$APP_PATH" || true
+            "$APP_PATH"
+          DMG_EXIT=$?
+          set -e
+          echo "create-dmg exit code: $DMG_EXIT"
           # create-dmg returns non-zero on some benign AppleScript Finder
           # warnings even on success; verify the dmg was actually produced.
           test -f QuickeR-macos.dmg

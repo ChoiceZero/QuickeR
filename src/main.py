@@ -1646,7 +1646,7 @@ def main(page: ft.Page):
 
     # URL
     url_protocol_dropdown = ft.Dropdown(
-        border_radius=50, fill_color=ft.Colors.SURFACE_CONTAINER_LOW, filled=True, value="https://", border_width=0,
+        border_radius=50, fill_color=ft.Colors.SURFACE_CONTAINER_LOW, filled=True, value="https://",on_select=lambda e: prop_changed(), border_width=0,
         options=[ft.DropdownOption(text="https://"), ft.DropdownOption(text="http://")],
     )
 
@@ -2227,6 +2227,35 @@ def main(page: ft.Page):
                         ])],
                     ),
                     ft.Row(alignment="center", controls=ft.Text(value="About", size=18, color=ft.Colors.PRIMARY)),
+                    ft.Container(
+                        bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
+                        margin=ft.Margin.only(bottom=-2),
+                        width=600,
+                        on_click=lambda e: asyncio.ensure_future(open_url("https://choicezero.github.io/QuickeR-Web/", "BLANK")),
+                        align=ft.Alignment.CENTER,
+                        padding=20,
+                        border_radius=ft.BorderRadius.only(top_left=30, top_right=30, bottom_left=30, bottom_right=30),
+                        content=ft.Row(
+                            controls=[
+                                ft.IconButton(
+                                    icon=ft.Icons.STAR_ROUNDED,
+                                    style=ft.ButtonStyle(
+                                        shape=ft.CircleBorder(), 
+                                        padding=10, 
+                                        bgcolor=ft.Colors.SECONDARY_CONTAINER, 
+                                        icon_color=ft.Colors.PRIMARY, 
+                                        icon_size=20
+                                    )
+                                ),
+                                ft.Column(spacing=-3,controls=[
+                                    ft.Text(value="QuickeR Web", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                    ft.Text(value="Check out the web app!", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200), overflow=ft.TextOverflow.ELLIPSIS, max_lines=1),
+                                ]),
+                                ft.Container(expand=True),
+                                ft.Icon(icon=ft.Icons.OPEN_IN_NEW_ROUNDED, color=ft.Colors.INVERSE_SURFACE, size=20),
+                            ]
+                        ),
+                    ),
                     ft.Container(
                         bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
                         margin=ft.Margin.only(bottom=5),
