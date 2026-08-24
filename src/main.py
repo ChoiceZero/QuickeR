@@ -960,8 +960,10 @@ def main(page: ft.Page):
     def on_resize():
         if page.width > 900:
             details_main_page_view.visible = True
+            details_main_page_view.parent.controls[1].visible = True
         else:
             details_main_page_view.visible = False
+            details_main_page_view.parent.controls[1].visible = False
 
     def progress_dialog(title):
         dialog = ft.AlertDialog(
@@ -1944,7 +1946,7 @@ def main(page: ft.Page):
             pin_filter_buttongroup,
         ]),
         ft.Divider(height=0.1,thickness=0.1, color=ft.Colors.GREY_400),
-        ft.Row(controls=[all_view,ft.Container(width=0.2,bgcolor=ft.Colors.GREY_500,margin=ft.Margin.only(left=5, right=5, top=-10, bottom=-10)),details_main_page_view], expand=True),
+        ft.Row(controls=[all_view,ft.Container(width=0.2,bgcolor=ft.Colors.GREY_500,margin=ft.Margin.only(left=5, right=5, top=-10, bottom=-10),visible=False),details_main_page_view], expand=True),
     ])
 
     # -------------------------------------------------------------

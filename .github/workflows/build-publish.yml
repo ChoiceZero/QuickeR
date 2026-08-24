@@ -175,6 +175,8 @@ jobs:
         with:
           path: ~/.pub-cache
           key: pub-macos-${{ runner.os }}
+      - name: Clean previous build
+        run: rm -rf build
       - name: Build
         run: uv run flet build macos --yes --no-rich-output
       - name: Package
@@ -279,18 +281,13 @@ jobs:
           New-Item -ItemType Directory -Force -Path build\windows | Out-Null
           Expand-Archive -Path dl\QuickeR-windows.zip -DestinationPath build\windows -Force
 
-      - name: Cache Inno Setup installer
-        id: cache-innosetup
-        uses: actions/cache@v4
-        with:
-          path: innosetup-installer.exe
-          key: innosetup-6
-
       - name: Download Inno Setup
-        if: steps.cache-innosetup.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
-          Invoke-WebRequest -Uri "https://jrsoftware.org/download.php/is.exe" -OutFile innosetup-installer.exe
+          Invoke-WebRequest -Uri "https://jrsoftware.org/download.php/is.exe" -OutFile innosetup-installer.exe -UseBasicParsing
+          $size = (Get-Item innosetup-installer.exe).Length
+          Write-Host "Downloaded size: $size bytes"
+          if ($size -lt 1000000) { throw "Inno Setup download failed or corrupted (too small)" }
 
       - name: Install Inno Setup
         shell: pwsh
@@ -359,6 +356,7 @@ jobs:
       - name: Build DMG
         run: |
           APP_PATH=$(find build/macos -maxdepth 2 -name "*.app" | head -n1)
+          echo "App path: $APP_PATH"
           create-dmg \
             --volname "QuickeR" \
             --window-size 500 300 \
