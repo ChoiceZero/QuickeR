@@ -397,9 +397,9 @@ jobs:
             artifacts/linux-build/QuickeR-linux.zip
             artifacts/linux-appimage/QuickeR-linux.AppImage
             artifacts/windows-build/QuickeR-windows.zip
-            artifacts/windows-installer/QuickeR-windows-setup.exe
             artifacts/android-build/*.apk
             artifacts/macos-build/QuickeR-macos.zip
-            artifacts/macos-dmg/QuickeR-macos.dmg
+  #          artifacts/windows-installer/QuickeR-windows-setup.exe
+  #          artifacts/macos-dmg/QuickeR-macos.dmg
           generate_release_notes: true
           fail_on_unmatched_files: true
