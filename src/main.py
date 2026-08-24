@@ -21,6 +21,7 @@ import zipfile
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ASSET_DIR = os.path.join(BASE_DIR, "assets")
 
+SORT_STATE = {"newest_first": True}
 
 def get_app_storage_dir() -> str:
     """Returns a writable, persistent directory for app data across platforms.
@@ -71,6 +72,12 @@ ERROR_CORRECTION_MAP = {
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+def _same_day_as_last(controls, label_value):
+    for c in reversed(controls):
+        if isinstance(c, ft.Text):
+            return c.value == label_value
+    return False
 
 def hex_to_rgba(color_str):
     if color_str.startswith("#"):
@@ -471,21 +478,21 @@ class QRCodes:
         today_label = time.strftime("%Y-%m-%d", time.localtime())
 
         if prepend:
-            if not self.all_view.controls or self.all_view.controls[0].value != today_label:
-                self.all_view.controls.insert(0, ft.Text(value=today_label, size=12, color=ft.Colors.GREY_400, font_family="MaterialRounded"))
-                self.pinned_view.controls.insert(0, ft.Text(value=today_label, size=12, color=ft.Colors.GREY_400, font_family="MaterialRounded"))
-                self.regular_view.controls.insert(0, ft.Text(value=today_label, size=12, color=ft.Colors.GREY_400, font_family="MaterialRounded"))
-                self.all_view.controls.insert(0, self.main_container)
-                target_view = self.pinned_view if pinned else self.regular_view
-                if pinned:
-                    self.main_container.controls[0].trailing = ft.Icon(icon=ft.Icons.PUSH_PIN_ROUNDED)
-                target_view.controls.insert(0, self.main_container)
-            else:
-                self.all_view.controls.insert(1, self.main_container)
-                target_view = self.pinned_view if pinned else self.regular_view
-                if pinned:
-                    self.main_container.controls[0].trailing = ft.Icon(icon=ft.Icons.PUSH_PIN_ROUNDED)
-                target_view.controls.insert(1, self.main_container)
+            target_view = self.pinned_view if pinned else self.regular_view
+            if pinned:
+                self.main_container.controls[0].trailing = ft.Icon(icon=ft.Icons.PUSH_PIN_ROUNDED)
+        
+            for view in (self.all_view, target_view):
+                if SORT_STATE["newest_first"]:
+                    if not view.controls or not isinstance(view.controls[0], ft.Text) or view.controls[0].value != today_label:
+                        view.controls.insert(0, ft.Text(value=today_label, size=16, color=ft.Colors.GREY_400))
+                        view.controls.insert(1, self.main_container)
+                    else:
+                        view.controls.insert(1, self.main_container)
+                else:
+                    if not _same_day_as_last(view.controls, today_label):
+                        view.controls.append(ft.Text(value=today_label, size=16, color=ft.Colors.GREY_400))
+                    view.controls.append(self.main_container)
         else:
             self.all_view.controls.append(self.main_container)
             target_view = self.pinned_view if pinned else self.regular_view
@@ -956,8 +963,12 @@ def main(page: ft.Page):
     def on_reorder():
         if order_toggle_button.icon == ft.Icons.ARROW_DOWNWARD_ROUNDED:
             order_toggle_button.icon = ft.Icons.ARROW_UPWARD_ROUNDED
+            SORT_STATE["newest_first"] = False
         else:
             order_toggle_button.icon = ft.Icons.ARROW_DOWNWARD_ROUNDED
+            SORT_STATE["newest_first"] = True
+        load_qrs()
+        page.update()
 
     def on_resize():
         if page.width > 900:
@@ -1249,6 +1260,10 @@ def main(page: ft.Page):
     # -------------------------------------------------------------
 
     def load_qrs():
+        all_view.controls.clear()
+        pinned_view.controls.clear()
+        regular_view.controls.clear()
+
         files_with_meta = []
         for directory, is_pinned in [(PINNED_DIR, True), (QR_DIR, False)]:
             if os.path.exists(directory):
@@ -1257,7 +1272,7 @@ def main(page: ft.Page):
                         path = os.path.join(directory, f)
                         files_with_meta.append((path, f[:-4], is_pinned, os.path.getctime(path)))
 
-        files_with_meta.sort(key=lambda x: x[3], reverse=True)
+        files_with_meta.sort(key=lambda x: x[3], reverse=SORT_STATE["newest_first"])
 
         last_date_all = None
         last_date_pinned = None
@@ -2048,6 +2063,7 @@ def main(page: ft.Page):
                         collapsed_shape=ft.RoundedRectangleBorder(side=ft.BorderSide(style=ft.BorderStyle.NONE), radius=ft.BorderRadius.only(top_left=30, top_right=30, bottom_left=30, bottom_right=30)),
                         title=ft.Row(controls=[
                             ft.IconButton(
+                                disabled=True,
                                 icon=ft.CupertinoIcons.HEART_FILL, 
                                 style=ft.ButtonStyle(
                                     shape=ft.CircleBorder(), 
@@ -2059,7 +2075,7 @@ def main(page: ft.Page):
                             ),
                             ft.Column(spacing=-3,expand=True,controls=[
                                 ft.Text(value="Support QuickeR", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                ft.Row(controls=ft.Text(value="Support the project and help it grow!", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),wrap=True,tight=True,expand=True),
+                                ft.Text(value="Support the project and help it grow!", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                             ]
                         ),
                         ]),
@@ -2114,6 +2130,7 @@ def main(page: ft.Page):
                         title=ft.Row(
                             controls=[
                                 ft.IconButton(
+                                    disabled=True,
                                     icon=ft.Icons.WB_SUNNY_ROUNDED, 
                                     style=ft.ButtonStyle(
                                         shape=ft.CircleBorder(), 
@@ -2144,6 +2161,7 @@ def main(page: ft.Page):
                         title=ft.Row(
                             controls=[
                                 ft.IconButton(
+                                    disabled=True,
                                     icon=ft.Icons.COLOR_LENS_ROUNDED, 
                                     style=ft.ButtonStyle(
                                         shape=ft.CircleBorder(), 
@@ -2173,6 +2191,7 @@ def main(page: ft.Page):
                         collapsed_shape=ft.RoundedRectangleBorder(side=ft.BorderSide(style=ft.BorderStyle.NONE), radius=ft.BorderRadius.only(top_left=30, top_right=30, bottom_left=30, bottom_right=30)),
                         title=ft.Row(controls=[
                             ft.IconButton(
+                                disabled=True,
                                 icon=ft.Icons.SAVE_AS_ROUNDED, 
                                 style=ft.ButtonStyle(
                                     shape=ft.CircleBorder(), 
@@ -2226,7 +2245,7 @@ def main(page: ft.Page):
                                     ft.Button(
                                         content=ft.Text(value="Delete all data", color=ft.Colors.BLACK, size=16), color=ft.Colors.INVERSE_SURFACE, icon=ft.Icons.DELETE_ROUNDED,
                                         on_click=lambda e: clear_app_data(),
-                                        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=50), padding=20, icon_size=20, bgcolor=ft.Colors.RED_100, icon_color=ft.Colors.INVERSE_SURFACE, overlay_color=ft.Colors.RED_200),
+                                        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=50), padding=20, icon_size=20, bgcolor=ft.Colors.RED_100, icon_color=ft.Colors.SURFACE, overlay_color=ft.Colors.RED_200),
                                     ),
                                 ]),
                             ),
@@ -2244,6 +2263,7 @@ def main(page: ft.Page):
                         content=ft.Row(
                             controls=[
                                 ft.IconButton(
+                                    disabled=True,
                                     icon=ft.Icons.STAR_ROUNDED,
                                     style=ft.ButtonStyle(
                                         shape=ft.CircleBorder(), 
@@ -2273,6 +2293,7 @@ def main(page: ft.Page):
                         content=ft.Row(
                             controls=[
                                 ft.IconButton(
+                                    disabled=True,
                                     icon=ft.Image(os.path.join(ASSET_DIR, "github-white-icon.webp"), color=ft.Colors.PRIMARY, width=20, height=20),
                                     style=ft.ButtonStyle(
                                         shape=ft.CircleBorder(), 
@@ -2301,6 +2322,7 @@ def main(page: ft.Page):
                         content=ft.Row(
                             controls=[
                                 ft.IconButton(
+                                    disabled=True,
                                     icon=ft.Icons.PERSON_2_ROUNDED,
                                     style=ft.ButtonStyle(
                                         shape=ft.CircleBorder(), 
@@ -2331,6 +2353,7 @@ def main(page: ft.Page):
                         title=ft.Row(
                             controls=[
                                 ft.IconButton(
+                                    disabled=True,
                                     icon=ft.Icons.SHIELD_ROUNDED, 
                                     style=ft.ButtonStyle(
                                         shape=ft.CircleBorder(), 
