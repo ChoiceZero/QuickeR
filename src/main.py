@@ -2254,7 +2254,6 @@ def main(page: ft.Page):
                     ft.Row(alignment="center", controls=ft.Text(value="About", size=18, color=ft.Colors.PRIMARY)),
                     ft.Container(
                         bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
-                        margin=ft.Margin.only(bottom=-2),
                         width=600,
                         on_click=lambda e: asyncio.ensure_future(open_url("https://choicezero.github.io/QuickeR-Web/", "BLANK")),
                         align=ft.Alignment.CENTER,
@@ -2277,11 +2276,11 @@ def main(page: ft.Page):
                                     ft.Text(value="QuickeR Web", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
                                     ft.Text(value="Check out the web app!", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                 ]),
-                                ft.Container(expand=True),
                                 ft.Icon(icon=ft.Icons.OPEN_IN_NEW_ROUNDED, color=ft.Colors.INVERSE_SURFACE, size=20),
                             ]
                         ),
                     ),
+                    ft.Container(height=0.2, bgcolor=ft.Colors.GREY_500, width=580,align=ft.Alignment.CENTER, margin=ft.Margin.only(top=7, bottom=7)),
                     ft.Container(
                         bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
                         margin=ft.Margin.only(bottom=5),

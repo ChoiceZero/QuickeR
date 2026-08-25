@@ -163,26 +163,20 @@ jobs:
         with:
           path: ~/flutter
           key: flutter-macos-${{ runner.os }}
-      - name: Cache CocoaPods
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/Library/Caches/CocoaPods
-            ~/.cocoapods
-          key: pods-macos-${{ runner.os }}-${{ hashFiles('**/Podfile.lock') }}
-      - name: Cache Flutter pub packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.pub-cache
-          key: pub-macos-${{ runner.os }}
+      - name: Clean CocoaPods cache
+        run: rm -rf ~/Library/Caches/CocoaPods ~/.cocoapods
       - name: Clean previous build
         run: rm -rf build
       - name: Build
         run: uv run flet build macos --yes --no-rich-output
+      - name: Remove circular symlinks
+        run: find build/macos -type l -lname '*.pod*' -delete
+      - name: Check build size
+        run: du -sh build/macos/*.app
       - name: Package
         run: |
           cd build/macos
-          zip -r ../../QuickeR-macos.zip .
+          zip -ry ../../QuickeR-macos.zip .
       - uses: actions/upload-artifact@v4
         with:
           name: macos-build
@@ -263,120 +257,120 @@ jobs:
           name: linux-appimage
           path: QuickeR-linux.AppImage
 
-  #build-windows-installer:
-  #  name: Build Windows Installer
-  #  needs: build-windows
-  #  runs-on: windows-latest
-  #  timeout-minutes: 20
-  #  steps: 
-  #    - name: Download Windows build
-  #      uses: actions/download-artifact@v4
-  #      with:
-  #        name: windows-build
-  #        path: dl
-  #
-  #    - name: Unpack build
-  #      shell: pwsh
-  #      run: |
-  #        New-Item -ItemType Directory -Force -Path build\windows | Out-Null
-  #        Expand-Archive -Path dl\QuickeR-windows.zip -DestinationPath build\windows -Force
-  #
-  #    - name: Install Inno Setup
-  #      shell: pwsh
-  #      run: |
-  #        choco install innosetup --no-progress -y
-  #
-  #    - name: Write Inno Setup script
-  #      shell: pwsh
-  #      run: |
-  #        @"
-  #        [Setup]
-  #        AppName=QuickeR
-  #        AppVersion=1.0
-  #        DefaultDirName={autopf}\QuickeR
-  #        DefaultGroupName=QuickeR
-  #        OutputDir=.
-  #        OutputBaseFilename=QuickeR-windows-setup
-  #        Compression=lzma2
-  #        SolidCompression=yes
-  #
-  #        [Files]
-  #        Source: "build\windows\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs
-  #
-  #        [Icons]
-  #        Name: "{group}\QuickeR"; Filename: "{app}\quicker.exe"
-  #        Name: "{autodesktop}\QuickeR"; Filename: "{app}\quicker.exe"
-  #        "@ | Out-File -FilePath installer.iss -Encoding ASCII
-  #
-  #    - name: Compile installer
-  #      shell: pwsh
-  #      run: |
-  #        & "$Env:ProgramFiles(x86)\Inno Setup 6\ISCC.exe" installer.iss
-  #
-  #    - uses: actions/upload-artifact@v4
-  #      with:
-  #        name: windows-installer
-  #        path: QuickeR-windows-setup.exe
+  build-windows-installer:
+    name: Build Windows Installer
+    needs: build-windows
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Download Windows build
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-build
+          path: dl
 
-  #build-macos-dmg:
-  #  name: Build macOS DMG
-  #  needs: build-macos
-  #  runs-on: macos-latest
-  #  timeout-minutes: 20
-  #  steps:
-  #    - name: Download macOS build
-  #      uses: actions/download-artifact@v4
-  #      with:
-  #        name: macos-build
-  #        path: dl
-  #
-  #    - name: Cache Homebrew (create-dmg)
-  #      uses: actions/cache@v4
-  #      with:
-  #        path: |
-  #          ~/Library/Caches/Homebrew
-  #        key: brew-create-dmg-${{ runner.os }}
-  #
-  #    - name: Install create-dmg
-  #      run: brew install create-dmg
-  #
-  #    - name: Unpack build
-  #      run: |
-  #        mkdir -p build/macos
-  #        unzip -q dl/QuickeR-macos.zip -d build/macos
-  #
-  #    - name: Build DMG
-  #      run: |
-  #        APP_PATH=$(find build/macos -maxdepth 2 -name "*.app" | head -n1)
-  #        echo "App path: $APP_PATH"
-  #        if [ -z "$APP_PATH" ]; then
-  #          echo "No .app found under build/macos"
-  #          find build/macos -maxdepth 3
-  #          exit 1
-  #        fi
-  #        set +e
-  #        create-dmg \
-  #          --volname "QuickeR" \
-  #          --window-size 500 300 \
-  #          --icon-size 100 \
-  #          --app-drop-link 380 120 \
-  #          "QuickeR-macos.dmg" \
-  #          "$APP_PATH"
-  #        DMG_EXIT=$?
-  #        set -e
-  #        echo "create-dmg exit code: $DMG_EXIT"
-  #        # create-dmg returns non-zero on some benign AppleScript Finder
-  #        # warnings even on success; verify the dmg was actually produced.
-  #        test -f QuickeR-macos.dmg
-  #
-  #    - uses: actions/upload-artifact@v4
-  #      with:
-  #        name: macos-dmg
-  #        path: QuickeR-macos.dmg
+      - name: Unpack build
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path build\windows | Out-Null
+          Expand-Archive -Path dl\QuickeR-windows.zip -DestinationPath build\windows -Force
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress -y
+
+      - name: Write Inno Setup script
+        shell: pwsh
+        run: |
+          @"
+          [Setup]
+          AppName=QuickeR
+          AppVersion=1.0
+          DefaultDirName={autopf}\QuickeR
+          DefaultGroupName=QuickeR
+          OutputDir=.
+          OutputBaseFilename=QuickeR-windows-setup
+          Compression=lzma2
+          SolidCompression=yes
+
+          [Files]
+          Source: "build\windows\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs
+
+          [Icons]
+          Name: "{group}\QuickeR"; Filename: "{app}\quicker.exe"
+          Name: "{autodesktop}\QuickeR"; Filename: "{app}\quicker.exe"
+          "@ | Out-File -FilePath installer.iss -Encoding ASCII
+
+      - name: Compile installer
+        shell: pwsh
+        run: |
+          & "$Env:ProgramFiles(x86)\Inno Setup 6\ISCC.exe" installer.iss
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: QuickeR-windows-setup.exe
+
+  build-macos-dmg:
+    name: Build macOS DMG
+    needs: build-macos
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - name: Download macOS build
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-build
+          path: dl
+
+      - name: Cache Homebrew (create-dmg)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/Homebrew
+          key: brew-create-dmg-${{ runner.os }}
+
+      - name: Install create-dmg
+        run: brew install create-dmg
+
+      - name: Unpack build
+        run: |
+          mkdir -p build/macos
+          unzip -q dl/QuickeR-macos.zip -d build/macos
+
+      - name: Build DMG
+        run: |
+          APP_PATH=$(find build/macos -maxdepth 2 -name "*.app" | head -n1)
+          echo "App path: $APP_PATH"
+          if [ -z "$APP_PATH" ]; then
+            echo "No .app found under build/macos"
+            find build/macos -maxdepth 3
+            exit 1
+          fi
+          set +e
+          create-dmg \
+            --volname "QuickeR" \
+            --window-size 500 300 \
+            --icon-size 100 \
+            --app-drop-link 380 120 \
+            "QuickeR-macos.dmg" \
+            "$APP_PATH"
+          DMG_EXIT=$?
+          set -e
+          echo "create-dmg exit code: $DMG_EXIT"
+          # create-dmg returns non-zero on some benign AppleScript Finder
+          # warnings even on success; verify the dmg was actually produced.
+          test -f QuickeR-macos.dmg
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-dmg
+          path: QuickeR-macos.dmg
 
   release:
     name: Publish to Releases
-    needs: [build-linux, build-windows, build-android, build-macos, build-appimage]
+    needs: [build-linux, build-windows, build-android, build-macos, build-appimage, build-windows-installer, build-macos-dmg]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -397,9 +391,9 @@ jobs:
             artifacts/linux-build/QuickeR-linux.zip
             artifacts/linux-appimage/QuickeR-linux.AppImage
             artifacts/windows-build/QuickeR-windows.zip
+            artifacts/windows-installer/QuickeR-windows-setup.exe
             artifacts/android-build/*.apk
             artifacts/macos-build/QuickeR-macos.zip
-  #          artifacts/windows-installer/QuickeR-windows-setup.exe
-  #          artifacts/macos-dmg/QuickeR-macos.dmg
+            artifacts/macos-dmg/QuickeR-macos.dmg
           generate_release_notes: true
           fail_on_unmatched_files: true
