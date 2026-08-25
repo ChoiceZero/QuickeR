@@ -37,7 +37,7 @@ QuickeR-Web is a platform that lets you create QR codes but without accounts, li
 | ----------------------------- | --------- | ------------------ | ---------  |
 | Linux                         | ✅        | ✅                 | ✅         |
 | Android                       | ✅        | ✅                 | *          |
-| Windows                       | ✅        | ❌                 | ✅         |
+| Windows                       | ✅        | ✅                 | ✅         |
 | IOs                           | ❌        | ❌                 | ❌         |
 | MacOs                         | ~         | ✅                 | ✅         |
 

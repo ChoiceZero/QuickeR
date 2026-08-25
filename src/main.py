@@ -358,13 +358,12 @@ class QRCodes:
         self.page = page
         self.details_main_page_view = details_main_page_view
         self.date = ""
-        self.url = ""
+        self.url = input
         self.filetext = ""
         self.id = ""
         self.img = None
         self.qr_id = ""
         self.qr_row = None
-        self.initial_input = input
         self.pin_state = False
         self.qr_size = ""
         self.fill_color = None
@@ -395,7 +394,6 @@ class QRCodes:
     def create_qr(self, image):
         self.qr_id = self.id_assigner()
         self.date = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-        self.url = self.initial_input
         self.img = image
         self.img.save(os.path.join(QR_DIR, f"{self.qr_id}.png"))
         self.display_qr(False)
@@ -412,7 +410,6 @@ class QRCodes:
         return f"{t.tm_year}{t.tm_mon}{t.tm_mday}{t.tm_hour}{t.tm_min}{t.tm_sec}"
 
     def _leading_icon_and_name(self):
-        """Determines the icon and name to display based on the QR content type."""
         url = self.url or ""
         if "WIFI:S:" in url:
             name = url.split(":")[2].split(";")[0]
@@ -871,7 +868,7 @@ class QRCodes:
                     shape=ft.RoundedRectangleBorder(side=ft.BorderSide(style=ft.BorderStyle.NONE), radius=20),
                     collapsed_shape=ft.RoundedRectangleBorder(side=ft.BorderSide(style=ft.BorderStyle.NONE), radius=20),
                     controls=ft.Column(expand=True, controls=[
-                        ft.Row(controls=[ft.Icon(icon=ft.Icons.INSERT_LINK_ROUNDED), ft.Column(spacing=-3, controls=[ft.Text(value="Raw data", size=16), ft.Text(value=self.url, size=11)])],wrap=True,tight=True,expand=True),
+                        ft.Row(controls=[ft.Icon(icon=ft.Icons.TEXT_FIELDS_ROUNDED), ft.Column(spacing=-3, controls=[ft.Text(value="Raw data", size=16), ft.Text(value=self.url, size=11)])],wrap=True,tight=True,expand=True),
                         ft.Container(height=0.2, bgcolor=ft.Colors.INVERSE_SURFACE, margin=ft.Margin.only(bottom=5, top=0)),
                         ft.Row(controls=[ft.Icon(icon=ft.Icons.CALENDAR_MONTH_ROUNDED), ft.Column(spacing=-3, controls=[ft.Text(value="Creation date", size=16), ft.Text(value=self.qr_date, size=11)])],wrap=True,tight=True,expand=True),
                         ft.Container(height=0.2, bgcolor=ft.Colors.INVERSE_SURFACE, margin=ft.Margin.only(bottom=5, top=0)),
@@ -950,6 +947,7 @@ def main(page: ft.Page):
     _debounce_task = {"task": None}
     logo_image_path = {"path": None}
     logo_picker_ref = {"instance": None}
+    qr_content = {"content": "https://"}
 
     page.fonts = {
         "MaterialRounded": "GoogleSansFlex.ttf",
@@ -1392,7 +1390,7 @@ def main(page: ft.Page):
         return None
 
     def create_qr_action():
-        create_info = qr_url_input_field.value
+        create_info = qr_content["content"]
         new_qr = QRCodes(page, create_info, all_view, regular_view, pinned_view,details_main_page_view)
         new_qr.fill_color, new_qr.back_color = qr_color_scheme_primary.color, qr_color_scheme_secondary.color
         if last_qr_image["img"] is None:
@@ -1437,10 +1435,12 @@ def main(page: ft.Page):
 
     def qr_creator_open():
         async def _open():
+            page.pop_dialog()
+            await asyncio.sleep(0.05)
             if create_layout not in page.overlay:
                 page.overlay.append(create_layout)
                 page.update()
-                await asyncio.sleep(0.05)
+                #await asyncio.sleep(0.05)
             create_layout.open = True
             page.update()
         page.run_task(_open)
@@ -1449,6 +1449,7 @@ def main(page: ft.Page):
         if create_layout and create_layout.open == True:
             create_layout.open = False
         if full_reset and create_layout:
+            qr_content["content"] = "https://"
             for item in [
                 wifi_name, wifi_password, qr_url_input_field, email_address, 
                 email_subject, email_body, phone_prefix, phone_number, sms_prefix, 
@@ -1499,7 +1500,6 @@ def main(page: ft.Page):
 
     def type_trigger(e):
         selected = e.control.value
-        qr_url_input_field.value = ""
 
         for area in [
             wifi_area, input_row, url_protocol_dropdown, email_general_content, email_adv_content,
@@ -1511,7 +1511,7 @@ def main(page: ft.Page):
         for field in [
             wifi_name, wifi_password, email_address, email_subject, email_body,
             phone_prefix, phone_number, sms_prefix, sms_number, sms_message,
-            location_lat, location_lng, event_title, event_location,
+            location_lat, location_lng, event_title, event_location, qr_url_input_field
         ]:
             field.value = ""
 
@@ -1563,14 +1563,15 @@ def main(page: ft.Page):
 
         if qr_type_dropdown.value == "WIFI":
             if wifi_protocol_dropdown.value != "No password":
-                qr_url_input_field.value = f"WIFI:S:{wifi_name.value};T:{wifi_protocol_dropdown.value};P:{wifi_password.value};;"
+                qr_content["content"] = f"WIFI:S:{wifi_name.value};T:{wifi_protocol_dropdown.value};P:{wifi_password.value};;"
             else:
-                qr_url_input_field.value = f"WIFI:S:{wifi_name.value};T:nopass;;"
-            display_preview_qr(qr_url_input_field.value, color_rgb_1, color_rgb_2, error_correction)
+                qr_content["content"] = f"WIFI:S:{wifi_name.value};T:nopass;;"
+            display_preview_qr(qr_content["content"], color_rgb_1, color_rgb_2, error_correction)
 
         elif qr_type_dropdown.value == "URL/Link":
             prefix = "https://" if url_protocol_dropdown.value == "https://" else "http://"
-            display_preview_qr(prefix + qr_url_input_field.value, color_rgb_1, color_rgb_2, error_correction)
+            qr_content["content"] = prefix + qr_url_input_field.value
+            display_preview_qr(qr_content["content"], color_rgb_1, color_rgb_2, error_correction)
 
         elif qr_type_dropdown.value == "Email":
             if email_adv_checkbox.value:
@@ -1580,22 +1581,22 @@ def main(page: ft.Page):
                 if email_body.value:
                     params.append(f"body={urllib.parse.quote(email_body.value)}")
                 query = "&".join(params)
-                qr_url_input_field.value = f"mailto:{email_address.value}" + (f"?{query}" if query else "")
+                qr_content["content"] = f"mailto:{email_address.value}" + (f"?{query}" if query else "")
             else:
-                qr_url_input_field.value = f"mailto:{email_address.value}"
-            display_preview_qr(qr_url_input_field.value, color_rgb_1, color_rgb_2, error_correction)
+                qr_content["content"] = f"mailto:{email_address.value}"
+            display_preview_qr(qr_content["content"], color_rgb_1, color_rgb_2, error_correction)
 
         elif qr_type_dropdown.value == "Phone":
-            qr_url_input_field.value = f"tel:+{phone_prefix.value}{phone_number.value}"
-            display_preview_qr(qr_url_input_field.value, color_rgb_1, color_rgb_2, error_correction)
+            qr_content["content"] = f"tel:+{phone_prefix.value}{phone_number.value}"
+            display_preview_qr(qr_content["content"], color_rgb_1, color_rgb_2, error_correction)
 
         elif qr_type_dropdown.value == "SMS":
-            qr_url_input_field.value = f"SMSTO:{sms_number.value}:{sms_message.value}"
-            display_preview_qr(qr_url_input_field.value, color_rgb_1, color_rgb_2, error_correction)
+            qr_content["content"] = f"SMSTO:{sms_prefix.value}{sms_number.value}:{sms_message.value}"
+            display_preview_qr(qr_content["content"], color_rgb_1, color_rgb_2, error_correction)
 
         elif qr_type_dropdown.value == "Location":
-            qr_url_input_field.value = f"geo:{location_lat.value},{location_lng.value}"
-            display_preview_qr(qr_url_input_field.value, color_rgb_1, color_rgb_2, error_correction)
+            qr_content["content"] = f"geo:{location_lat.value},{location_lng.value}"
+            display_preview_qr(qr_content["content"], color_rgb_1, color_rgb_2, error_correction)
 
         elif qr_type_dropdown.value == "Event":
             if date_picker.start_value and date_picker.end_value and start_time_picker.value and end_time_picker.value:
@@ -1603,20 +1604,21 @@ def main(page: ft.Page):
                 end_date = normalize_picker_date(date_picker.end_value)
                 dtstart_str = f"{start_date.strftime('%Y%m%d')}T{start_time_picker.value.strftime('%H%M%S')}"
                 dtend_str = f"{end_date.strftime('%Y%m%d')}T{end_time_picker.value.strftime('%H%M%S')}"
-                qr_url_input_field.value = (
+                qr_content["content"] = (
                     f"BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\n"
                     f"SUMMARY:{event_title.value}\r\nLOCATION:{event_location.value}\r\n"
                     f"DTSTART:{dtstart_str}\r\nDTEND:{dtend_str}\r\nEND:VEVENT\r\nEND:VCALENDAR"
                 )
             else:
-                qr_url_input_field.value = (
+                qr_content["content"] = (
                     f"BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\n"
                     f"SUMMARY:{event_title.value}\r\nLOCATION:{event_location.value}\r\nEND:VEVENT\r\nEND:VCALENDAR"
                 )
-            display_preview_qr(qr_url_input_field.value, color_rgb_1, color_rgb_2, error_correction)
+            display_preview_qr(qr_content["content"], color_rgb_1, color_rgb_2, error_correction)
 
         else:
-            display_preview_qr(qr_url_input_field.value, color_rgb_1, color_rgb_2, error_correction)
+            qr_content["content"] = qr_url_input_field.value
+            display_preview_qr(qr_content["content"], color_rgb_1, color_rgb_2, error_correction)
 
     # -------------------------------------------------------------
     # UI controls
@@ -2423,7 +2425,7 @@ def main(page: ft.Page):
     load_qrs()
     theme_init_loader()
     appearance_loader()
-    display_preview_qr("", "black", "white", ERROR_CORRECTION_MAP["M (15%)"])
+    display_preview_qr(qr_content["content"], "black", "white", ERROR_CORRECTION_MAP["M (15%)"])
 
 
 ft.run(main)
