@@ -72,7 +72,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: C:\Users\runneradmin\flutter
-          key: flutter-windows-${{ runner.os }}
+          key: flutter-windows-${{ runner.os }}-v2
       - name: Build
         run: uv run flet build windows --yes --verbose --no-rich-output
         env:
@@ -305,7 +305,7 @@ jobs:
       - name: Compile installer
         shell: pwsh
         run: |
-          & "$Env:ProgramFiles(x86)\Inno Setup 6\ISCC.exe" installer.iss
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" installer.iss
 
       - uses: actions/upload-artifact@v4
         with:

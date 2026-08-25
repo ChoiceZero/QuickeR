@@ -39,7 +39,7 @@ QuickeR-Web is a platform that lets you create QR codes but without accounts, li
 | Android                       | ✅        | ✅                 | *          |
 | Windows                       | ✅        | ❌                 | ✅         |
 | IOs                           | ❌        | ❌                 | ❌         |
-| MacOs                         | ~         | ❌                 | ✅         |
+| MacOs                         | ~         | ✅                 | ✅         |
 
 >[!CAUTION]
 >Due to IOs working unreliably with Flet's tools and limitations at operating system level, support has to be dropped for the time being. However, the web version (QuickeR-Web) can be used perfectly.
