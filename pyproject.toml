@@ -28,7 +28,7 @@ dev = [
 [tool.flet]
 desktop_flavor = "light"    # Change to "full" to use flet-audio and flet-video
 org = "com.mycompany"
-product = "quicker"
+product = "QuickeR"
 company = "Unax Martinez Llorente"
 copyright = "MIT License"
 
