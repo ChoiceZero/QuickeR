@@ -46,6 +46,8 @@ QR_DIR = os.path.join(APP_DATA_DIR, "qr_codes")
 PINNED_DIR = os.path.join(APP_DATA_DIR, "pinned_qr_codes")
 SETTINGS_PATH = os.path.join(APP_DATA_DIR, "settings.json")
 
+ACCEPTED_FILETYPES = [".png", ".jpg", ".jpeg", ".webp",".svg"]
+
 os.makedirs(QR_DIR, exist_ok=True)
 os.makedirs(PINNED_DIR, exist_ok=True)
 
@@ -247,7 +249,7 @@ def get_qr_image_path(qr_id):
 # ---------------------------------------------------------------------------
 
 class StlBuilder:
-    def __init__(self, qr_id, base_height=2, pillar_height=4, pixel_size=1.0, threshold=128, invert=False):
+    def __init__(self, qr_id, base_height=2, pillar_height=2, pixel_size=0.2, threshold=128, invert=False):
         self.qr_id = qr_id
         self.base_height = base_height
         self.pillar_height = pillar_height
@@ -1305,6 +1307,17 @@ def main(page: ft.Page):
     # -------------------------------------------------------------
     # QR creation: preview + per-type forms
     # -------------------------------------------------------------
+
+    def import_logo_image():
+        async def pick_logo_image():
+            files = await ft.FilePicker().pick_files(allowed_extensions=["png", "jpg", "jpeg"])
+            if files:
+                logo_image_path["path"] = files[0].path
+                logo_picker_ref["instance"].src = files[0].path
+                logo_picker_ref["instance"].update()
+                display_preview_qr(qr_content["content"], qr_color_scheme_primary.color, qr_color_scheme_secondary.color, error_correct=qrcode.constants.ERROR_CORRECT_M)
+
+        asyncio.ensure_future(pick_logo_image())
 
     def display_preview_qr(url, qr_color_primary, qr_color_secondary, error_correct):
         preview_qr_area.controls.clear()
