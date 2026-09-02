@@ -534,9 +534,10 @@ class QRCodes:
     def download_qr_action(self):
         self.filetext = ft.TextField(
             hint_text="Enter filename here", 
-            expand=True, 
+            #expand=True, 
             label="Filename",
             autofocus=True,
+            width=310,
             border=ft.InputBorder.NONE,
             margin=ft.Margin.only(left=10,right=10),
         )
@@ -544,57 +545,64 @@ class QRCodes:
             title=ft.Text("Export Options"),
             on_dismiss=lambda e: self.handle_download_dialog_dismissed(),
             alignment=ft.Alignment.CENTER,
-            actions=[
-                ft.Container(
-                    #expand=True, 
-                    #alignment="center",
-                    padding=5,
-                    content=self.filetext,
-                    margin=ft.Margin.only(bottom=10),
-                    border_radius=13,
-                    bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST,
-                ),
-                ft.Row(
-                    alignment=ft.MainAxisAlignment.CENTER,
-                    spacing=3,
-                    wrap=True,
-                    controls=[
-                        ft.Button(
-                            elevation=0, icon=ft.Icons.IMAGE_ROUNDED, content=ft.Text("Gallery", size=16),
-                            height=50, color=ft.Colors.SURFACE, bgcolor=ft.Colors.PRIMARY,
-                            style=ft.ButtonStyle(
-                                shape=ft.RoundedRectangleBorder(
-                                    radius=ft.BorderRadius.only(top_left=50, top_right=25, bottom_left=50, bottom_right=25)
+            content=ft.Column(
+                alignment=ft.Alignment.CENTER,
+                tight=True,
+                controls=[
+                    ft.Container(
+                        #expand=True, 
+                        #alignment="center",
+                        padding=5,
+                        content=ft.Row(controls=[self.filetext],tight=True,alignment=ft.MainAxisAlignment.END),
+                        margin=ft.Margin.only(bottom=10),
+                        border_radius=13,
+                        bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST,
+                    ),
+                    ft.Row(
+                        alignment=ft.Alignment.CENTER,
+                        spacing=3,
+                        wrap=True,
+                        controls=[
+                            ft.Button(
+                                elevation=0, icon=ft.Icons.IMAGE_ROUNDED, content=ft.Text("Gallery", size=16),
+                                height=50, color=ft.Colors.SURFACE, bgcolor=ft.Colors.PRIMARY,
+                                style=ft.ButtonStyle(
+                                    overlay_color=ft.Colors.ON_PRIMARY_CONTAINER,
+                                    shape=ft.RoundedRectangleBorder(
+                                        radius=ft.BorderRadius.only(top_left=50, top_right=25, bottom_left=50, bottom_right=25)
+                                    ),
                                 ),
+                                on_click=lambda e: asyncio.ensure_future(self.export_to_gallery()),
                             ),
-                            on_click=lambda e: asyncio.ensure_future(self.export_to_gallery()),
-                        ),
-                        ft.Button(
-                            elevation=0, icon=ft.Icons.FOLDER_COPY_ROUNDED, 
-                            content=ft.Text("Folder", size=16),
-                            height=50, color=ft.Colors.SURFACE, 
-                            bgcolor=ft.Colors.PRIMARY,
-                            style=ft.ButtonStyle(
-                                shape=ft.RoundedRectangleBorder(
-                                    radius=13
+                            ft.Button(
+                                elevation=0, icon=ft.Icons.FOLDER_COPY_ROUNDED, 
+                                content=ft.Text("Folder", size=16),
+                                height=50, color=ft.Colors.SURFACE, 
+                                bgcolor=ft.Colors.PRIMARY,
+                                style=ft.ButtonStyle(
+                                    overlay_color=ft.Colors.ON_PRIMARY_CONTAINER,
+                                    shape=ft.RoundedRectangleBorder(
+                                        radius=13
+                                    ),
                                 ),
+                                on_click=lambda e: asyncio.ensure_future(self.export_to_folder()),
                             ),
-                            on_click=lambda e: asyncio.ensure_future(self.export_to_folder()),
-                        ),
-                        ft.Button(
-                            elevation=0, icon=ft.Icons.FILE_COPY_ROUNDED, content=ft.Text(".STL", size=16),
-                            height=50, color=ft.Colors.SURFACE, bgcolor=ft.Colors.PRIMARY,
-                            style=ft.ButtonStyle(
-                                shape=ft.RoundedRectangleBorder(
-                                    radius=ft.BorderRadius.only(top_left=25, top_right=50, bottom_left=25, bottom_right=50)
+                            ft.Button(
+                                elevation=0, icon=ft.Icons.FILE_COPY_ROUNDED, content=ft.Text(".STL", size=16),
+                                height=50, color=ft.Colors.SURFACE, bgcolor=ft.Colors.PRIMARY,
+                                style=ft.ButtonStyle(
+                                    overlay_color=ft.Colors.ON_PRIMARY_CONTAINER,
+                                    shape=ft.RoundedRectangleBorder(
+                                        radius=ft.BorderRadius.only(top_left=25, top_right=50, bottom_left=25, bottom_right=50)
+                                    ),
                                 ),
+                                on_click=lambda e: asyncio.ensure_future(self.export_to_stl()),
                             ),
-                            on_click=lambda e: asyncio.ensure_future(self.export_to_stl()),
-                        ),
-                    ],
-                ),
-            ],
-        )
+                        ],
+                    ),
+                ],
+            )
+        )   
         self.page.show_dialog(download_dialog)
 
     def handle_download_dialog_dismissed(self):
@@ -840,6 +848,7 @@ class QRCodes:
                             elevation=0, icon=ft.Icons.DOWNLOAD, content=ft.Text("Export options", size=16),
                             height=50, color=ft.Colors.SURFACE, bgcolor=ft.Colors.PRIMARY,
                             style=ft.ButtonStyle(
+                                overlay_color=ft.Colors.ON_PRIMARY_CONTAINER,
                                 shape=ft.RoundedRectangleBorder(
                                     radius=ft.BorderRadius.only(top_left=50, top_right=25, bottom_left=50, bottom_right=25)
                                 ),
@@ -851,6 +860,7 @@ class QRCodes:
                             icon=ft.Icons.OFFLINE_SHARE, height=50, width=45, alignment=ft.Alignment.CENTER_LEFT,
                             icon_color=ft.Colors.SURFACE, bgcolor=ft.Colors.PRIMARY,
                             style=ft.ButtonStyle(
+                                overlay_color=ft.Colors.ON_PRIMARY_CONTAINER,
                                 shape=ft.RoundedRectangleBorder(
                                     radius=ft.BorderRadius.only(top_left=25, top_right=50, bottom_left=25, bottom_right=50)
                                 ),
@@ -892,7 +902,8 @@ class QRCodes:
                         ft.Row(controls=[ft.Text(value="Primary:"), ft.Container(expand=True), ft.Text(value=fill_text)]),
                         ft.Row(controls=[ft.Text(value="Background:"), ft.Container(expand=True), ft.Text(value=back_text)]),
                     ]),
-                )
+                ),
+                ft.Container(height=50)
             ]
         )    
 
@@ -1824,7 +1835,7 @@ def main(page: ft.Page):
     save_qr_button = ft.Button(
         elevation=0, icon=ft.Icons.CHECK, content=ft.Text("Save QR", size=16),
         height=50, color=ft.Colors.SURFACE, bgcolor=ft.Colors.PRIMARY,
-        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=ft.BorderRadius.only(top_left=50, top_right=25, bottom_left=50, bottom_right=25))),
+        style=ft.ButtonStyle(overlay_color=ft.Colors.ON_PRIMARY_CONTAINER,shape=ft.RoundedRectangleBorder(radius=ft.BorderRadius.only(top_left=50, top_right=25, bottom_left=50, bottom_right=25))),
         on_click=lambda e: qr_create_triggered(),
     )
 
@@ -1899,6 +1910,7 @@ def main(page: ft.Page):
                             elevation=0, icon=ft.Icons.IMAGE_ROUNDED, content=ft.Text("Pick Logo", size=16),
                             height=50, color=ft.Colors.SURFACE, bgcolor=ft.Colors.PRIMARY,
                             style=ft.ButtonStyle(
+                                overlay_color=ft.Colors.ON_PRIMARY_CONTAINER,
                                 shape=ft.RoundedRectangleBorder(
                                     radius=ft.BorderRadius.only(top_left=50, top_right=25, bottom_left=50, bottom_right=25)
                                 ),
@@ -1907,8 +1919,9 @@ def main(page: ft.Page):
                         ),
                         ft.IconButton(
                             icon=ft.Icons.DELETE_ROUNDED, height=50, width=45, alignment=ft.Alignment.CENTER_LEFT,
-                            icon_color=ft.Colors.SURFACE, bgcolor=ft.Colors.PRIMARY,
+                            icon_color=ft.Colors.INVERSE_SURFACE, bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST,
                             style=ft.ButtonStyle(
+                                shadow_color=ft.Colors.SURFACE_CONTAINER_HIGHEST,
                                 shape=ft.RoundedRectangleBorder(
                                     radius=ft.BorderRadius.only(top_left=25, top_right=50, bottom_left=25, bottom_right=50)
                                 ),
@@ -1959,6 +1972,7 @@ def main(page: ft.Page):
             ft.IconButton(
                 icon=ft.Icons.COFFEE_ROUNDED,
                 style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=10, bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, icon_color=ft.Colors.INVERSE_SURFACE, icon_size=20),
+                on_click=lambda e: asyncio.ensure_future(open_url("https://www.buymeacoffee.com/choicezero", "BLANK"))
             ),
             ft.IconButton(
                 icon=ft.Image(os.path.join(ASSET_DIR, "github-white-icon.webp"), color=ft.Colors.INVERSE_SURFACE, width=20, height=20),
@@ -2105,8 +2119,8 @@ def main(page: ft.Page):
                                     ]),
                                     ft.Text(value="If you want to support the project, you can do so by donating via Buy Me a Coffee or GitHub Sponsors.", size=15, color=ft.Colors.INVERSE_SURFACE),
                                     ft.Row(wrap=True,alignment="center", controls=ft.Row(wrap=True,tight=True, controls=[
-                                        ft.Button(margin=ft.Margin.only(top=10), content=ft.Text(value="Buy Me a Coffee"), icon=ft.Icons.COFFEE_ROUNDED, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=10, bgcolor=ft.Colors.PRIMARY, color=ft.Colors.SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER)),
-                                        ft.Button(margin=ft.Margin.only(top=10), content=ft.Text(value="GitHub Sponsors"), icon=ft.CupertinoIcons.HEART_FILL, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=10, bgcolor=ft.Colors.PRIMARY, color=ft.Colors.SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER)),
+                                        ft.Button(margin=ft.Margin.only(top=10), content=ft.Text(value="Buy Me a Coffee"), icon=ft.Icons.COFFEE_ROUNDED, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=10, bgcolor=ft.Colors.PRIMARY, color=ft.Colors.SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER), on_click=lambda e: asyncio.ensure_future(open_url("https://www.buymeacoffee.com/choicezero", "BLANK"))),
+                                        ft.Button(margin=ft.Margin.only(top=10), content=ft.Text(value="GitHub Sponsors"), icon=ft.CupertinoIcons.HEART_FILL, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=10, bgcolor=ft.Colors.PRIMARY, color=ft.Colors.SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER), on_click=lambda e: asyncio.ensure_future(open_url("https://github.com/sponsors/ChoiceZero", "BLANK"))),
                                     ])),
                                 ]),
                             ),
