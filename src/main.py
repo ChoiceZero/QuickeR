@@ -234,13 +234,13 @@ def get_qr_colors(image_path):
 
 
 def get_qr_image_path(qr_id):
-    """Returns the png path of a QR (pinned or normal), or None if it doesn't exist."""
-    qr_path = os.path.join(QR_DIR, f"{qr_id}.png")
-    pinned_path = os.path.join(PINNED_DIR, f"{qr_id}.png")
-    if os.path.exists(qr_path):
-        return qr_path
-    if os.path.exists(pinned_path):
-        return pinned_path
+    """Returns the image path of a QR (pinned or normal) for any accepted
+    filetype, or None if it doesn't exist."""
+    for directory in (QR_DIR, PINNED_DIR):
+        for ext in ACCEPTED_FILETYPES:
+            candidate = os.path.join(directory, f"{qr_id}{ext}")
+            if os.path.exists(candidate):
+                return candidate
     return None
 
 
@@ -455,7 +455,7 @@ class QRCodes:
                             border=ft.Border.all(width=1, color=ft.Colors.TERTIARY_FIXED_DIM),
                             content=ft.Text(value=str(self.qr_size), size=10),
                         ),
-                        ft.Text(italic=True, color=ft.Colors.GREY_400, value=self.qr_id + ".png", overflow="ELLIPSIS"),
+                        ft.Text(italic=True, color=ft.Colors.GREY_400, value=os.path.basename(get_qr_image_path(self.qr_id) or f"{self.qr_id}"), overflow="ELLIPSIS"),
                     ]),
                     on_click=lambda e: self.display_details_bottomsheet(),
                     content_padding=2,
@@ -625,9 +625,11 @@ class QRCodes:
         self.page.update()
     
         await asyncio.sleep(0.1)
-        
+
+        src_ext = os.path.splitext(src)[1]
+
         try:
-            shutil.copy(src, f"{folder_path}/{self.filetext.value}.png")
+            shutil.copy(src, f"{folder_path}/{self.filetext.value}{src_ext}")
 
             load_dialog.title.value = "Export Complete!"
             load_dialog.content.controls[0] = ft.IconButton(icon=ft.Icons.CHECK, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.SECONDARY_CONTAINER, icon_color=ft.Colors.PRIMARY))
@@ -669,8 +671,10 @@ class QRCodes:
     
         await asyncio.sleep(0.1)
 
+        src_ext = os.path.splitext(src)[1]
+
         try:
-            shutil.copy(src, f"{folder_path}/{self.filetext.value}.png")
+            shutil.copy(src, f"{folder_path}/{self.filetext.value}{src_ext}")
 
             load_dialog.title.value = "Export Complete!"
             load_dialog.content.controls[0] = ft.IconButton(icon=ft.Icons.CHECK, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.SECONDARY_CONTAINER, icon_color=ft.Colors.PRIMARY))
@@ -770,8 +774,8 @@ class QRCodes:
             self.page.update()
 
     def pin_triggered(self):
-        pinned_path = os.path.join(PINNED_DIR, f"{self.qr_id}.png")
-        self.pin_state = not os.path.exists(pinned_path)
+        current_path = get_qr_image_path(self.qr_id)
+        self.pin_state = current_path is not None and os.path.dirname(current_path) != PINNED_DIR
         if self.pin_state:
             self.pin_qr_action()
         else:
@@ -779,7 +783,9 @@ class QRCodes:
 
     def pin_qr_action(self):
         self.pin_button.icon = ft.Icons.PUSH_PIN_ROUNDED
-        shutil.move(os.path.join(QR_DIR, f"{self.qr_id}.png"), os.path.join(PINNED_DIR, f"{self.qr_id}.png"))
+        current_path = get_qr_image_path(self.qr_id)
+        ext = os.path.splitext(current_path)[1]
+        shutil.move(current_path, os.path.join(PINNED_DIR, f"{self.qr_id}{ext}"))
         if self.main_container in self.regular_view.controls:
             self.regular_view.controls.remove(self.main_container)
         if self.main_container in self.all_view.controls:
@@ -790,7 +796,9 @@ class QRCodes:
     def unpin_qr_action(self):
         self.pin_button.icon = ft.Icons.PUSH_PIN_OUTLINED
         os.makedirs(QR_DIR, exist_ok=True)
-        shutil.move(os.path.join(PINNED_DIR, f"{self.qr_id}.png"), os.path.join(QR_DIR, f"{self.qr_id}.png"))
+        current_path = get_qr_image_path(self.qr_id)
+        ext = os.path.splitext(current_path)[1]
+        shutil.move(current_path, os.path.join(QR_DIR, f"{self.qr_id}{ext}"))
         if self.main_container in self.pinned_view.controls:
             self.pinned_view.controls.remove(self.main_container)
         if self.main_container in self.all_view.controls:
@@ -799,8 +807,6 @@ class QRCodes:
         self.display_qr(False)
 
     def display_details_bottomsheet(self):
-        pinned_path = os.path.join(PINNED_DIR, f"{self.qr_id}.png")
-
         self.pin_button = ft.IconButton(
             icon=ft.Icons.PUSH_PIN_OUTLINED,
             on_click=lambda e: self.pin_triggered(),
@@ -817,7 +823,7 @@ class QRCodes:
             return
 
         qr = ft.Image(src=self.qrpath, border_radius=10, width=250, height=250)
-        if self.qrpath == pinned_path:
+        if os.path.dirname(self.qrpath) == PINNED_DIR:
             self.pin_button.icon = ft.Icons.PUSH_PIN_ROUNDED
 
         fill_text = self.fill_color or "Unknown"
@@ -1145,7 +1151,7 @@ def main(page: ft.Page):
                 for directory, arc_folder in [(QR_DIR, "qr_codes"), (PINNED_DIR, "pinned_qr_codes")]:
                     if os.path.exists(directory):
                         for f in os.listdir(directory):
-                            if f.endswith(".png"):
+                            if os.path.splitext(f)[1].lower() in ACCEPTED_FILETYPES:
                                 zipf.write(os.path.join(directory, f), arcname=f"{arc_folder}/{f}")
 
             load_dialog.title.value = "Export Complete!"
@@ -1169,48 +1175,102 @@ def main(page: ft.Page):
         if not files:
             return
 
+        skipped_files = []
         load_dialog = progress_dialog("Importing codes...")
         page.show_dialog(load_dialog)
 
         await asyncio.sleep(0.1)
 
-        with zipfile.ZipFile(files[0].path, "r") as zipf:
-            for name in zipf.namelist():
-                if not name.endswith(".png"):
-                    continue
-                target_dir = PINNED_DIR if name.startswith("pinned_qr_codes/") else QR_DIR
-                #os.makedirs(target_dir, exist_ok=True)
+        try:
+            with zipfile.ZipFile(files[0].path, "r") as zipf:
+                for name in zipf.namelist():
+                    if os.path.splitext(name)[1].lower() not in ACCEPTED_FILETYPES:
+                        skipped_files.append(name)
+                        continue
+                    target_dir = PINNED_DIR if name.startswith("pinned_qr_codes/") else QR_DIR
+                    #os.makedirs(target_dir, exist_ok=True)
 
-                base_name = os.path.basename(name)[:-4] 
-                dest_path = os.path.join(target_dir, f"{base_name}.png")
+                    base_name, ext = os.path.splitext(os.path.basename(name))
+                    dest_path = os.path.join(target_dir, f"{base_name}{ext}")
 
-                counter = 1
-                while os.path.exists(dest_path):
-                    dest_path = os.path.join(target_dir, f"{base_name}_{counter}.png")
-                    counter += 1
-                try:
+                    counter = 1
+                    while os.path.exists(dest_path):
+                        dest_path = os.path.join(target_dir, f"{base_name}_{counter}{ext}")
+                        counter += 1
+                    
                     with zipf.open(name) as src, open(dest_path, "wb") as dst:
                         dst.write(src.read())
-
                     all_view.controls.clear()
                     pinned_view.controls.clear()
                     regular_view.controls.clear()
                     load_qrs()
 
-                    load_dialog.title.value = "Import Complete!"
-                    load_dialog.content.controls[0] = ft.IconButton(icon=ft.Icons.CHECK, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.SECONDARY_CONTAINER, icon_color=ft.Colors.PRIMARY))
-                    load_dialog.content.controls[1] = ft.Text(value="Success!", size=16, color=ft.Colors.PRIMARY)
-                    load_dialog.actions[0].visible = True
-                    load_dialog.modal = False
-                    page.update()
+            if skipped_files:
+                load_dialog.title.value = "Import Complete (with skipped files)!"
+                load_dialog.content.controls[0] = ft.IconButton(icon=ft.Icons.WARNING, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.AMBER_200, icon_color=ft.Colors.AMBER_600))
+                load_dialog.content.controls[1] = ft.Text(value=f"Success! Some files were skipped:\n{'\n'.join(skipped_files)}", size=16, color=ft.Colors.PRIMARY)
+            else:
+                load_dialog.title.value = "Import Complete!"
+                load_dialog.content.controls[0] = ft.IconButton(icon=ft.Icons.CHECK, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.SECONDARY_CONTAINER, icon_color=ft.Colors.PRIMARY))
+                load_dialog.content.controls[1] = ft.Text(value="Success!", size=16, color=ft.Colors.PRIMARY)
+            load_dialog.actions[0].visible = True
+            load_dialog.modal = False
+            page.update()
 
-                except Exception as ex:
-                    load_dialog.title.value = "Error"
-                    load_dialog.content.controls[0] = ft.IconButton(icon=ft.Icons.CLOSE, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.RED_200, icon_color=ft.Colors.RED_600))
-                    load_dialog.content.controls[1] = ft.Text(value="Error: "+str(ex), size=16, color=ft.Colors.RED_600)
-                    load_dialog.actions[0].visible = True
-                    load_dialog.modal = False
-                    page.update()
+        except Exception as ex:
+            load_dialog.title.value = "Error"
+            load_dialog.content.controls[0] = ft.IconButton(icon=ft.Icons.CLOSE, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.RED_200, icon_color=ft.Colors.RED_600))
+            load_dialog.content.controls[1] = ft.Text(value="Error: "+str(ex), size=16, color=ft.Colors.RED_600)
+            load_dialog.actions[0].visible = True
+            load_dialog.modal = False
+            page.update()
+
+    async def import_external_qr_image():
+        """Lets the user pick an image file from outside the app (any of
+        ACCEPTED_FILETYPES), copies it into QR_DIR renamed to a fresh id,
+        decodes it and adds a single new ListTile (no full reload)."""
+        files = await ft.FilePicker().pick_files(
+            allowed_extensions=[ext.lstrip(".") for ext in ACCEPTED_FILETYPES]
+        )
+        if not files:
+            return
+
+        src_path = files[0].path
+        ext = os.path.splitext(src_path)[1].lower()
+        if ext not in ACCEPTED_FILETYPES:
+            page.show_dialog(ft.AlertDialog(content=ft.Text("Unsupported file type."), title=ft.Text("Error"), actions=[ft.TextButton("OK", on_click=lambda e: page.pop_dialog())]))
+            return
+
+        try:
+            new_qr = QRCodes(page, "", all_view, regular_view, pinned_view, details_main_page_view)
+            new_id = new_qr.id_assigner()
+            dest_path = os.path.join(QR_DIR, f"{new_id}{ext}")
+            shutil.copy(src_path, dest_path)
+
+            image = cv2.imread(dest_path)
+            data = try_decode_with_preprocessing(image)
+            if not data:
+                os.remove(dest_path)
+                page.update()
+                return
+
+            new_qr.fill_color, new_qr.back_color = get_qr_colors(dest_path)
+            new_qr.qr_id = new_id
+            new_qr.url = data
+            new_qr.date = new_qr.get_qr_date(new_id)
+            new_qr.display_qr(False)
+
+            page.show_dialog(ft.SnackBar(content=ft.Text("QR code imported successfully.")))
+
+        except Exception as ex:
+            page.show_dialog(ft.AlertDialog(
+                title=ft.Text("Error"),
+                content=ft.Row([
+                    ft.IconButton(icon=ft.Icons.CLOSE, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.RED_200, icon_color=ft.Colors.RED_600)),
+                    ft.Text("Error: "+str(ex))
+                ]),
+                actions=[ft.TextButton("OK", on_click=lambda e: page.pop_dialog())]
+            ))
 
     # -------------------------------------------------------------
     # Overview view (All / Pinned / Unpinned) + ordering
@@ -1279,9 +1339,9 @@ def main(page: ft.Page):
         for directory, is_pinned in [(PINNED_DIR, True), (QR_DIR, False)]:
             if os.path.exists(directory):
                 for f in os.listdir(directory):
-                    if f.endswith(".png"):
+                    if os.path.splitext(f)[1].lower() in ACCEPTED_FILETYPES:
                         path = os.path.join(directory, f)
-                        files_with_meta.append((path, f[:-4], is_pinned, os.path.getctime(path)))
+                        files_with_meta.append((path, os.path.splitext(f)[0], is_pinned, os.path.getctime(path)))
 
         files_with_meta.sort(key=lambda x: x[3], reverse=SORT_STATE["newest_first"])
 
@@ -2257,7 +2317,7 @@ def main(page: ft.Page):
                                 content=ft.Column(
                                     controls=[
                                     ft.Row(controls=[ft.Icon(icon=ft.Icons.SAVE_ALT_ROUNDED, color=ft.Colors.INVERSE_SURFACE), ft.Text(value="Import", size=25, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD))]),
-                                    ft.Text(value="Select a .ZIP file to import. The containing QR codes will be added to your library, not replace the existing ones. If you want to add your own codes, they have to be .PNG files.", size=15, color=ft.Colors.INVERSE_SURFACE),
+                                    ft.Text(value="Select a .ZIP file to import. The containing QR codes will be added to your library, not replace the existing ones. If you want to add your own codes, they have to be image files (PNG, JPG, JPEG, WEBP or SVG).", size=15, color=ft.Colors.INVERSE_SURFACE),
                                     ft.Button(
                                         content=ft.Text(value="Import Library", color=ft.Colors.SURFACE, size=16), color=ft.Colors.SURFACE, icon=ft.Icons.CREATE_NEW_FOLDER_ROUNDED,
                                         on_click=lambda e: asyncio.ensure_future(import_library_from_zip()),
@@ -2265,6 +2325,19 @@ def main(page: ft.Page):
                                     ),
                                 ]),
                             ),
+                            #ft.Container(
+                            #    border_radius=20, margin=ft.Margin.only(left=10, right=10), bgcolor=ft.Colors.SURFACE_CONTAINER, padding=20,
+                            #    content=ft.Column(
+                            #        controls=[
+                            #        ft.Row(controls=[ft.Icon(icon=ft.Icons.ADD_PHOTO_ALTERNATE_ROUNDED, color=ft.Colors.INVERSE_SURFACE), ft.Text(value="Import QR image", size=25, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD))]),
+                            #        ft.Text(value="Import a single QR code image from outside the app. It will be copied into your library under a new ID.", size=15, color=ft.Colors.INVERSE_SURFACE),
+                            #        ft.Button(
+                            #            content=ft.Text(value="Import Image", color=ft.Colors.SURFACE, size=16), color=ft.Colors.SURFACE, icon=ft.Icons.IMAGE_ROUNDED,
+                            #            on_click=lambda e: asyncio.ensure_future(import_external_qr_image()),
+                            #            style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=20, icon_size=20, bgcolor=ft.Colors.SECONDARY, icon_color=ft.Colors.SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER),
+                            #        ),
+                            #    ]),
+                            #),
                             ft.Divider(thickness=0.2, color=ft.Colors.INVERSE_SURFACE,height=20, leading_indent=10, trailing_indent=10),
                             ft.Container(
                                 border_radius=20, margin=ft.Margin.only(left=10, right=10, bottom=10), bgcolor=ft.Colors.RED_700, padding=20,
@@ -2428,14 +2501,32 @@ def main(page: ft.Page):
         ])
     )
 
-    create_button = ft.FloatingActionButton(icon=ft.Icons.ADD_ROUNDED, on_click=lambda e: qr_creator_open())
-    page.floating_action_button = create_button
+    create_button = ft.FloatingActionButton(icon=ft.Icons.ADD_ROUNDED, on_click=lambda e: qr_creator_open(),width=70, height=70)
+    add_external_qr_button = ft.FloatingActionButton(icon=ft.Icons.ADD_PHOTO_ALTERNATE_ROUNDED, on_click=lambda e: asyncio.ensure_future(import_external_qr_image()), bgcolor=ft.Colors.TERTIARY_CONTAINER)
+
+    floating_actions = ft.Container(
+        expand=False,
+        width=70,
+        height=136,
+        align=ft.Alignment.BOTTOM_RIGHT,
+        alignment=ft.Alignment.BOTTOM_RIGHT,
+        content=ft.Column(
+            controls=[add_external_qr_button, create_button],
+            spacing=10,
+            horizontal_alignment=ft.CrossAxisAlignment.END,
+            alignment=ft.MainAxisAlignment.END,
+            tight=True,
+        ),
+        margin=ft.Margin.only(right=10, bottom=10),
+    )
+
+    #page.floating_action_button = create_button
 
     view = ft.Column(controls=[overview], horizontal_alignment=ft.CrossAxisAlignment.STRETCH)
 
     safearea = ft.SafeArea(
         content=ft.Stack(
-            controls=[view, settings_view],
+            controls=[view, floating_actions, settings_view],
             expand=True,
         ),
         expand=True,
