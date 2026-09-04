@@ -56,6 +56,7 @@ if not os.path.exists(SETTINGS_PATH):
         DEFAULT_SETTINGS = {
             "Theme_color": "#ff1e88e5",
             "Appearance": "System",
+            "First_run": "True",
             "GridMode": "True"
         }
         
@@ -975,8 +976,800 @@ def main(page: ft.Page):
     }
 
     # -------------------------------------------------------------
+    # Initial loading screen
+    # -------------------------------------------------------------
+
+    loading_screen = ft.Container(
+        expand=True,
+        alignment=ft.Alignment.CENTER,
+        content=ft.Column(
+            expand=True,
+            alignment=ft.MainAxisAlignment.CENTER,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            controls=[
+                ft.Container(
+                    padding=5,
+                    border_radius=20,
+                    margin=ft.Margin.only(bottom=20),
+                    bgcolor=ft.Colors.SECONDARY_CONTAINER,
+                    content=ft.Icon(
+                        icon=ft.Icons.QR_CODE_2_ROUNDED, 
+                        color=ft.Colors.PRIMARY, 
+                        size=100
+                    ),
+                ),
+                ft.Text(
+                    value="QuickeR", 
+                    size=40, 
+                    font_family="MaterialRoundedBold", 
+                    color=ft.Colors.INVERSE_SURFACE, 
+                    style=ft.TextStyle(weight=ft.FontWeight.BOLD),
+                    margin=ft.Margin.only(bottom=30)
+                ),
+                ft.ProgressRing(
+                    color=ft.Colors.PRIMARY,
+                    stroke_width=5,
+                    width=50,
+                    height=50,
+                    #style=ft.ProgressRingStyle(stroke_cap=ft.StrokeCap.ROUND),
+                ),
+                ft.Text(
+                    value="Loading content...", 
+                    color=ft.Colors.GREY_400
+                ),
+            ]
+        )
+    )
+
+    page.add(loading_screen)
+
+    # -------------------------------------------------------------
     # General utilities
     # -------------------------------------------------------------
+    def json_reader():
+        try:
+            with open(SETTINGS_PATH, "r", encoding="utf-8") as file:
+                return json.load(file)
+        except FileNotFoundError:
+            print(f"Error: Could not find the JSON file at {SETTINGS_PATH}")
+            return None
+    
+    def json_writer(data):
+        with open(SETTINGS_PATH, "w", encoding="utf-8") as file:
+            json.dump(data, file, indent=4, ensure_ascii=False)
+
+    def build_tutorial():
+        tutorial = {"Tutorial": False}
+        
+        intro_screen_1 = ft.Column(
+            offset=ft.Offset(0, 0),
+            animate_offset=ft.Animation(500, ft.AnimationCurve.EASE_OUT_CUBIC),
+            expand=True,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            alignment=ft.MainAxisAlignment.CENTER,
+            controls=[
+                ft.Container(
+                    expand=True,
+                    alignment=ft.Alignment.CENTER,
+                    content=ft.Column(
+                        expand=True,
+                        alignment=ft.MainAxisAlignment.CENTER,
+                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                        controls=[
+                            ft.Container(
+                                padding=5,
+                                border_radius=20,
+                                margin=ft.Margin.only(bottom=20),
+                                bgcolor=ft.Colors.SECONDARY_CONTAINER,
+                                content=ft.Icon(
+                                    icon=ft.Icons.QR_CODE_2_ROUNDED, 
+                                    color=ft.Colors.PRIMARY, 
+                                    size=100
+                                ),
+                            ),
+                            ft.Text(
+                                value="QuickeR", 
+                                size=40, 
+                                font_family="MaterialRoundedBold", 
+                                color=ft.Colors.INVERSE_SURFACE, 
+                                style=ft.TextStyle(weight=ft.FontWeight.BOLD)
+                            ),
+                            ft.Text(
+                                value="Your QRs, made quicker.", 
+                                color=ft.Colors.GREY_400
+                            ),
+                        ]
+                    )
+                ),
+                ft.Container(
+                    bgcolor=ft.Colors.PRIMARY_CONTAINER,
+                    border_radius=100,
+                    padding=10,
+                    content=ft.Row(
+                        tight=True,
+                        spacing=5,
+                        controls=[
+                            ft.Icon(icon=ft.Icons.PERSON_ROUNDED, size=20, color=ft.Colors.PRIMARY),
+                            ft.Text(value="By Unax Martínez", size=15, color=ft.Colors.INVERSE_SURFACE)
+                        ]
+                    )
+                ),
+                ft.Button(
+                    width=400,
+                    on_click=lambda e: change_views(tutorial["Tutorial"]),
+                    content=ft.Row(
+                        alignment=ft.MainAxisAlignment.CENTER,
+                        controls=[
+                            ft.Text("Get Started",size=20, weight=ft.FontWeight.BOLD),
+                            ft.Icon(icon=ft.Icons.ARROW_FORWARD_ROUNDED, size=25)
+                        ]
+                    ),
+                    margin=10,
+                    disabled=False,
+                    style=ft.ButtonStyle(
+                        shape=ft.RoundedRectangleBorder(radius=20), 
+                        color=ft.Colors.SURFACE, 
+                        overlay_color=ft.Colors.ON_PRIMARY_CONTAINER,
+                        bgcolor=ft.Colors.PRIMARY, 
+                        padding=20
+                    )
+                ),
+            ]
+        )
+        
+        intro_screen_2 = ft.Column(
+            offset=ft.Offset(1, 0),
+            animate_offset=ft.Animation(500, ft.AnimationCurve.EASE_OUT_CUBIC),
+            expand=True,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            alignment=ft.MainAxisAlignment.CENTER,
+            controls=[
+                ft.Button(
+                    align=ft.Alignment.TOP_LEFT,
+                    content="Back",
+                    icon=ft.Icons.ARROW_BACK_ROUNDED,
+                    on_click=lambda e: invert_change_views(tutorial["Tutorial"])
+                ),
+                ft.Container(
+                    expand=True,
+                    content=ft.Column(
+                        expand=True,
+                        alignment=ft.MainAxisAlignment.CENTER,
+                        horizontal_alignment="center",
+                        margin=10,
+                        controls=[
+                            ft.IconButton(
+                                icon=ft.Icons.SCHOOL_ROUNDED,
+                                icon_size=30,
+                                bgcolor=ft.Colors.PRIMARY_CONTAINER,
+                                disabled=True,
+                                icon_color=ft.Colors.PRIMARY,
+                            ),
+                            ft.Text(
+                                value="Tutorial", 
+                                size=25, 
+                                font_family="MaterialRoundedBold", 
+                                color=ft.Colors.INVERSE_SURFACE, 
+                                style=ft.TextStyle(weight=ft.FontWeight.BOLD)
+                            ),
+                            ft.Text(
+                                value="Want to learn how to use QuickeR?", 
+                                color=ft.Colors.GREY_400
+                            ),
+                        ]
+                    )
+                ),
+                ft.Row(
+                    alignment=ft.MainAxisAlignment.CENTER,
+                    margin=9,
+                    controls=[
+                        ft.Button(
+                            width=290,
+                            on_click=lambda e: tutorial_true(),
+                            content=ft.Row(
+                                alignment=ft.MainAxisAlignment.CENTER,
+                                controls=[
+                                    ft.Text("Tutorial",size=20, weight=ft.FontWeight.BOLD),
+                                    ft.Icon(icon=ft.Icons.ARROW_FORWARD_ROUNDED, size=25)
+                                ]
+                            ),
+                            disabled=False,
+                            style=ft.ButtonStyle(
+                                shape=ft.RoundedRectangleBorder(radius=20), 
+                                color=ft.Colors.SURFACE, 
+                                overlay_color=ft.Colors.ON_PRIMARY_CONTAINER,
+                                bgcolor=ft.Colors.PRIMARY, 
+                                padding=20
+                            )
+                        ),
+                        ft.IconButton(
+                            width=80,
+                            icon=ft.Icon(icon=ft.Icons.CLOSE_ROUNDED, size=25),
+                            on_click=lambda e: tutorial_false(),
+                            style=ft.ButtonStyle(
+                                shape=ft.RoundedRectangleBorder(radius=20,side=ft.BorderSide(color=ft.Colors.PRIMARY, width=1)), 
+                                color=ft.Colors.PRIMARY, 
+                                bgcolor=ft.Colors.SURFACE, 
+                                padding=15
+                            )
+                        ),
+                    ]
+                )
+        
+            ]
+        )
+        
+        tutorial_screen_1 = ft.Column(
+            offset=ft.Offset(1, 0),
+            animate_offset=ft.Animation(500, ft.AnimationCurve.EASE_OUT_CUBIC),
+            expand=True,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            alignment=ft.MainAxisAlignment.CENTER,
+            controls=[
+                ft.Button(
+                    align=ft.Alignment.TOP_LEFT,
+                    content="Back",
+                    icon=ft.Icons.ARROW_BACK_ROUNDED,
+                    on_click=lambda e: invert_change_views(tutorial["Tutorial"])
+                ),
+                ft.Container(
+                    expand=True,
+                    content=ft.Column(
+                        scroll=ft.ScrollMode.AUTO,
+                        expand=True,
+                        alignment=ft.MainAxisAlignment.CENTER,
+                        horizontal_alignment="center",
+                        margin=10,
+                        controls=[
+                            ft.IconButton(
+                                icon=ft.Icons.QR_CODE_2_ROUNDED,
+                                icon_size=30,
+                                bgcolor=ft.Colors.PRIMARY_CONTAINER,
+                                disabled=True,
+                                icon_color=ft.Colors.PRIMARY,
+                            ),
+                            ft.Text(
+                                value="Creating a QR", 
+                                size=25, 
+                                font_family="MaterialRoundedBold", 
+                                color=ft.Colors.INVERSE_SURFACE, 
+                                style=ft.TextStyle(weight=ft.FontWeight.BOLD)
+                            ),
+                            ft.Column(
+                                tight=True,
+                                width=400,
+                                horizontal_alignment="left",
+                                controls=[
+                                    ft.Text(
+                                        value="Steps to create your first QR code", 
+                                        color=ft.Colors.GREY_400,
+                                        style=ft.TextStyle(size=19,font_family="MaterialRoundedBold"),
+                                        margin=ft.Margin.only(bottom=5)
+                                    ),
+                                    ft.Text(
+                                        value="1. Click on the '+' button.\n2. Expand the 'Main content' section.\n3. Select the QR code type you want to create.\n4. Enter the required data.",
+                                        color=ft.Colors.GREY_400,
+                                        style=ft.TextStyle(size=15),
+                                        margin=ft.Margin.only(bottom=10)
+                                    ),
+                                    ft.Container(
+                                        padding=10,
+                                        border_radius=20,
+                                        bgcolor=ft.Colors.TERTIARY_CONTAINER,
+                                        margin=ft.Margin.only(bottom=10),
+                                        content=ft.Column(
+                                            alignment=ft.MainAxisAlignment.START,
+                                            tight=True,
+                                            controls=[
+                                                ft.Row(
+                                                    tight=True,
+                                                    spacing=5,
+                                                    alignment=ft.MainAxisAlignment.START,
+                                                    controls=[
+                                                        ft.Icon(icon=ft.Icons.INFO_OUTLINED, size=20, color=ft.Colors.INVERSE_SURFACE),
+                                                        ft.Text(value="Optional", size=17, color=ft.Colors.INVERSE_SURFACE)
+                                                    ]
+                                                ),
+                                                ft.Container(
+                                                    padding=10,
+                                                    border_radius=10,
+                                                    bgcolor=ft.Colors.SURFACE_CONTAINER,
+                                                    content=ft.Text(
+                                                        size=15,
+                                                        value="- Change error correction level           \nOn the 'Customization' section:\n- Add a custom logo\n- Change the QR's colors"
+                                                    )
+                                                )
+                                            ]
+                                        )
+                                    ),
+                                    ft.Text(
+                                        value="5. Click on 'Save' button.",
+                                        color=ft.Colors.GREY_400,
+                                        style=ft.TextStyle(size=15),
+                                        margin=ft.Margin.only(bottom=10)
+                                    ),
+                                ]
+                            ),
+                        ]
+                    )
+                ),
+                ft.Button(
+                    width=400,
+                    on_click=lambda e: change_views(tutorial["Tutorial"]),
+                    content=ft.Row(
+                        alignment=ft.MainAxisAlignment.CENTER,
+                        controls=[
+                            ft.Text("Next",size=20, weight=ft.FontWeight.BOLD),
+                            ft.Icon(icon=ft.Icons.ARROW_FORWARD_ROUNDED, size=25)
+                        ]
+                    ),
+                    margin=10,
+                    disabled=False,
+                    style=ft.ButtonStyle(
+                        shape=ft.RoundedRectangleBorder(radius=20), 
+                        color=ft.Colors.SURFACE, 
+                        overlay_color=ft.Colors.ON_PRIMARY_CONTAINER,
+                        bgcolor=ft.Colors.PRIMARY, 
+                        padding=20
+                    )
+                ), 
+            ]
+        )
+        
+        tutorial_screen_2 = ft.Column(
+            offset=ft.Offset(1, 0),
+            animate_offset=ft.Animation(500, ft.AnimationCurve.EASE_OUT_CUBIC),
+            expand=True,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            alignment=ft.MainAxisAlignment.CENTER,
+            controls=[
+                ft.Button(
+                    align=ft.Alignment.TOP_LEFT,
+                    content="Back",
+                    icon=ft.Icons.ARROW_BACK_ROUNDED,
+                    on_click=lambda e: invert_change_views(tutorial["Tutorial"])
+                ),
+                ft.Container(
+                    expand=True,
+                    content=ft.Column(
+                        scroll=ft.ScrollMode.AUTO,
+                        expand=True,
+                        alignment=ft.MainAxisAlignment.CENTER,
+                        horizontal_alignment="center",
+                        margin=10,
+                        controls=[
+                            ft.IconButton(
+                                icon=ft.Icons.BOOK_ROUNDED,
+                                icon_size=30,
+                                bgcolor=ft.Colors.PRIMARY_CONTAINER,
+                                disabled=True,
+                                icon_color=ft.Colors.PRIMARY,
+                            ),
+                            ft.Text(
+                                value="Library", 
+                                size=25, 
+                                font_family="MaterialRoundedBold", 
+                                color=ft.Colors.INVERSE_SURFACE, 
+                                style=ft.TextStyle(weight=ft.FontWeight.BOLD)
+                            ),
+                            ft.Column(
+                                width=400,
+                                tight=True,
+                                horizontal_alignment="left",
+                                controls=[
+                                    ft.Text(
+                                        value="Filtering and order", 
+                                        color=ft.Colors.GREY_400,
+                                        style=ft.TextStyle(size=19,font_family="MaterialRoundedBold"),
+                                        margin=ft.Margin.only(bottom=5)
+                                    ),
+                                    ft.Text(
+                                        value="Order:\nBy default, QRs are ordered from newest to oldest. To toggle the order, click on the arrow button.\n\nFilter:\nTo filter by the pinned state, select the corresponding option.",
+                                        color=ft.Colors.GREY_400,
+                                        style=ft.TextStyle(size=15),
+                                        margin=ft.Margin.only(bottom=10)
+                                    ),
+                                    ft.Text(
+                                        value="Viewing QRs, actions and details", 
+                                        color=ft.Colors.GREY_400,
+                                        style=ft.TextStyle(size=19,font_family="MaterialRoundedBold"),
+                                        margin=ft.Margin.only(bottom=5)
+                                    ),
+                                    ft.Text(
+                                        value="To view a QR, its actions and its details, click on its row/entry.\n\nActions:\n- Delete\n- Export\n- Share\n- Pin\n\nThe info is in their respective sections.",
+                                        color=ft.Colors.GREY_400,
+                                        style=ft.TextStyle(size=15),
+                                        margin=ft.Margin.only(bottom=10)
+                                    ),
+                                    ft.Text(
+                                        value="Exporting", 
+                                        color=ft.Colors.GREY_400,
+                                        style=ft.TextStyle(size=19,font_family="MaterialRoundedBold"),
+                                        margin=ft.Margin.only(bottom=5)
+                                    ),
+                                    ft.Text(
+                                        value="There are three options to export a QR:\n- Export to gallery\n- Export to folder\n- Export to 3D model (.stl) -> protruding or insetting\n\nThe images are always exported in .png format.\nA filename is required.",
+                                        color=ft.Colors.GREY_400,
+                                        style=ft.TextStyle(size=15),
+                                        margin=ft.Margin.only(bottom=10)
+                                    ),
+                                ]
+                            ),
+                        ]
+                    )
+                ),
+                ft.Button(
+                    width=400,
+                    on_click=lambda e: change_views(tutorial["Tutorial"]),
+                    content=ft.Row(
+                        alignment=ft.MainAxisAlignment.CENTER,
+                        controls=[
+                            ft.Text("Next",size=20, weight=ft.FontWeight.BOLD),
+                            ft.Icon(icon=ft.Icons.ARROW_FORWARD_ROUNDED, size=25)
+                        ]
+                    ),
+                    margin=10,
+                    disabled=False,
+                    style=ft.ButtonStyle(
+                        shape=ft.RoundedRectangleBorder(radius=20), 
+                        color=ft.Colors.SURFACE, 
+                        overlay_color=ft.Colors.ON_PRIMARY_CONTAINER,
+                        bgcolor=ft.Colors.PRIMARY, 
+                        padding=20
+                    )
+                ), 
+            ]
+        )
+        
+        tutorial_screen_3 = ft.Column(
+            offset=ft.Offset(1, 0),
+            animate_offset=ft.Animation(500, ft.AnimationCurve.EASE_OUT_CUBIC),
+            expand=True,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            alignment=ft.MainAxisAlignment.CENTER,
+            controls=[
+                ft.Button(
+                    align=ft.Alignment.TOP_LEFT,
+                    content="Back",
+                    icon=ft.Icons.ARROW_BACK_ROUNDED,
+                    on_click=lambda e: invert_change_views(tutorial["Tutorial"])
+                ),
+                ft.Container(
+                    expand=True,
+                    content=ft.Column(
+                        scroll=ft.ScrollMode.AUTO,
+                        expand=True,
+                        alignment=ft.MainAxisAlignment.CENTER,
+                        horizontal_alignment="center",
+                        margin=10,
+                        controls=[
+                            ft.IconButton(
+                                icon=ft.Icons.ADD_PHOTO_ALTERNATE_ROUNDED,
+                                icon_size=30,
+                                bgcolor=ft.Colors.PRIMARY_CONTAINER,
+                                disabled=True,
+                                icon_color=ft.Colors.PRIMARY,
+                            ),
+                            ft.Text(
+                                value="External codes", 
+                                size=25, 
+                                font_family="MaterialRoundedBold", 
+                                color=ft.Colors.INVERSE_SURFACE, 
+                                style=ft.TextStyle(weight=ft.FontWeight.BOLD)
+                            ),
+                            ft.Column(
+                                width=400,
+                                tight=True,
+                                horizontal_alignment="left",
+                                controls=[
+                                    ft.Text(
+                                        value="Adding an external QR code", 
+                                        color=ft.Colors.GREY_400,
+                                        style=ft.TextStyle(size=19,font_family="MaterialRoundedBold"),
+                                        margin=ft.Margin.only(bottom=5)
+                                    ),
+                                    ft.Text(
+                                        value="Steps:\n1. Click on the image icon above the '+'.\n2. Select an image from your device.\nDone! The QR code will be automatically added to the library.",
+                                        color=ft.Colors.GREY_400,
+                                        style=ft.TextStyle(size=15),
+                                        margin=ft.Margin.only(bottom=10)
+                                    ),
+                                ]
+                            ),
+                        ]
+                    )
+                ),
+                ft.Button(
+                    width=400,
+                    on_click=lambda e: change_views(tutorial["Tutorial"]),
+                    content=ft.Row(
+                        alignment=ft.MainAxisAlignment.CENTER,
+                        controls=[
+                            ft.Text("Next",size=20, weight=ft.FontWeight.BOLD),
+                            ft.Icon(icon=ft.Icons.ARROW_FORWARD_ROUNDED, size=25)
+                        ]
+                    ),
+                    margin=10,
+                    disabled=False,
+                    style=ft.ButtonStyle(
+                        shape=ft.RoundedRectangleBorder(radius=20), 
+                        color=ft.Colors.SURFACE, 
+                        overlay_color=ft.Colors.ON_PRIMARY_CONTAINER,
+                        bgcolor=ft.Colors.PRIMARY, 
+                        padding=20
+                    )
+                ), 
+            ]
+        )
+        
+        tutorial_screen_4 = ft.Column(
+            offset=ft.Offset(1, 0),
+            animate_offset=ft.Animation(500, ft.AnimationCurve.EASE_OUT_CUBIC),
+            expand=True,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            alignment=ft.MainAxisAlignment.CENTER,
+            controls=[
+                ft.Button(
+                    align=ft.Alignment.TOP_LEFT,
+                    content="Back",
+                    icon=ft.Icons.ARROW_BACK_ROUNDED,
+                    on_click=lambda e: invert_change_views(tutorial["Tutorial"])
+                ),
+                ft.Container(
+                    expand=True,
+                    content=ft.Column(
+                        scroll=ft.ScrollMode.AUTO,
+                        expand=True,
+                        alignment=ft.MainAxisAlignment.CENTER,
+                        horizontal_alignment="center",
+                        margin=10,
+                        controls=[
+                            ft.IconButton(
+                                icon=ft.Icons.SETTINGS_ROUNDED,
+                                icon_size=30,
+                                bgcolor=ft.Colors.PRIMARY_CONTAINER,
+                                disabled=True,
+                                icon_color=ft.Colors.PRIMARY,
+                            ),
+                            ft.Text(
+                                value="Settings", 
+                                size=25, 
+                                font_family="MaterialRoundedBold", 
+                                color=ft.Colors.INVERSE_SURFACE, 
+                                style=ft.TextStyle(weight=ft.FontWeight.BOLD)
+                            ),
+                            ft.Column(
+                                width=400,
+                                tight=True,
+                                horizontal_alignment="left",
+                                controls=[
+                                    ft.Text(
+                                        value="Customizing", 
+                                        color=ft.Colors.GREY_400,
+                                        style=ft.TextStyle(size=19,font_family="MaterialRoundedBold"),
+                                        margin=ft.Margin.only(bottom=5)
+                                    ),
+                                    ft.Text(
+                                        value="Cusmizations:\n- The app's theme mode -> Light/Dark/System (Default)\n- The app's theme color",
+                                        color=ft.Colors.GREY_400,
+                                        style=ft.TextStyle(size=15),
+                                        margin=ft.Margin.only(bottom=10)
+                                    ),
+                                    ft.Text(
+                                        value="Tools", 
+                                        color=ft.Colors.GREY_400,
+                                        style=ft.TextStyle(size=19,font_family="MaterialRoundedBold"),
+                                        margin=ft.Margin.only(bottom=5)
+                                    ),
+                                    ft.Text(
+                                        value="Tools available:\n- Export library to zip\n- Import library from zip\n- Clear library",
+                                        color=ft.Colors.GREY_400,
+                                        style=ft.TextStyle(size=15),
+                                        margin=ft.Margin.only(bottom=10)
+                                    ),
+                                    ft.Text(
+                                        value="Other", 
+                                        color=ft.Colors.GREY_400,
+                                        style=ft.TextStyle(size=19,font_family="MaterialRoundedBold"),
+                                        margin=ft.Margin.only(bottom=5)
+                                    ),
+                                    ft.Text(
+                                        value="- This tutorial",
+                                        color=ft.Colors.GREY_400,
+                                        style=ft.TextStyle(size=15),
+                                        margin=ft.Margin.only(bottom=10)
+                                    ),
+                                ]
+                            ),
+                        ]
+                    )
+                ),
+                ft.Button(
+                    width=400,
+                    on_click=lambda e: change_views(tutorial["Tutorial"]),
+                    content=ft.Row(
+                        alignment=ft.MainAxisAlignment.CENTER,
+                        controls=[
+                            ft.Text("Finish",size=20, weight=ft.FontWeight.BOLD),
+                            ft.Icon(icon=ft.Icons.ARROW_FORWARD_ROUNDED, size=25)
+                        ]
+                    ),
+                    margin=10,
+                    disabled=False,
+                    style=ft.ButtonStyle(
+                        shape=ft.RoundedRectangleBorder(radius=20), 
+                        color=ft.Colors.SURFACE, 
+                        overlay_color=ft.Colors.ON_PRIMARY_CONTAINER,
+                        bgcolor=ft.Colors.PRIMARY, 
+                        padding=20
+                    )
+                ), 
+            ]
+        )
+        
+        intro_screen_3 = ft.Column(
+            offset=ft.Offset(1, 0),
+            animate_offset=ft.Animation(500, ft.AnimationCurve.EASE_OUT_CUBIC),
+            expand=True,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            alignment=ft.MainAxisAlignment.CENTER,
+            controls=[
+                ft.Button(
+                    align=ft.Alignment.TOP_LEFT,
+                    content="Back",
+                    icon=ft.Icons.ARROW_BACK_ROUNDED,
+                    on_click=lambda e: invert_change_views(tutorial["Tutorial"])
+                ),
+                ft.Container(
+                    expand=True,
+                    content=ft.Column(
+                        expand=True,
+                        alignment=ft.MainAxisAlignment.CENTER,
+                        horizontal_alignment="center",
+                        margin=10,
+                        controls=[
+                            ft.IconButton(
+                                icon=ft.Icons.CHECK_CIRCLE_OUTLINE_ROUNDED,
+                                icon_size=30,
+                                bgcolor=ft.Colors.PRIMARY_CONTAINER,
+                                disabled=True,
+                                icon_color=ft.Colors.PRIMARY,
+                            ),
+                            ft.Text(
+                                value="That's it!", 
+                                size=25, 
+                                font_family="MaterialRoundedBold", 
+                                color=ft.Colors.INVERSE_SURFACE, 
+                                style=ft.TextStyle(weight=ft.FontWeight.BOLD)
+                            ),
+                            ft.Text(
+                                value="The app doesn't need permissions.", 
+                                color=ft.Colors.GREY_400
+                            ),
+                        ]
+                    )
+                ),
+                ft.Button(
+                    width=400,
+                    on_click=lambda e: finish_tutorial(),
+                    content=ft.Row(
+                        alignment=ft.MainAxisAlignment.CENTER,
+                        controls=[
+                            ft.Text("Proceed to app",size=20, weight=ft.FontWeight.BOLD),
+                            ft.Icon(icon=ft.Icons.ARROW_FORWARD_ROUNDED, size=25)
+                        ]
+                    ),
+                    margin=10,
+                    disabled=False,
+                    style=ft.ButtonStyle(
+                        shape=ft.RoundedRectangleBorder(radius=20), 
+                        color=ft.Colors.SURFACE,
+                        overlay_color=ft.Colors.ON_PRIMARY_CONTAINER,
+                        bgcolor=ft.Colors.PRIMARY, 
+                        padding=20
+                    )
+                ), 
+            ]
+        )
+
+        layout = ft.Stack(
+            animate_offset=ft.Animation(500, ft.AnimationCurve.EASE_OUT_CUBIC),
+            expand=True,
+            controls=[intro_screen_1, intro_screen_2, tutorial_screen_1, tutorial_screen_2, tutorial_screen_3, tutorial_screen_4, intro_screen_3],
+        )
+        
+        def tutorial_true():
+            tutorial["Tutorial"] = True
+            change_views(tutorial["Tutorial"])
+        
+        def tutorial_false():
+            tutorial["Tutorial"] = False
+            change_views(tutorial["Tutorial"])
+        
+        def change_views(tutorial):
+            if intro_screen_1.offset == ft.Offset(0, 0):
+                intro_screen_1.offset = ft.Offset(-1, 0)
+                intro_screen_2.offset = ft.Offset(0, 0)
+                page.update()
+            elif intro_screen_2.offset == ft.Offset(0, 0):
+                intro_screen_2.offset = ft.Offset(-1, 0)
+                if tutorial == False:
+                    intro_screen_3.offset = ft.Offset(0, 0)
+                else:
+                    tutorial_screen_1.offset = ft.Offset(0, 0)
+                page.update()
+            elif tutorial_screen_1.offset == ft.Offset(0, 0):
+                tutorial_screen_1.offset = ft.Offset(-1, 0)
+                tutorial_screen_2.offset = ft.Offset(0, 0)
+                page.update()
+            elif tutorial_screen_2.offset == ft.Offset(0, 0):
+                tutorial_screen_2.offset = ft.Offset(-1, 0)
+                tutorial_screen_3.offset = ft.Offset(0, 0)
+                page.update()
+            elif tutorial_screen_3.offset == ft.Offset(0, 0):
+                tutorial_screen_3.offset = ft.Offset(-1, 0)
+                tutorial_screen_4.offset = ft.Offset(0, 0)
+                page.update()
+            elif intro_screen_3.offset == ft.Offset(0, 0):
+                intro_screen_3.offset = ft.Offset(-1, 0)
+                page.update()
+            elif tutorial_screen_4.offset == ft.Offset(0, 0):
+                tutorial_screen_4.offset = ft.Offset(-1, 0)
+                intro_screen_3.offset = ft.Offset(0, 0)
+                page.update()
+        
+        def invert_change_views(tutorial):
+            if intro_screen_2.offset == ft.Offset(0, 0):
+                intro_screen_2.offset = ft.Offset(1, 0)
+                intro_screen_1.offset = ft.Offset(0, 0)
+                page.update()
+            elif intro_screen_3.offset == ft.Offset(0, 0):
+                intro_screen_3.offset = ft.Offset(1, 0)
+                if tutorial == False:
+                    intro_screen_2.offset = ft.Offset(0, 0)
+                else:
+                    tutorial_screen_4.offset = ft.Offset(0, 0)
+                page.update()
+            elif tutorial_screen_1.offset == ft.Offset(0, 0):
+                tutorial_screen_1.offset = ft.Offset(1, 0)
+                intro_screen_2.offset = ft.Offset(0, 0)
+                page.update()
+            elif tutorial_screen_2.offset == ft.Offset(0, 0):
+                tutorial_screen_2.offset = ft.Offset(1, 0)
+                tutorial_screen_1.offset = ft.Offset(0, 0)
+                page.update()
+            elif tutorial_screen_3.offset == ft.Offset(0, 0):
+                tutorial_screen_3.offset = ft.Offset(1, 0)
+                tutorial_screen_2.offset = ft.Offset(0, 0)
+                page.update()
+            elif tutorial_screen_4.offset == ft.Offset(0, 0):
+                tutorial_screen_4.offset = ft.Offset(1, 0)
+                tutorial_screen_3.offset = ft.Offset(0, 0)
+                page.update()
+
+        def finish_tutorial():
+            data = json_reader()
+            if data is None:
+                return
+            data["First_run"] = False
+            json_writer(data)
+            render_tutorial()
+
+        return layout
+    
+    def render_tutorial(triggered=False):
+        if json_reader()["First_run"] or triggered:
+            page.controls.clear()
+            page.add(build_tutorial())
+            page.on_resize = None
+            page.update()
+        else:
+            page.controls.clear()
+            page.add(root_row)
+            on_resize()
+            page.on_resize = on_resize
+            page.update()
+
     def on_reorder():
         if order_toggle_button.icon == ft.Icons.ARROW_DOWNWARD_ROUNDED:
             order_toggle_button.icon = ft.Icons.ARROW_UPWARD_ROUNDED
@@ -1012,18 +1805,6 @@ def main(page: ft.Page):
         )
 
         return dialog
-
-    def json_reader():
-        try:
-            with open(SETTINGS_PATH, "r", encoding="utf-8") as file:
-                return json.load(file)
-        except FileNotFoundError:
-            print(f"Error: Could not find the JSON file at {SETTINGS_PATH}")
-            return None
-
-    def json_writer(data):
-        with open(SETTINGS_PATH, "w", encoding="utf-8") as file:
-            json.dump(data, file, indent=4, ensure_ascii=False)
 
     def autocollapse_expansion_tiles(e):
         pass
@@ -2276,8 +3057,8 @@ def main(page: ft.Page):
                         on_change=lambda e: autocollapse_expansion_tiles(e),
                         align=ft.Alignment.CENTER, 
                         tile_padding=ft.Padding.only(left=20, right=20, top=10, bottom=10),
-                        shape=ft.RoundedRectangleBorder(side=ft.BorderSide(style=ft.BorderStyle.NONE), radius=ft.BorderRadius.only(top_left=30, top_right=30, bottom_left=30, bottom_right=30)),
-                        collapsed_shape=ft.RoundedRectangleBorder(side=ft.BorderSide(style=ft.BorderStyle.NONE), radius=ft.BorderRadius.only(top_left=30, top_right=30, bottom_left=30, bottom_right=30)),
+                        shape=ft.RoundedRectangleBorder(side=ft.BorderSide(style=ft.BorderStyle.NONE), radius=ft.BorderRadius.only(top_left=30, top_right=30, bottom_left=8, bottom_right=8)),
+                        collapsed_shape=ft.RoundedRectangleBorder(side=ft.BorderSide(style=ft.BorderStyle.NONE), radius=ft.BorderRadius.only(top_left=30, top_right=30, bottom_left=8, bottom_right=8)),
                         title=ft.Row(controls=[
                             ft.IconButton(
                                 disabled=True,
@@ -2352,6 +3133,35 @@ def main(page: ft.Page):
                                 ]),
                             ),
                         ])],
+                    ),
+                    ft.Container(
+                        bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
+                        margin=ft.Margin.only(bottom=5,top=-12),
+                        width=600,
+                        on_click=lambda e: render_tutorial(triggered=True),
+                        align=ft.Alignment.CENTER,
+                        padding=20,
+                        border_radius=ft.BorderRadius.only(top_left=8, top_right=8, bottom_left=30, bottom_right=30),
+                        content=ft.Row(
+                            controls=[
+                                ft.IconButton(
+                                    disabled=True,
+                                    icon=ft.Icons.SCHOOL_ROUNDED,
+                                    style=ft.ButtonStyle(
+                                        shape=ft.CircleBorder(), 
+                                        padding=10, 
+                                        bgcolor=ft.Colors.SECONDARY_CONTAINER, 
+                                        icon_color=ft.Colors.PRIMARY, 
+                                        icon_size=20
+                                    )
+                                ),
+                                ft.Column(spacing=-3,expand=True,controls=[
+                                    ft.Text(value="Tutorial", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                    ft.Text(value="Go through the setup process again", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                ]),
+                                ft.Icon(icon=ft.Icons.OPEN_IN_NEW_ROUNDED, color=ft.Colors.INVERSE_SURFACE, size=20),
+                            ]
+                        ),
                     ),
                     ft.Row(alignment="center", controls=ft.Text(value="About", size=18, color=ft.Colors.PRIMARY)),
                     ft.Container(
@@ -2533,12 +3343,13 @@ def main(page: ft.Page):
     )
 
     page.overlay.append(create_layout)
+    
 
     root_row = ft.Row(controls=[safearea], expand=True, vertical_alignment=ft.CrossAxisAlignment.STRETCH)
-    page.add(root_row)
 
-    on_resize()
-    page.on_resize = on_resize
+    page.remove(loading_screen)
+
+    render_tutorial()
 
     load_qrs()
     theme_init_loader()
