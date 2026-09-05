@@ -1126,7 +1126,9 @@ def main(page: ft.Page):
             controls=[
                 ft.Button(
                     align=ft.Alignment.TOP_LEFT,
+                    margin=ft.Margin.only(left=10, top=10),
                     content="Back",
+                    style=ft.ButtonStyle(elevation=0, shadow_color=ft.Colors.TRANSPARENT, bgcolor=ft.Colors.SECONDARY_CONTAINER),
                     icon=ft.Icons.ARROW_BACK_ROUNDED,
                     on_click=lambda e: invert_change_views(tutorial["Tutorial"])
                 ),
@@ -1162,9 +1164,10 @@ def main(page: ft.Page):
                 ft.Row(
                     alignment=ft.MainAxisAlignment.CENTER,
                     margin=9,
+                    width=400,
                     controls=[
                         ft.Button(
-                            width=290,
+                            expand=True,
                             on_click=lambda e: tutorial_true(),
                             content=ft.Row(
                                 alignment=ft.MainAxisAlignment.CENTER,
@@ -1183,7 +1186,7 @@ def main(page: ft.Page):
                             )
                         ),
                         ft.IconButton(
-                            width=80,
+                            width=70,
                             icon=ft.Icon(icon=ft.Icons.CLOSE_ROUNDED, size=25),
                             on_click=lambda e: tutorial_false(),
                             style=ft.ButtonStyle(
@@ -1208,7 +1211,9 @@ def main(page: ft.Page):
             controls=[
                 ft.Button(
                     align=ft.Alignment.TOP_LEFT,
+                    margin=ft.Margin.only(left=10, top=10),
                     content="Back",
+                    style=ft.ButtonStyle(elevation=0, shadow_color=ft.Colors.TRANSPARENT, bgcolor=ft.Colors.SECONDARY_CONTAINER),
                     icon=ft.Icons.ARROW_BACK_ROUNDED,
                     on_click=lambda e: invert_change_views(tutorial["Tutorial"])
                 ),
@@ -1242,13 +1247,13 @@ def main(page: ft.Page):
                                 controls=[
                                     ft.Text(
                                         value="Steps to create your first QR code", 
-                                        color=ft.Colors.GREY_400,
+                                        color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=19,font_family="MaterialRoundedBold"),
                                         margin=ft.Margin.only(bottom=5)
                                     ),
                                     ft.Text(
                                         value="1. Click on the '+' button.\n2. Expand the 'Main content' section.\n3. Select the QR code type you want to create.\n4. Enter the required data.",
-                                        color=ft.Colors.GREY_400,
+                                        color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=15),
                                         margin=ft.Margin.only(bottom=10)
                                     ),
@@ -1284,7 +1289,7 @@ def main(page: ft.Page):
                                     ),
                                     ft.Text(
                                         value="5. Click on 'Save' button.",
-                                        color=ft.Colors.GREY_400,
+                                        color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=15),
                                         margin=ft.Margin.only(bottom=10)
                                     ),
@@ -1325,7 +1330,9 @@ def main(page: ft.Page):
             controls=[
                 ft.Button(
                     align=ft.Alignment.TOP_LEFT,
+                    margin=ft.Margin.only(left=10, top=10),
                     content="Back",
+                    style=ft.ButtonStyle(elevation=0, shadow_color=ft.Colors.TRANSPARENT, bgcolor=ft.Colors.SECONDARY_CONTAINER),
                     icon=ft.Icons.ARROW_BACK_ROUNDED,
                     on_click=lambda e: invert_change_views(tutorial["Tutorial"])
                 ),
@@ -1359,37 +1366,37 @@ def main(page: ft.Page):
                                 controls=[
                                     ft.Text(
                                         value="Filtering and order", 
-                                        color=ft.Colors.GREY_400,
+                                        color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=19,font_family="MaterialRoundedBold"),
                                         margin=ft.Margin.only(bottom=5)
                                     ),
                                     ft.Text(
                                         value="Order:\nBy default, QRs are ordered from newest to oldest. To toggle the order, click on the arrow button.\n\nFilter:\nTo filter by the pinned state, select the corresponding option.",
-                                        color=ft.Colors.GREY_400,
+                                        color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=15),
                                         margin=ft.Margin.only(bottom=10)
                                     ),
                                     ft.Text(
                                         value="Viewing QRs, actions and details", 
-                                        color=ft.Colors.GREY_400,
+                                        color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=19,font_family="MaterialRoundedBold"),
                                         margin=ft.Margin.only(bottom=5)
                                     ),
                                     ft.Text(
                                         value="To view a QR, its actions and its details, click on its row/entry.\n\nActions:\n- Delete\n- Export\n- Share\n- Pin\n\nThe info is in their respective sections.",
-                                        color=ft.Colors.GREY_400,
+                                        color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=15),
                                         margin=ft.Margin.only(bottom=10)
                                     ),
                                     ft.Text(
                                         value="Exporting", 
-                                        color=ft.Colors.GREY_400,
+                                        color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=19,font_family="MaterialRoundedBold"),
                                         margin=ft.Margin.only(bottom=5)
                                     ),
                                     ft.Text(
                                         value="There are three options to export a QR:\n- Export to gallery\n- Export to folder\n- Export to 3D model (.stl) -> protruding or insetting\n\nThe images are always exported in .png format.\nA filename is required.",
-                                        color=ft.Colors.GREY_400,
+                                        color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=15),
                                         margin=ft.Margin.only(bottom=10)
                                     ),
@@ -1430,7 +1437,9 @@ def main(page: ft.Page):
             controls=[
                 ft.Button(
                     align=ft.Alignment.TOP_LEFT,
+                    margin=ft.Margin.only(left=10, top=10),
                     content="Back",
+                    style=ft.ButtonStyle(elevation=0, shadow_color=ft.Colors.TRANSPARENT, bgcolor=ft.Colors.SECONDARY_CONTAINER),
                     icon=ft.Icons.ARROW_BACK_ROUNDED,
                     on_click=lambda e: invert_change_views(tutorial["Tutorial"])
                 ),
@@ -1464,13 +1473,13 @@ def main(page: ft.Page):
                                 controls=[
                                     ft.Text(
                                         value="Adding an external QR code", 
-                                        color=ft.Colors.GREY_400,
+                                        color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=19,font_family="MaterialRoundedBold"),
                                         margin=ft.Margin.only(bottom=5)
                                     ),
                                     ft.Text(
                                         value="Steps:\n1. Click on the image icon above the '+'.\n2. Select an image from your device.\nDone! The QR code will be automatically added to the library.",
-                                        color=ft.Colors.GREY_400,
+                                        color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=15),
                                         margin=ft.Margin.only(bottom=10)
                                     ),
@@ -1511,7 +1520,9 @@ def main(page: ft.Page):
             controls=[
                 ft.Button(
                     align=ft.Alignment.TOP_LEFT,
+                    margin=ft.Margin.only(left=10, top=10),
                     content="Back",
+                    style=ft.ButtonStyle(elevation=0, shadow_color=ft.Colors.TRANSPARENT, bgcolor=ft.Colors.SECONDARY_CONTAINER),
                     icon=ft.Icons.ARROW_BACK_ROUNDED,
                     on_click=lambda e: invert_change_views(tutorial["Tutorial"])
                 ),
@@ -1545,37 +1556,37 @@ def main(page: ft.Page):
                                 controls=[
                                     ft.Text(
                                         value="Customizing", 
-                                        color=ft.Colors.GREY_400,
+                                        color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=19,font_family="MaterialRoundedBold"),
                                         margin=ft.Margin.only(bottom=5)
                                     ),
                                     ft.Text(
                                         value="Cusmizations:\n- The app's theme mode -> Light/Dark/System (Default)\n- The app's theme color",
-                                        color=ft.Colors.GREY_400,
+                                        color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=15),
                                         margin=ft.Margin.only(bottom=10)
                                     ),
                                     ft.Text(
                                         value="Tools", 
-                                        color=ft.Colors.GREY_400,
+                                        color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=19,font_family="MaterialRoundedBold"),
                                         margin=ft.Margin.only(bottom=5)
                                     ),
                                     ft.Text(
                                         value="Tools available:\n- Export library to zip\n- Import library from zip\n- Clear library",
-                                        color=ft.Colors.GREY_400,
+                                        color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=15),
                                         margin=ft.Margin.only(bottom=10)
                                     ),
                                     ft.Text(
                                         value="Other", 
-                                        color=ft.Colors.GREY_400,
+                                        color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=19,font_family="MaterialRoundedBold"),
                                         margin=ft.Margin.only(bottom=5)
                                     ),
                                     ft.Text(
                                         value="- This tutorial",
-                                        color=ft.Colors.GREY_400,
+                                        color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=15),
                                         margin=ft.Margin.only(bottom=10)
                                     ),
@@ -1616,7 +1627,9 @@ def main(page: ft.Page):
             controls=[
                 ft.Button(
                     align=ft.Alignment.TOP_LEFT,
+                    margin=ft.Margin.only(left=10,top=10),
                     content="Back",
+                    style=ft.ButtonStyle(elevation=0, shadow_color=ft.Colors.TRANSPARENT, bgcolor=ft.Colors.SECONDARY_CONTAINER),
                     icon=ft.Icons.ARROW_BACK_ROUNDED,
                     on_click=lambda e: invert_change_views(tutorial["Tutorial"])
                 ),
@@ -1672,10 +1685,13 @@ def main(page: ft.Page):
             ]
         )
 
-        layout = ft.Stack(
-            animate_offset=ft.Animation(500, ft.AnimationCurve.EASE_OUT_CUBIC),
+        layout = ft.SafeArea(
             expand=True,
-            controls=[intro_screen_1, intro_screen_2, tutorial_screen_1, tutorial_screen_2, tutorial_screen_3, tutorial_screen_4, intro_screen_3],
+            content=ft.Stack(
+                animate_offset=ft.Animation(500, ft.AnimationCurve.EASE_OUT_CUBIC),
+                expand=True,
+                controls=[intro_screen_1, intro_screen_2, tutorial_screen_1, tutorial_screen_2, tutorial_screen_3, tutorial_screen_4, intro_screen_3],
+            )
         )
         
         def tutorial_true():
@@ -3312,7 +3328,7 @@ def main(page: ft.Page):
     )
 
     create_button = ft.FloatingActionButton(icon=ft.Icons.ADD_ROUNDED, on_click=lambda e: qr_creator_open(),width=70, height=70)
-    add_external_qr_button = ft.FloatingActionButton(icon=ft.Icons.ADD_PHOTO_ALTERNATE_ROUNDED, on_click=lambda e: asyncio.ensure_future(import_external_qr_image()), bgcolor=ft.Colors.TERTIARY_CONTAINER)
+    add_external_qr_button = ft.FloatingActionButton(icon=ft.Icon(icon=ft.Icons.ADD_PHOTO_ALTERNATE_ROUNDED, color=ft.Colors.TERTIARY), on_click=lambda e: asyncio.ensure_future(import_external_qr_image()), bgcolor=ft.Colors.TERTIARY_CONTAINER)
 
     floating_actions = ft.Container(
         expand=False,
