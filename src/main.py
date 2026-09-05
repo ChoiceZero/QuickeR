@@ -1278,9 +1278,10 @@ def main(page: ft.Page):
                                                 ft.Container(
                                                     padding=10,
                                                     border_radius=10,
-                                                    bgcolor=ft.Colors.SURFACE_CONTAINER,
+                                                    bgcolor=ft.Colors.SURFACE,
                                                     content=ft.Text(
                                                         size=15,
+                                                        color=ft.Colors.GREY_500,
                                                         value="- Change error correction level           \nOn the 'Customization' section:\n- Add a custom logo\n- Change the QR's colors"
                                                     )
                                                 )
