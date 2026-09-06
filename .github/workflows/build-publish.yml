@@ -245,6 +245,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
+      - uses: actions/checkout@v4
+
       - name: Download Linux build
         uses: actions/download-artifact@v4
         with:
@@ -286,14 +288,7 @@ jobs:
           EOF
           chmod +x "$APPDIR/AppRun"
 
-          ICON_SRC=$(find "$APPDIR/usr/bin" -iname "*.png" | head -n1 || true)
-          if [ -n "$ICON_SRC" ]; then
-            cp "$ICON_SRC" "$APPDIR/quicker.png"
-          else
-            # appimagetool requires an icon to exist; create a blank fallback
-            python3 -c "from PIL import Image; Image.new('RGBA',(256,256),(30,136,229,255)).save('$APPDIR/quicker.png')" || \
-              touch "$APPDIR/quicker.png"
-          fi
+          cp src/assets/icon.png "$APPDIR/quicker.png"
 
           cat > "$APPDIR/quicker.desktop" <<EOF
           [Desktop Entry]

@@ -526,9 +526,8 @@ class QRCodes:
             if self.main_container in self.regular_view.controls:
                 self.regular_view.controls.remove(self.main_container)
         self.clean_bs_up()
-        self.details_main_page_view.controls.clear()
         self.details_main_page_view.alignment=ft.MainAxisAlignment.CENTER
-        self.details_main_page_view.controls.append(ft.Text(value="Click on an item to view details!",font_family="MaterialRoundedBold",size=16,color=ft.Colors.GREY_500))
+        self.details_main_page_view.content=ft.Text(value="Click on an item to view details!",font_family="MaterialRoundedBold",size=16,color=ft.Colors.GREY_500)
         self.page.pop_dialog()
         self.page.update()
 
@@ -2044,7 +2043,7 @@ def main(page: ft.Page):
     def clear_app_data():
         def clear_data_confirmed():
             page.pop_dialog()
-            page.show_dialog(ft.AlertDialog(title=ft.Text("Clearing data..."), content=ft.ProgressRing(), actions=[], open=True))
+            page.show_dialog(ft.AlertDialog(title=ft.Text("Clearing data..."), content=ft.ProgressRing(width=50, height=50), actions=[], open=True))
             if os.path.exists(QR_DIR):
                 shutil.rmtree(QR_DIR)
             if os.path.exists(PINNED_DIR):
@@ -2054,8 +2053,7 @@ def main(page: ft.Page):
             all_view.controls.clear()
             pinned_view.controls.clear()
             regular_view.controls.clear()
-            details_main_page_view.controls.clear()
-            details_main_page_view.controls.append(ft.Text(value="Click on an item to view details!",font_family="MaterialRoundedBold",size=16,color=ft.Colors.GREY_500))
+            details_main_page_view.content = ft.Text(value="Click on an item to view details!",font_family="MaterialRoundedBold",size=16,color=ft.Colors.GREY_500)
             details_main_page_view.alignment = ft.MainAxisAlignment.CENTER
             page.update()
             page.pop_dialog()
