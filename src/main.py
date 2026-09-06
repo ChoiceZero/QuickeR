@@ -354,7 +354,7 @@ class LogoPicker:
 # ---------------------------------------------------------------------------
 
 class QRCodes:
-    def __init__(self, page, input, all_view, regular_view, pinned_view,details_main_page_view):
+    def __init__(self, page, input, all_view, regular_view, pinned_view,details_main_page_view,tip_text):
         self.all_view = all_view
         self.regular_view = regular_view
         self.pinned_view = pinned_view
@@ -377,7 +377,7 @@ class QRCodes:
         self.result_raw = ft.Text()
         self.stl_invert = False
         self.details_bs = None
-
+        self.tip_text = tip_text
     def get_qr_date(self, qr_id):
         img_path = get_qr_image_path(qr_id)
         if img_path:
@@ -509,7 +509,7 @@ class QRCodes:
             ),
             actions=[
                 ft.Button(content="Cancel", on_click=lambda e: self.page.pop_dialog()),
-                ft.Button(icon=ft.Icons.DELETE, bgcolor=ft.Colors.RED_900, content="Delete", on_click=lambda e: self.delete_qr()),
+                ft.Button(icon=ft.Icons.DELETE, bgcolor=ft.Colors.RED_900, color=ft.Colors.WHITE, content="Delete", on_click=lambda e: self.delete_qr()),
             ],
             open=True,
         )
@@ -543,6 +543,9 @@ class QRCodes:
         self.details_main_page_view.content = ft.Text(value="Click on an item to view details!", font_family="MaterialRoundedBold", size=16, color=ft.Colors.GREY_500)
         self.page.pop_dialog()
         self.page.update()
+        if not self.all_view.controls:
+            self.tip_text.visible = True
+            self.page.update()
 
     def download_qr_action(self):
         self.filetext = ft.TextField(
@@ -2071,6 +2074,8 @@ def main(page: ft.Page):
             page.update()
             page.pop_dialog()
             page.show_dialog(ft.SnackBar(content=ft.Text("All data cleared successfully.")))
+            if tip_text.visible == False:
+                tip_text.visible = True
 
         page.show_dialog(ft.AlertDialog(
             title=ft.Text("Are you sure you want to clear all data?"),
@@ -2194,7 +2199,7 @@ def main(page: ft.Page):
             return
 
         try:
-            new_qr = QRCodes(page, "", all_view, regular_view, pinned_view, details_main_page_view)
+            new_qr = QRCodes(page, "", all_view, regular_view, pinned_view, details_main_page_view,tip_text)
             new_id = new_qr.id_assigner()
             dest_path = os.path.join(QR_DIR, f"{new_id}{ext}")
             shutil.copy(src_path, dest_path)
@@ -2211,6 +2216,9 @@ def main(page: ft.Page):
             new_qr.url = data
             new_qr.date = new_qr.get_qr_date(new_id)
             new_qr.display_qr(False)
+            if tip_text.visible:
+                tip_text.visible = False
+                page.update()
 
             page.show_dialog(ft.SnackBar(content=ft.Text("QR code imported successfully.")))
 
@@ -2320,12 +2328,15 @@ def main(page: ft.Page):
             if not data:
                 continue
 
-            qr = QRCodes(page, data, all_view, regular_view, pinned_view,details_main_page_view)
+            qr = QRCodes(page, data, all_view, regular_view, pinned_view,details_main_page_view,tip_text)
             qr.fill_color, qr.back_color = get_qr_colors(path)
             qr.qr_id = qr_id
             qr.date = qr.get_qr_date(qr_id)
             qr.url = data
             qr.display_qr(is_pinned, prepend=False)
+
+        tip_text.visible = not bool(all_view.controls)
+        page.update()
 
     # -------------------------------------------------------------
     # QR creation: preview + per-type forms
@@ -2427,13 +2438,16 @@ def main(page: ft.Page):
 
     def create_qr_action():
         create_info = qr_content["content"]
-        new_qr = QRCodes(page, create_info, all_view, regular_view, pinned_view,details_main_page_view)
+        new_qr = QRCodes(page, create_info, all_view, regular_view, pinned_view,details_main_page_view,tip_text)
         new_qr.fill_color, new_qr.back_color = qr_color_scheme_primary.color, qr_color_scheme_secondary.color
         if last_qr_image["img"] is None:
             print("image can't be Nonetype!")
         else:
             new_qr.create_qr(last_qr_image["img"])
         clean_create_bs_up(full_reset=True)
+        if tip_text.visible == True:
+            tip_text.visible = False
+        page.update()
 
     def qr_create_triggered():
         if not input_checker():
@@ -2951,7 +2965,7 @@ def main(page: ft.Page):
             alignment=ft.MainAxisAlignment.CENTER,
             controls=[
                 ft.Text(
-                    value="Click on an item to view details!",
+                    value="No QR codes yet! Tap the '+' button to create your first one.",
                     font_family="MaterialRoundedBold",
                     size=16,
                     color=ft.Colors.GREY_500
@@ -2963,6 +2977,16 @@ def main(page: ft.Page):
         margin=5,
         bgcolor=ft.Colors.SURFACE_CONTAINER_LOWEST,
         border_radius=25
+    )
+
+    tip_text = ft.Container(
+        content=ft.Row(controls=[
+            ft.Icon(icon=ft.Icons.INFO_OUTLINE_ROUNDED, color=ft.Colors.INVERSE_SURFACE),
+            ft.Container(expand=True, content=ft.Text(value="No QR codes yet! Tap the '+' button to create your first one.", size=16, color=ft.Colors.INVERSE_SURFACE)),
+        ]),
+        visible=False,
+        padding=15, bgcolor=ft.Colors.INVERSE_PRIMARY, border_radius=30,
+        margin=ft.Margin.only(left=0, right=0, top=5, bottom=5),
     )
 
     overview = ft.Column(expand=True, horizontal_alignment=ft.CrossAxisAlignment.STRETCH, controls=[
@@ -2991,6 +3015,7 @@ def main(page: ft.Page):
             pin_filter_buttongroup,
         ]),
         ft.Divider(height=0.1,thickness=0.1, color=ft.Colors.GREY_400),
+        tip_text,
         ft.Row(controls=[all_view,details_main_page_view], expand=True),
     ])
 
