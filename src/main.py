@@ -515,19 +515,32 @@ class QRCodes:
         )
         self.page.show_dialog(delete_dialog)
 
+    def _remove_from_view_with_orphan_label(self, view):
+        if self.main_container not in view.controls:
+            return
+        idx = view.controls.index(self.main_container)
+        view.controls.pop(idx)
+        if idx > 0 and isinstance(view.controls[idx - 1], ft.Text):
+            is_last = idx >= len(view.controls)
+            next_is_label = (not is_last) and isinstance(view.controls[idx], ft.Text)
+            if is_last or next_is_label:
+                view.controls.pop(idx - 1)
+
     def delete_qr(self):
         img_path = get_qr_image_path(self.qr_id)
         if img_path:
             os.remove(img_path)
-            if self.main_container in self.all_view.controls:
-                self.all_view.controls.remove(self.main_container)
-            if self.main_container in self.pinned_view.controls:
-                self.pinned_view.controls.remove(self.main_container)
-            if self.main_container in self.regular_view.controls:
-                self.regular_view.controls.remove(self.main_container)
-        self.clean_bs_up()
-        self.details_main_page_view.alignment=ft.MainAxisAlignment.CENTER
-        self.details_main_page_view.content=ft.Text(value="Click on an item to view details!",font_family="MaterialRoundedBold",size=16,color=ft.Colors.GREY_500)
+            self._remove_from_view_with_orphan_label(self.all_view)
+            self._remove_from_view_with_orphan_label(self.pinned_view)
+            self._remove_from_view_with_orphan_label(self.regular_view)
+
+        if self.details_bs and self.details_bs in self.page.overlay:
+            self.details_bs.open = False
+            self.page.update()
+            self.page.overlay.remove(self.details_bs)
+
+        self.details_main_page_view.alignment = ft.MainAxisAlignment.CENTER
+        self.details_main_page_view.content = ft.Text(value="Click on an item to view details!", font_family="MaterialRoundedBold", size=16, color=ft.Colors.GREY_500)
         self.page.pop_dialog()
         self.page.update()
 
@@ -628,7 +641,7 @@ class QRCodes:
                 ),
                 actions=[
                     ft.TextButton("Cancel", on_click=lambda e: self.page.pop_dialog()),
-                    ft.TextButton("Continue", on_click=lambda e: [self.page.pop_dialog(), asyncio.ensure_future(self._export_to_gallery_direct(src))]),
+                    ft.TextButton("Continue", on_click=lambda e: [self.page.pop_dialog(), asyncio.ensure_future(self._export_to_gallery_picker(src))]),
                 ],
                 actions_alignment="end",
                 open=True,
@@ -881,7 +894,7 @@ class QRCodes:
 
     def display_details_bottomsheet(self):
         def get_actions():
-            if self.page.width > 400:
+            if self.page.width > 380:
                 return ft.Row(
                     alignment="center", 
                     margin=ft.Margin.only(left=20, right=20), 
@@ -2694,8 +2707,8 @@ def main(page: ft.Page):
         ft.Divider(color=ft.Colors.GREY),
         ft.Container(
             content=ft.Row(controls=[
-                ft.Icon(icon=ft.Icons.INFO_OUTLINE_ROUNDED, color=ft.Colors.WHITE),
-                ft.Container(expand=True, content=ft.Text(value="If your network has no password, select it here!", size=16, color=ft.Colors.WHITE)),
+                ft.Icon(icon=ft.Icons.INFO_OUTLINE_ROUNDED, color=ft.Colors.INVERSE_SURFACE),
+                ft.Container(expand=True, content=ft.Text(value="If your network has no password, select it here!", size=16, color=ft.Colors.INVERSE_SURFACE, text_align=ft.TextAlign.LEFT), padding=ft.Padding.only(left=10)),
             ]),
             padding=15, bgcolor=ft.Colors.INVERSE_PRIMARY, border_radius=30,
             margin=ft.Margin.only(left=0, right=0, top=5, bottom=5),
@@ -2784,8 +2797,8 @@ def main(page: ft.Page):
         ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.ACCESS_TIME_ROUNDED), ft.Text(value="Date and time", size=20)]),
         ft.Container(
             content=ft.Row(controls=[
-                ft.Icon(icon=ft.Icons.INFO_OUTLINE_ROUNDED, color=ft.Colors.WHITE),
-                ft.Container(expand=True, content=ft.Text(value="Please change all fields in the buttons below here! Else, the dates and times will not be applied.", size=16, color=ft.Colors.WHITE)),
+                ft.Icon(icon=ft.Icons.INFO_OUTLINE_ROUNDED, color=ft.Colors.INVERSE_SURFACE),
+                ft.Container(expand=True, content=ft.Text(value="Please change all fields in the buttons below here! Else, the dates and times will not be applied.", size=16, color=ft.Colors.INVERSE_SURFACE)),
             ]),
             padding=15, bgcolor=ft.Colors.INVERSE_PRIMARY, border_radius=30,
             margin=ft.Margin.only(left=0, right=0, top=5, bottom=5),
