@@ -629,7 +629,7 @@ class QRCodes:
                 ),
                 actions=[
                     ft.TextButton("Cancel", on_click=lambda e: self.page.pop_dialog()),
-                    ft.TextButton("Continue", on_click=lambda e: [self.page.pop_dialog(), asyncio.ensure_future(self._do_export_to_gallery(src))]),
+                    ft.TextButton("Continue", on_click=lambda e: [self.page.pop_dialog(), asyncio.ensure_future(self._export_to_gallery_direct(src))]),
                 ],
                 actions_alignment="end",
                 open=True,
@@ -1014,7 +1014,7 @@ class QRCodes:
             horizontal_alignment="center", 
             scroll=ft.ScrollMode.AUTO, 
             controls=[
-                ft.Text(value=self.display_name, size=20, weight="bold", font_family="MaterialRounded", text_align="center",overflow="ELLIPSIS"),
+                ft.Text(value=self.display_name, size=20, weight="bold", font_family="MaterialRounded", text_align="center",overflow="ELLIPSIS", margin=ft.Margin.only(top=10)),
                 ft.Container(
                     bgcolor=ft.Colors.INVERSE_PRIMARY, border_radius=30, content=qr, padding=20,
                     margin=ft.Margin.only(left=20, right=20, bottom=5),
@@ -1060,25 +1060,24 @@ class QRCodes:
         )    
 
         if self.page.width < 1050:
+            if self.details_bs and self.details_bs in self.page.overlay:
+                self.page.overlay.remove(self.details_bs)
             self.details_bs = ft.BottomSheet(
                 draggable=True, show_drag_handle=True, use_safe_area=True, scrollable=False, fullscreen=True,
                 open=False, on_dismiss=lambda e: self.clean_bs_up(),
                 content= self.about_content
             )
-            if self.details_bs not in self.page.overlay:
-                self.page.overlay.append(self.details_bs)
+            self.page.overlay.append(self.details_bs)
             self.page.update()
             self.details_bs.open = True
             self.page.update()
         else:
-            self.details_main_page_view.controls.clear()
-            self.details_main_page_view.alignment=ft.MainAxisAlignment.START
-            self.details_main_page_view.controls.append(self.about_content)
+            self.details_main_page_view.content = self.about_content
             self.page.update()
 
     def clean_bs_up(self):
         if self.details_bs and self.details_bs in self.page.overlay:
-            self.details_bs.open = False
+            self.page.overlay.remove(self.details_bs)
             self.page.update()
 
     async def do_share_files_from_paths(self):
@@ -1946,10 +1945,8 @@ def main(page: ft.Page):
     def on_resize():
         if page.width > 1050:
             details_main_page_view.visible = True
-            details_main_page_view.parent.controls[1].visible = True
         else:
             details_main_page_view.visible = False
-            details_main_page_view.parent.controls[1].visible = False
 
     def progress_dialog(title):
         dialog = ft.AlertDialog(
@@ -2935,14 +2932,26 @@ def main(page: ft.Page):
         on_click=lambda e: on_reorder()
     )
 
-    details_main_page_view = ft.Column(
-        controls=[ft.Text(value="Click on an item to view details!",font_family="MaterialRoundedBold",size=16,color=ft.Colors.GREY_500)], 
+    details_main_page_view = ft.Container(
+        content=ft.Column(
+            expand=True,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER, 
+            scroll=ft.ScrollMode.AUTO, 
+            alignment=ft.MainAxisAlignment.CENTER,
+            controls=[
+                ft.Text(
+                    value="Click on an item to view details!",
+                    font_family="MaterialRoundedBold",
+                    size=16,
+                    color=ft.Colors.GREY_500
+                )
+            ]
+        ),
         visible=False, 
         expand=True,
-        margin=ft.Margin.only(left=10, right=10, top=20),
-        horizontal_alignment=ft.CrossAxisAlignment.CENTER, 
-        scroll=ft.ScrollMode.AUTO, 
-        alignment=ft.MainAxisAlignment.CENTER
+        margin=5,
+        bgcolor=ft.Colors.SURFACE_CONTAINER_LOWEST,
+        border_radius=25
     )
 
     overview = ft.Column(expand=True, horizontal_alignment=ft.CrossAxisAlignment.STRETCH, controls=[
@@ -2971,7 +2980,7 @@ def main(page: ft.Page):
             pin_filter_buttongroup,
         ]),
         ft.Divider(height=0.1,thickness=0.1, color=ft.Colors.GREY_400),
-        ft.Row(controls=[all_view,ft.Container(width=0.2,bgcolor=ft.Colors.GREY_500,margin=ft.Margin.only(left=5, right=5, top=-10, bottom=-10),visible=False),details_main_page_view], expand=True),
+        ft.Row(controls=[all_view,details_main_page_view], expand=True),
     ])
 
     # -------------------------------------------------------------

@@ -15,12 +15,60 @@ env:
   PYTHONIOENCODING: utf-8
 
 jobs:
+  bump-version:
+    name: Bump version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
+      sha: ${{ steps.sha.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Bump patch version
+        id: bump
+        run: |
+          CURRENT=$(grep -m1 '^version' pyproject.toml | sed -E 's/version[[:space:]]*=[[:space:]]*"(.*)"/\1/')
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+          PATCH=$((PATCH+1))
+          if [ "$PATCH" -ge 10 ]; then
+            PATCH=0
+            MINOR=$((MINOR+1))
+            if [ "$MINOR" -ge 10 ]; then
+              MINOR=0
+              MAJOR=$((MAJOR+1))
+            fi
+          fi
+          NEW="$MAJOR.$MINOR.$PATCH"
+          echo "Current version: $CURRENT -> New version: $NEW"
+          sed -i "s/^version[[:space:]]*=[[:space:]]*\".*\"/version = \"$NEW\"/" pyproject.toml
+          echo "version=$NEW" >> "$GITHUB_OUTPUT"
+
+      - name: Commit and push bumped version
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add pyproject.toml
+          git commit -m "chore: bump version to ${{ steps.bump.outputs.version }} [skip ci]"
+          git push
+
+      - name: Resolve commit sha to build
+        id: sha
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
   build-linux:
     name: Build Linux
+    needs: bump-version
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.bump-version.outputs.sha }}
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
@@ -51,10 +99,13 @@ jobs:
 
   build-windows:
     name: Build Windows
+    needs: bump-version
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.bump-version.outputs.sha }}
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
@@ -87,10 +138,13 @@ jobs:
 
   build-android:
     name: Build Android
+    needs: bump-version
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.bump-version.outputs.sha }}
 
       - name: Free disk space
         uses: jlumbroso/free-disk-space@main
@@ -146,10 +200,13 @@ jobs:
 
   build-macos:
     name: Build macOS
+    needs: bump-version
     runs-on: macos-latest
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.bump-version.outputs.sha }}
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
@@ -370,7 +427,7 @@ jobs:
 
   release:
     name: Publish to Releases
-    needs: [build-linux, build-windows, build-android, build-macos, build-appimage, build-windows-installer, build-macos-dmg]
+    needs: [bump-version, build-linux, build-windows, build-android, build-macos, build-appimage, build-windows-installer, build-macos-dmg]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -386,7 +443,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('manual-{0}', github.run_number) }}
+          tag_name: v${{ needs.bump-version.outputs.version }}
+          name: QuickeR v${{ needs.bump-version.outputs.version }}
           files: |
             artifacts/linux-build/QuickeR-linux.zip
             artifacts/linux-appimage/QuickeR-linux.AppImage
