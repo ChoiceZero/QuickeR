@@ -434,7 +434,7 @@ class QRCodes:
             icon = ft.Icons.PHONE_ROUNDED
         elif "geo:" in url:
             name = url.split(":")[1]
-            icon = ft.Icons.PIN_ROUNDED
+            icon = ft.CupertinoIcons.COMPASS_FILL
         elif "http" in url:
             name = url
             icon = ft.Icons.LINK_ROUNDED
@@ -895,6 +895,612 @@ class QRCodes:
         self.qrpath = get_qr_image_path(self.qr_id)
         self.display_qr(False)
 
+    def data_unpacker(self):
+        url = self.url or ""
+        try:
+            if "WIFI:S:" in url:
+                if "T:nopass" in url:
+                    layout = ft.Column(
+                        spacing=3,
+                        tight=True,
+                        controls=[
+                            ft.Container(
+                                bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
+                                width=600,
+                                align=ft.Alignment.CENTER,
+                                padding=20,
+                                border_radius=ft.BorderRadius.only(top_left=30, top_right=30, bottom_left=8, bottom_right=8),
+                                content=ft.Row(
+                                    controls=[
+                                        ft.IconButton(
+                                            disabled=True,
+                                            icon=ft.Icons.WIFI_ROUNDED,
+                                            style=ft.ButtonStyle(
+                                                shape=ft.CircleBorder(), 
+                                                padding=10, 
+                                                bgcolor=ft.Colors.SECONDARY_CONTAINER, 
+                                                icon_color=ft.Colors.PRIMARY, 
+                                                icon_size=20
+                                            )
+                                        ),
+                                        ft.Column(spacing=-3,expand=True,controls=[
+                                            ft.Text(value=url.split(";")[0].split(":")[2], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                            ft.Text(value="Network name", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                        ]),
+                                    ]
+                                ),
+                            ),
+                            ft.Container(
+                                bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
+                                width=600,
+                                align=ft.Alignment.CENTER,
+                                padding=20,
+                                border_radius=ft.BorderRadius.only(top_left=8, top_right=8, bottom_left=30, bottom_right=30),
+                                content=ft.Row(
+                                    controls=[
+                                        ft.IconButton(
+                                            disabled=True,
+                                            icon=ft.Icons.LOCK_OUTLINE_ROUNDED,
+                                            style=ft.ButtonStyle(
+                                                shape=ft.CircleBorder(), 
+                                                padding=10, 
+                                                bgcolor=ft.Colors.SECONDARY_CONTAINER, 
+                                                icon_color=ft.Colors.PRIMARY, 
+                                                icon_size=20
+                                            )
+                                        ),
+                                        ft.Column(spacing=-3,expand=True,controls=[
+                                            ft.Text(value="No password", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                            ft.Text(value="Password", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                        ]),
+                                    ]
+                                ),
+                            ),
+                        ]
+                    )
+                else:
+                    layout = ft.Column(
+                        spacing=3,
+                        tight=True,
+                        controls=[
+                            ft.Container(
+                                bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
+                                width=600,
+                                align=ft.Alignment.CENTER,
+                                padding=20,
+                                border_radius=ft.BorderRadius.only(top_left=30, top_right=30, bottom_left=8, bottom_right=8),
+                                content=ft.Row(
+                                    controls=[
+                                        ft.IconButton(
+                                            disabled=True,
+                                            icon=ft.Icons.WIFI_ROUNDED,
+                                            style=ft.ButtonStyle(
+                                                shape=ft.CircleBorder(), 
+                                                padding=10, 
+                                                bgcolor=ft.Colors.SECONDARY_CONTAINER, 
+                                                icon_color=ft.Colors.PRIMARY, 
+                                                icon_size=20
+                                            )
+                                        ),
+                                        ft.Column(spacing=-3,expand=True,controls=[
+                                            ft.Text(value=url.split(";")[0].split(":")[2], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                            ft.Text(value="Network name", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                        ]),
+                                    ]
+                                ),
+                            ),
+                            ft.Container(
+                                bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
+                                width=600,
+                                align=ft.Alignment.CENTER,
+                                padding=20,
+                                border_radius=ft.BorderRadius.only(top_left=8, top_right=8, bottom_left=8, bottom_right=8),
+                                content=ft.Row(
+                                    controls=[
+                                        ft.IconButton(
+                                            disabled=True,
+                                            icon=ft.Icons.SHIELD_ROUNDED,
+                                            style=ft.ButtonStyle(
+                                                shape=ft.CircleBorder(), 
+                                                padding=10, 
+                                                bgcolor=ft.Colors.SECONDARY_CONTAINER, 
+                                                icon_color=ft.Colors.PRIMARY, 
+                                                icon_size=20
+                                            )
+                                        ),
+                                        ft.Column(spacing=-3,expand=True,controls=[
+                                            ft.Text(value=url.split(";")[1].split(":")[1], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                            ft.Text(value="Protocol", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                        ]),
+                                    ]
+                                ),
+                            ),
+                            ft.Container(
+                                bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
+                                width=600,
+                                align=ft.Alignment.CENTER,
+                                padding=20,
+                                border_radius=ft.BorderRadius.only(top_left=8, top_right=8, bottom_left=30, bottom_right=30),
+                                content=ft.Row(
+                                    controls=[
+                                        ft.IconButton(
+                                            disabled=True,
+                                            icon=ft.Icons.LOCK_OUTLINE_ROUNDED,
+                                            style=ft.ButtonStyle(
+                                                shape=ft.CircleBorder(), 
+                                                padding=10, 
+                                                bgcolor=ft.Colors.SECONDARY_CONTAINER, 
+                                                icon_color=ft.Colors.PRIMARY, 
+                                                icon_size=20
+                                            )
+                                        ),
+                                        ft.Column(spacing=-3,expand=True,controls=[
+                                            ft.Text(value=url.split(";")[2].split(":")[1], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                            ft.Text(value="Password", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                        ]),
+                                    ]
+                                ),
+                            ),
+                        ]
+                    )
+            elif "BEGIN:VCALENDAR" in url:
+                layout = ft.Column(
+                    spacing=3,
+                    tight=True,
+                    controls=[
+                        ft.Container(
+                            bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
+                            width=600,
+                            align=ft.Alignment.CENTER,
+                            padding=20,
+                            border_radius=ft.BorderRadius.only(top_left=30, top_right=30, bottom_left=8, bottom_right=8),
+                            content=ft.Row(
+                                controls=[
+                                    ft.IconButton(
+                                        disabled=True,
+                                        icon=ft.Icons.TEXT_FIELDS_ROUNDED,
+                                        style=ft.ButtonStyle(
+                                            shape=ft.CircleBorder(), 
+                                            padding=10, 
+                                            bgcolor=ft.Colors.SECONDARY_CONTAINER, 
+                                            icon_color=ft.Colors.PRIMARY, 
+                                            icon_size=20
+                                        )
+                                    ),
+                                    ft.Column(spacing=-3,expand=True,controls=[
+                                        ft.Text(value=url.split("\n")[3].split(":")[1], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                        ft.Text(value="Event name", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                    ]),
+                                ]
+                            ),
+                        ),
+                        ft.Container(
+                            bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
+                            width=600,
+                            align=ft.Alignment.CENTER,
+                            padding=20,
+                            border_radius=ft.BorderRadius.only(top_left=8, top_right=8, bottom_left=8, bottom_right=8),
+                            content=ft.Row(
+                                controls=[
+                                    ft.IconButton(
+                                        disabled=True,
+                                        icon=ft.Icons.PIN_DROP_ROUNDED,
+                                        style=ft.ButtonStyle(
+                                            shape=ft.CircleBorder(), 
+                                            padding=10, 
+                                            bgcolor=ft.Colors.SECONDARY_CONTAINER, 
+                                            icon_color=ft.Colors.PRIMARY, 
+                                            icon_size=20
+                                        )
+                                    ),
+                                    ft.Column(spacing=-3,expand=True,controls=[
+                                        ft.Text(value=url.split("\n")[4].split(":")[1], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                        ft.Text(value="Location name", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                    ]),
+                                ]
+                            ),
+                        ),
+                        ft.Container(
+                            bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
+                            width=600,
+                            align=ft.Alignment.CENTER,
+                            padding=20,
+                            border_radius=ft.BorderRadius.only(top_left=8, top_right=8, bottom_left=8, bottom_right=8),
+                            content=ft.Row(
+                                controls=[
+                                    ft.IconButton(
+                                        disabled=True,
+                                        icon=ft.Icons.ACCESS_TIME_FILLED_ROUNDED,
+                                        style=ft.ButtonStyle(
+                                            shape=ft.CircleBorder(), 
+                                            padding=10, 
+                                            bgcolor=ft.Colors.SECONDARY_CONTAINER, 
+                                            icon_color=ft.Colors.PRIMARY, 
+                                            icon_size=20
+                                        )
+                                    ),
+                                    ft.Column(spacing=-3,expand=True,controls=[
+                                        ft.Text(value=f"Day: {url.split("\n")[5].split(":")[1].split('T')[0][:4]}-{url.split("\n")[5].split(":")[1].split('T')[0][4:6]}-{url.split("\n")[5].split(":")[1].split('T')[0][6:8]} Time: {url.split("\n")[5].split(":")[1].split('T')[1][:2]}:{url.split("\n")[5].split(":")[1].split('T')[1][2:4]}", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                        ft.Text(value="Start time", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                    ]),
+                                ]
+                            ),
+                        ),
+                        ft.Container(
+                            bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
+                            width=600,
+                            align=ft.Alignment.CENTER,
+                            padding=20,
+                            border_radius=ft.BorderRadius.only(top_left=8, top_right=8, bottom_left=30, bottom_right=30),
+                            content=ft.Row(
+                                controls=[
+                                    ft.IconButton(
+                                        disabled=True,
+                                        icon=ft.Icons.ACCESS_TIME_FILLED_ROUNDED,
+                                        style=ft.ButtonStyle(
+                                            shape=ft.CircleBorder(), 
+                                            padding=10, 
+                                            bgcolor=ft.Colors.SECONDARY_CONTAINER, 
+                                            icon_color=ft.Colors.PRIMARY, 
+                                            icon_size=20
+                                        )
+                                    ),
+                                    ft.Column(spacing=-3,expand=True,controls=[
+                                        ft.Text(value=f"Day: {url.split("\n")[6].split(":")[1].split('T')[0][:4]}-{url.split("\n")[6].split(":")[1].split('T')[0][4:6]}-{url.split("\n")[6].split(":")[1].split('T')[0][6:8]} Time: {url.split("\n")[6].split(":")[1].split('T')[1][:2]}:{url.split("\n")[6].split(":")[1].split('T')[1][2:4]}", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                        ft.Text(value="End time", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                    ]),
+                                ]
+                            ),
+                        )
+                    ]
+                )
+            elif "mailto:" in url:
+                if "?subject=" in url:
+                    layout = ft.Column(
+                        spacing=3,
+                        tight=True,
+                        controls=[
+                            ft.Container(
+                                bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
+                                width=600,
+                                align=ft.Alignment.CENTER,
+                                padding=20,
+                                border_radius=ft.BorderRadius.only(top_left=30, top_right=30, bottom_left=8, bottom_right=8),
+                                content=ft.Row(
+                                    controls=[
+                                        ft.IconButton(
+                                            disabled=True,
+                                            icon=ft.Icons.PERSON_2_ROUNDED,
+                                            style=ft.ButtonStyle(
+                                                shape=ft.CircleBorder(), 
+                                                padding=10, 
+                                                bgcolor=ft.Colors.SECONDARY_CONTAINER, 
+                                                icon_color=ft.Colors.PRIMARY, 
+                                                icon_size=20
+                                            )
+                                        ),
+                                        ft.Column(spacing=-3,expand=True,controls=[
+                                            ft.Text(value=url.split("?")[0].split(":")[1], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                            ft.Text(value="Receiver's address", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                        ]),
+                                    ]
+                                ),
+                            ),
+                            ft.Container(
+                                bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
+                                width=600,
+                                align=ft.Alignment.CENTER,
+                                padding=20,
+                                border_radius=ft.BorderRadius.only(top_left=8, top_right=8, bottom_left=8, bottom_right=8),
+                                content=ft.Row(
+                                    controls=[
+                                        ft.IconButton(
+                                            disabled=True,
+                                            icon=ft.Icons.SHORT_TEXT_ROUNDED,
+                                            style=ft.ButtonStyle(
+                                                shape=ft.CircleBorder(), 
+                                                padding=10, 
+                                                bgcolor=ft.Colors.SECONDARY_CONTAINER, 
+                                                icon_color=ft.Colors.PRIMARY, 
+                                                icon_size=20
+                                            )
+                                        ),
+                                        ft.Column(spacing=-3,expand=True,controls=[
+                                            ft.Text(value=urllib.parse.unquote(url.split("?")[0].split(":")[1]), size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                            ft.Text(value="Subject", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                        ]),
+                                    ]
+                                ),
+                            ),
+                            ft.Container(
+                                bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
+                                width=600,
+                                align=ft.Alignment.CENTER,
+                                padding=20,
+                                border_radius=ft.BorderRadius.only(top_left=8, top_right=8, bottom_left=30, bottom_right=30),
+                                content=ft.Row(
+                                    controls=[
+                                        ft.IconButton(
+                                            disabled=True,
+                                            icon=ft.Icons.SUBJECT_ROUNDED,
+                                            style=ft.ButtonStyle(
+                                                shape=ft.CircleBorder(), 
+                                                padding=10, 
+                                                bgcolor=ft.Colors.SECONDARY_CONTAINER, 
+                                                icon_color=ft.Colors.PRIMARY, 
+                                                icon_size=20
+                                            )
+                                        ),
+                                        ft.Column(spacing=-3,expand=True,controls=[
+                                            ft.Text(value=urllib.parse.unquote(url.split("=")[1].split("&")[0]), size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                            ft.Text(value="Body", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                        ]),
+                                    ]
+                                ),
+                            )
+                        ]
+                    )
+                else:
+                    layout = ft.Container(
+                        bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
+                        width=600,
+                        align=ft.Alignment.CENTER,
+                        padding=20,
+                        border_radius=ft.BorderRadius.only(top_left=30, top_right=30, bottom_left=30, bottom_right=30),
+                        content=ft.Row(
+                            controls=[
+                                ft.IconButton(
+                                    disabled=True,
+                                    icon=ft.Icons.PERSON_2_ROUNDED,
+                                    style=ft.ButtonStyle(
+                                        shape=ft.CircleBorder(), 
+                                        padding=10, 
+                                        bgcolor=ft.Colors.SECONDARY_CONTAINER, 
+                                        icon_color=ft.Colors.PRIMARY, 
+                                        icon_size=20
+                                    )
+                                ),
+                                ft.Column(spacing=-3,expand=True,controls=[
+                                    ft.Text(value=url.split(":")[1], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                    ft.Text(value="Receiver's address", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                ]),
+                            ]
+                        ),
+                    )
+            elif "SMSTO:" in url:
+                layout = ft.Column(
+                    spacing=3,
+                    tight=True,
+                    controls=[
+                        ft.Container(
+                            bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
+                            width=600,
+                            align=ft.Alignment.CENTER,
+                            padding=20,
+                            border_radius=ft.BorderRadius.only(top_left=30, top_right=30, bottom_left=8, bottom_right=8),
+                            content=ft.Row(
+                                controls=[
+                                    ft.IconButton(
+                                        disabled=True,
+                                        icon=ft.Icons.CALL_ROUNDED,
+                                        style=ft.ButtonStyle(
+                                            shape=ft.CircleBorder(), 
+                                            padding=10, 
+                                            bgcolor=ft.Colors.SECONDARY_CONTAINER, 
+                                            icon_color=ft.Colors.PRIMARY, 
+                                            icon_size=20
+                                        )
+                                    ),
+                                    ft.Column(spacing=-3,expand=True,controls=[
+                                        ft.Text(value=f"+{url.split(":")[1]}", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                        ft.Text(value="Receiver's phone number", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                    ]),
+                                ]
+                            ),
+                        ),
+                        ft.Container(
+                            bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
+                            width=600,
+                            align=ft.Alignment.CENTER,
+                            padding=20,
+                            border_radius=ft.BorderRadius.only(top_left=8, top_right=8, bottom_left=30, bottom_right=30),
+                            content=ft.Row(
+                                controls=[
+                                    ft.IconButton(
+                                        disabled=True,
+                                        icon=ft.Icons.TEXT_FIELDS_ROUNDED,
+                                        style=ft.ButtonStyle(
+                                            shape=ft.CircleBorder(), 
+                                            padding=10, 
+                                            bgcolor=ft.Colors.SECONDARY_CONTAINER, 
+                                            icon_color=ft.Colors.PRIMARY, 
+                                            icon_size=20
+                                        )
+                                    ),
+                                    ft.Column(spacing=-3,expand=True,controls=[
+                                        ft.Text(value=url.split(":")[2], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                        ft.Text(value="Preset message", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                    ]),
+                                ]
+                            ),
+                        )
+                    ]
+                )
+            elif "tel:" in url:
+                layout = ft.Container(
+                    bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
+                    width=600,
+                    align=ft.Alignment.CENTER,
+                    padding=20,
+                    border_radius=ft.BorderRadius.only(top_left=30, top_right=30, bottom_left=30, bottom_right=30),
+                    content=ft.Row(
+                        controls=[
+                            ft.IconButton(
+                                disabled=True,
+                                icon=ft.Icons.CALL_ROUNDED,
+                                style=ft.ButtonStyle(
+                                    shape=ft.CircleBorder(), 
+                                    padding=10, 
+                                    bgcolor=ft.Colors.SECONDARY_CONTAINER, 
+                                    icon_color=ft.Colors.PRIMARY, 
+                                    icon_size=20
+                                )
+                            ),
+                            ft.Column(spacing=-3,expand=True,controls=[
+                                ft.Text(value=url.split(":")[1], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                ft.Text(value="Phone number", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                            ]),
+                        ]
+                    ),
+                )
+            elif "geo:" in url:
+                layout = ft.Column(
+                    spacing=3,
+                    tight=True,
+                    controls=[
+                        ft.Container(
+                            bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
+                            width=600,
+                            align=ft.Alignment.CENTER,
+                            padding=20,
+                            border_radius=ft.BorderRadius.only(top_left=30, top_right=30, bottom_left=8, bottom_right=8),
+                            content=ft.Row(
+                                controls=[
+                                    ft.IconButton(
+                                        disabled=True,
+                                        icon=ft.CupertinoIcons.COMPASS_FILL,
+                                        style=ft.ButtonStyle(
+                                            shape=ft.CircleBorder(), 
+                                            padding=10, 
+                                            bgcolor=ft.Colors.SECONDARY_CONTAINER, 
+                                            icon_color=ft.Colors.PRIMARY, 
+                                            icon_size=20
+                                        )
+                                    ),
+                                    ft.Column(spacing=-3,expand=True,controls=[
+                                        ft.Text(value=f"{url.split(":")[1].split(',')[0]}", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                        ft.Text(value="Latitude", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                    ]),
+                                ]
+                            ),
+                        ),
+                        ft.Container(
+                            bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
+                            width=600,
+                            align=ft.Alignment.CENTER,
+                            padding=20,
+                            border_radius=ft.BorderRadius.only(top_left=8, top_right=8, bottom_left=30, bottom_right=30),
+                            content=ft.Row(
+                                controls=[
+                                    ft.IconButton(
+                                        disabled=True,
+                                        icon=ft.CupertinoIcons.COMPASS_FILL,
+                                        style=ft.ButtonStyle(
+                                            shape=ft.CircleBorder(), 
+                                            padding=10, 
+                                            bgcolor=ft.Colors.SECONDARY_CONTAINER, 
+                                            icon_color=ft.Colors.PRIMARY, 
+                                            icon_size=20
+                                        )
+                                    ),
+                                    ft.Column(spacing=-3,expand=True,controls=[
+                                        ft.Text(value=f"{url.split(":")[1].split(',')[1]}", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                        ft.Text(value="Longitude", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                    ]),
+                                ]
+                            ),
+                        )
+                    ]
+                )
+            else:
+                layout = ft.Container(
+                    bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
+                    width=600,
+                    align=ft.Alignment.CENTER,
+                    padding=20,
+                    border_radius=ft.BorderRadius.only(top_left=30, top_right=30, bottom_left=30, bottom_right=30),
+                    content=ft.Row(
+                        controls=[
+                            ft.IconButton(
+                                disabled=True,
+                                icon=ft.Icons.TEXT_FIELDS_ROUNDED,
+                                style=ft.ButtonStyle(
+                                    shape=ft.CircleBorder(), 
+                                    padding=10, 
+                                    bgcolor=ft.Colors.SECONDARY_CONTAINER, 
+                                    icon_color=ft.Colors.PRIMARY, 
+                                    icon_size=20
+                                )
+                            ),
+                            ft.Column(spacing=-3,expand=True,controls=[
+                                ft.Text(value=url, size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                ft.Text(value="Content", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                            ]),
+                        ]
+                    ),
+                )
+
+            final_layout = ft.Column(
+                tight=True,
+                margin=ft.Margin.only(left=20, right=20),
+                controls=[
+                    layout,
+                    ft.Container(
+                        margin=ft.Margin.only(left=20, right=20,top=15),
+                        content=ft.Text(value="If the QR was imported from a different source, it may have a different structure and thus diplay an error or incorrect information. If that is not the case, open a bug report issue on the GitHub repository.", size=15, color=ft.Colors.GREY_500)
+                    )
+                ]
+            )
+            
+            return final_layout
+        
+        except Exception as ex:
+            layout = ft.Column(
+                tight=True,
+                controls=[
+                    ft.Container(
+                        bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
+                        width=600,
+                        margin=ft.Margin.only(left=20, right=20),
+                        align=ft.Alignment.CENTER,
+                        padding=20,
+                        border_radius=ft.BorderRadius.only(top_left=30, top_right=30, bottom_left=30, bottom_right=30),
+                        content=ft.Row(
+                            controls=[
+                                ft.IconButton(
+                                    disabled=True,
+                                    icon=ft.Icons.TEXT_FIELDS_ROUNDED,
+                                    style=ft.ButtonStyle(
+                                        shape=ft.CircleBorder(), 
+                                        padding=10, 
+                                        bgcolor=ft.Colors.SECONDARY_CONTAINER, 
+                                        icon_color=ft.Colors.PRIMARY, 
+                                        icon_size=20
+                                    )
+                                ),
+                                ft.Column(spacing=-3,expand=True,controls=[
+                                    ft.Text(value=url, size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                    ft.Text(value="Failed to unpack, raw content shown", size=15, color=ft.Colors.RED_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                ]),
+                            ]
+                        ),
+                    ),
+                    ft.Container(
+                        content=ft.Row(controls=[
+                            ft.Icon(icon=ft.Icons.ERROR_OUTLINE_OUTLINED, color=ft.Colors.WHITE),
+                            ft.Container(expand=True, content=ft.Text(value=f"Error: {str(ex)}", size=16, color=ft.Colors.WHITE)),
+                        ]),
+                        padding=15, bgcolor=ft.Colors.RED_500, border_radius=30,
+                        margin=ft.Margin.only(left=20, right=20),
+                    ),
+                    ft.Container(
+                        margin=ft.Margin.only(left=40, right=40,top=15),
+                        content=ft.Text(value="If the QR was imported from a different source, it may have a different structure and thus diplay an error. If this is the case, you may ignore the error message. If not, please open a bug report issue on the GitHub repository.", size=15, color=ft.Colors.GREY_500)
+                    ),
+                ]
+            )
+            return layout
+
     def display_details_bottomsheet(self):
         def get_actions():
             if self.page.width > 380:
@@ -1035,6 +1641,8 @@ class QRCodes:
                     margin=ft.Margin.only(left=20, right=20, bottom=5),
                 ),
                 get_actions(),
+                ft.Container(height=20),
+                self.data_unpacker(),
                 ft.Divider(color=ft.Colors.INVERSE_SURFACE, thickness=0.2, leading_indent=20, trailing_indent=20, height=50),
                 ft.ExpansionTile(
                     width=600,
@@ -2341,7 +2949,7 @@ def main(page: ft.Page):
     # -------------------------------------------------------------
     # QR creation: preview + per-type forms
     # -------------------------------------------------------------
-
+ 
     def import_logo_image():
         async def pick_logo_image():
             files = await ft.FilePicker().pick_files(allowed_extensions=["png", "jpg", "jpeg"])
