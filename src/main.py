@@ -1634,6 +1634,7 @@ class QRCodes:
         self.about_content = ft.Column(
             horizontal_alignment="center", 
             scroll=ft.ScrollMode.AUTO, 
+            margin=ft.Margin.only(top=20),
             controls=[
                 ft.Text(value=self.display_name, size=20, weight="bold", font_family="MaterialRounded", text_align="center",overflow="ELLIPSIS", margin=ft.Margin.only(top=10)),
                 ft.Container(
