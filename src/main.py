@@ -1649,7 +1649,7 @@ class QRCodes:
                     controls=[
                         ft.Container(
                             border_radius=20, 
-                            bgcolor=ft.Colors.SECONDARY_FIXED, 
+                            bgcolor=ft.Colors.SECONDARY_CONTAINER, 
                             padding=20,
                             content=ft.Row(
                                 wrap=True,
