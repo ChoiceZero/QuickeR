@@ -1641,26 +1641,74 @@ class QRCodes:
                     margin=ft.Margin.only(left=20, right=20, bottom=5),
                 ),
                 get_actions(),
-                ft.Container(height=20),
+                ft.Row(
+                    wrap=True,
+                    tight=True,
+                    alignment=ft.MainAxisAlignment.CENTER,
+                    margin=ft.Margin.only(top=40,left=10, right=10),
+                    controls=[
+                        ft.Container(
+                            border_radius=20, 
+                            bgcolor=ft.Colors.SECONDARY_FIXED, 
+                            padding=20,
+                            content=ft.Row(
+                                wrap=True,
+                                tight=True,
+                                controls=[
+                                    ft.Icon(icon=ft.Icons.CALENDAR_MONTH_ROUNDED, color=ft.Colors.INVERSE_SURFACE, size=20,margin=ft.Margin.only(right=-5)),
+                                    ft.Text(value="Creation date", size=15, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD),margin=ft.Margin.only(right=20)),
+                                    ft.Container(
+                                        content=ft.Text(value=str(self.qr_date), size=15, color=ft.Colors.INVERSE_SURFACE),
+                                    ),
+                                ]
+                            ),
+                        ),
+                        ft.Container(
+                            padding=20, 
+                            bgcolor=ft.Colors.TERTIARY_CONTAINER, 
+                            border_radius=20,
+                            #border=ft.Border.all(width=3, color=ft.Colors.TERTIARY_FIXED_DIM),
+                            content=ft.Text(value=str(self.qr_size), size=15,color=ft.Colors.TERTIARY),
+                        ),
+                    ]
+                ),
                 self.data_unpacker(),
                 ft.Divider(color=ft.Colors.INVERSE_SURFACE, thickness=0.2, leading_indent=20, trailing_indent=20, height=50),
                 ft.ExpansionTile(
                     width=600,
-                    title=ft.Row(controls=[ft.Icon(icon=ft.Icons.INFO_ROUNDED), ft.Text(value="QR details", size=16)]),
+                    title=ft.Row(controls=[ft.Icon(icon=ft.Icons.INFO_ROUNDED), ft.Text(value="QR technical details", size=16)]),
                     tile_padding=ft.Padding.only(left=20, right=20, top=10, bottom=10),
-                    controls_padding=ft.Padding.only(left=20, right=20, bottom=20),
+                    controls_padding=ft.Padding.only(left=10, right=10, bottom=10),
                     bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, collapsed_bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
                     margin=ft.Margin.only(left=20, right=20),
                     shape=ft.RoundedRectangleBorder(side=ft.BorderSide(style=ft.BorderStyle.NONE), radius=20),
                     collapsed_shape=ft.RoundedRectangleBorder(side=ft.BorderSide(style=ft.BorderStyle.NONE), radius=20),
                     controls=ft.Column(expand=True, controls=[
-                        ft.Row(controls=[ft.Icon(icon=ft.Icons.TEXT_FIELDS_ROUNDED), ft.Column(spacing=-3, controls=[ft.Text(value="Raw data", size=16), ft.Text(value=self.url, size=11)])],wrap=True,tight=True,expand=True),
-                        ft.Container(height=0.2, bgcolor=ft.Colors.INVERSE_SURFACE, margin=ft.Margin.only(bottom=5, top=0)),
-                        ft.Row(controls=[ft.Icon(icon=ft.Icons.CALENDAR_MONTH_ROUNDED), ft.Column(spacing=-3, controls=[ft.Text(value="Creation date", size=16), ft.Text(value=self.qr_date, size=11)])],wrap=True,tight=True,expand=True),
-                        ft.Container(height=0.2, bgcolor=ft.Colors.INVERSE_SURFACE, margin=ft.Margin.only(bottom=5, top=0)),
-                        ft.Row(controls=[ft.Icon(icon=ft.Icons.FOLDER_COPY_ROUNDED), ft.Column(spacing=-3, controls=[ft.Text(value="Internal path", size=16), ft.Container(content=ft.Text(value=self.qrpath, size=11))])],wrap=True,tight=True,expand=True),
-                        ft.Container(height=0.2, bgcolor=ft.Colors.INVERSE_SURFACE, margin=ft.Margin.only(bottom=5, top=0)),
-                        ft.Row(controls=[ft.Icon(icon=ft.Icons.INSERT_DRIVE_FILE_ROUNDED), ft.Column(spacing=-3, controls=[ft.Text(value="Filesize", size=16), ft.Text(value=self.qr_size, size=11)])],wrap=True,tight=True,expand=True),
+                        ft.Container(height=0.2, bgcolor=ft.Colors.INVERSE_SURFACE, margin=ft.Margin.only(left=10, right=10)),
+                        ft.Container(
+                            border_radius=20, 
+                            bgcolor=ft.Colors.SURFACE_CONTAINER_LOW, 
+                            padding=20,
+                            content=ft.Column(controls=[
+                                ft.Row(spacing=5,controls=[
+                                    ft.Icon(icon=ft.Icons.CODE_ROUNDED, color=ft.Colors.INVERSE_SURFACE, size=30),
+                                    ft.Text(value="Raw data", size=25, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                ]),
+                                ft.Text(value=str(self.url), size=15, color=ft.Colors.INVERSE_SURFACE, margin=ft.Margin.only(top=-5)),
+                            ]),
+                        ),
+                        ft.Container(
+                            border_radius=20, 
+                            bgcolor=ft.Colors.SURFACE_CONTAINER_LOW, 
+                            padding=20,
+                            content=ft.Column(controls=[
+                                ft.Row(spacing=5,controls=[
+                                    ft.Icon(icon=ft.Icons.CALENDAR_MONTH_ROUNDED, color=ft.Colors.INVERSE_SURFACE, size=30),
+                                    ft.Text(value="Internal path (in app)", size=25, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                ]),
+                                ft.Text(value=str(self.qrpath), size=15, color=ft.Colors.INVERSE_SURFACE, margin=ft.Margin.only(top=-5)),
+                            ]),
+                        ),
                     ]),
                 ),
                 ft.ExpansionTile(
@@ -3781,7 +3829,7 @@ def main(page: ft.Page):
                         ]),
                         controls=[ft.Column(controls=[
                             ft.Container(
-                                margin=ft.Margin.only(left=10, right=10), border_radius=20, bgcolor=ft.Colors.SURFACE_CONTAINER, padding=20,
+                                margin=ft.Margin.only(left=10, right=10), border_radius=20, bgcolor=ft.Colors.SURFACE_CONTAINER_LOW, padding=20,
                                 content=ft.Column(controls=[
                                     ft.Row(controls=[
                                         ft.Icon(icon=ft.Icons.PAYMENT_ROUNDED, color=ft.Colors.INVERSE_SURFACE),
@@ -3796,7 +3844,7 @@ def main(page: ft.Page):
                                 ]),
                             ),
                             ft.Container(
-                                border_radius=20, margin=ft.Margin.only(left=10, right=10), bgcolor=ft.Colors.SURFACE_CONTAINER, padding=20,
+                                border_radius=20, margin=ft.Margin.only(left=10, right=10), bgcolor=ft.Colors.SURFACE_CONTAINER_LOW, padding=20,
                                 content=ft.Column(controls=[
                                     ft.Row(controls=[ft.Icon(icon=ft.Icons.CODE_ROUNDED, color=ft.Colors.INVERSE_SURFACE), ft.Text(value="Contribute", size=25, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD))]),
                                     ft.Text(value="Contribute code or report bugs in order to improve the project as a community effort.", size=15, color=ft.Colors.INVERSE_SURFACE),
@@ -3807,7 +3855,7 @@ def main(page: ft.Page):
                                 ]),
                             ),
                             ft.Container(
-                                border_radius=20, margin=ft.Margin.only(left=10, right=10, bottom=10), bgcolor=ft.Colors.SURFACE_CONTAINER, padding=20,
+                                border_radius=20, margin=ft.Margin.only(left=10, right=10, bottom=10), bgcolor=ft.Colors.SURFACE_CONTAINER_LOW, padding=20,
                                 content=ft.Column(controls=[
                                     ft.Row(controls=[ft.Icon(icon=ft.Icons.SHARE_ROUNDED, color=ft.Colors.INVERSE_SURFACE), ft.Text(value="Share the app", size=25, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD))]),
                                     ft.Text(value="Help spread the word about the app and recommend it to others. The more users, the more interest in the project!", size=15, color=ft.Colors.INVERSE_SURFACE),
