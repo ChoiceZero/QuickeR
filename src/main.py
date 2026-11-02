@@ -244,6 +244,9 @@ def get_qr_image_path(qr_id):
                 return candidate
     return None
 
+def get_creation_time(path):
+    st = os.stat(path)
+    return getattr(st, "st_birthtime", st.st_mtime)
 
 # ---------------------------------------------------------------------------
 # STL export
@@ -354,7 +357,7 @@ class LogoPicker:
 # ---------------------------------------------------------------------------
 
 class QRCodes:
-    def __init__(self, page, input, all_view, regular_view, pinned_view,details_main_page_view,tip_text,tag_name):
+    def __init__(self, page, input, all_view, regular_view, pinned_view,details_main_page_view,tip_text,tag_name,load_qrs_func):
         self.all_view = all_view
         self.regular_view = regular_view
         self.pinned_view = pinned_view
@@ -378,11 +381,12 @@ class QRCodes:
         self.stl_invert = False
         self.details_bs = None
         self.tag_name = tag_name
+        self.load_qrs_func = load_qrs_func
         self.tip_text = tip_text
     def get_qr_date(self, qr_id):
         img_path = get_qr_image_path(qr_id)
         if img_path:
-            self.date = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(os.path.getctime(img_path)))
+            self.date = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(get_creation_time(img_path)))
         return self.date
 
     def get_qr_size(self, qr_id):
@@ -396,13 +400,13 @@ class QRCodes:
             return f"{round(raw_size / (1024 * 1024), 2)} MB"
 
     def create_qr(self, image):
-
         if self.tag_name == "":
             self.qr_id = self.id_assigner()
+            self.tag_name = self.qr_id
         else:
-            counter = 1
-            while os.path.exists(os.path.join(QR_DIR, f"{self.tag_name}.png")) or os.path.exists(os.path.join(PINNED_DIR, f"{self.tag_name}.png")):
-                self.tag_name = f"{self.tag_name}_{counter}"
+            base, counter = self.tag_name, 1
+            while get_qr_image_path(self.tag_name) is not None:
+                self.tag_name = f"{base}_{counter}"
                 counter += 1
             self.qr_id = self.tag_name
 
@@ -872,6 +876,7 @@ class QRCodes:
             self.all_view.controls.remove(self.main_container)
         self.qrpath = get_qr_image_path(self.qr_id)
         self.display_qr(True)
+        #self.clean_bs_up(self.details_bs)
 
     def unpin_qr_action(self):
         self.pin_button.icon = ft.Icons.PUSH_PIN_OUTLINED
@@ -885,7 +890,7 @@ class QRCodes:
             self.all_view.controls.remove(self.main_container)
         self.qrpath = get_qr_image_path(self.qr_id)
         self.display_qr(False)
-
+        #self.clean_bs_up(self.details_bs)
     def data_unpacker(self):
         url = self.url or ""
         try:
@@ -1322,10 +1327,10 @@ class QRCodes:
                                         )
                                     ),
                                     ft.Column(spacing=-3,expand=True,controls=[
-                                        ft.Text(value=url.split(":")[2], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                        ft.Text(value=url.split(":", 2)[2], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
                                         ft.Text(value="Preset message", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                     ]),
-                                    self.copy_content_btn(url.split(":")[2]),
+                                    self.copy_content_btn(url.split(":", 2)[2]),
                                 ]
                             ),
                         )
@@ -1657,7 +1662,22 @@ class QRCodes:
             scroll=ft.ScrollMode.AUTO, 
             margin=ft.Margin.only(top=20),
             controls=[
-                ft.Text(value=self.tag_name, size=20, weight="bold", font_family="MaterialRounded", text_align="center",overflow="ELLIPSIS", margin=ft.Margin.only(top=10)),
+                ft.Row(
+                    expand=True,
+                    margin=ft.Margin.only(left=20, right=20),
+                    controls=[
+                        ft.Container(width=15),
+                        ft.Text(value=self.tag_name, expand=True, size=20, weight="bold", font_family="MaterialRounded", text_align="center",overflow="ELLIPSIS", margin=ft.Margin.only(left=25)),
+                        ft.IconButton(
+                            icon=ft.Icons.EDIT_ROUNDED,
+                            on_click=lambda e: self.edit_tag_name_dialog(),
+                            style=ft.ButtonStyle(
+                                shape=ft.CircleBorder(), padding=5, bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
+                                icon_color=ft.Colors.INVERSE_SURFACE, icon_size=15,
+                            ),
+                        ),
+                    ]
+                ),
                 ft.Container(
                     bgcolor=ft.Colors.INVERSE_PRIMARY, border_radius=30, content=qr, padding=20,
                     margin=ft.Margin.only(left=20, right=20, bottom=5),
@@ -1732,7 +1752,7 @@ class QRCodes:
                                     ft.Icon(icon=ft.Icons.FOLDER_ROUNDED, color=ft.Colors.INVERSE_SURFACE, size=30),
                                     ft.Text(value="Internal path", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
                                     ft.Container(expand=True),
-                                    self.copy_content_btn(str(self.url)),
+                                    self.copy_content_btn(str(self.qrpath)),
                                 ]),
                                 ft.Text(value=str(self.qrpath), size=15, color=ft.Colors.INVERSE_SURFACE, margin=ft.Margin.only(top=-5)),
                             ]),
@@ -1761,18 +1781,109 @@ class QRCodes:
         if self.page.width < 1050:
             if self.details_bs and self.details_bs in self.page.overlay:
                 self.page.overlay.remove(self.details_bs)
-            self.details_bs = ft.BottomSheet(
+            bs = ft.BottomSheet(
                 draggable=True, show_drag_handle=True, use_safe_area=True, scrollable=False, fullscreen=True,
-                open=False, on_dismiss=lambda e: self.clean_bs_up(),
-                content= self.about_content
+                open=False, content=self.about_content,
             )
-            self.page.overlay.append(self.details_bs)
+            bs.on_dismiss = lambda e, b=bs: self.clean_bs_up(b)
+            self.details_bs = bs
+            self.page.overlay.append(bs)
             self.page.update()
-            self.details_bs.open = True
+            bs.open = True
             self.page.update()
         else:
             self.details_main_page_view.content = self.about_content
             self.page.update()
+
+    def edit_tag_name_dialog(self):
+        tag_field = ft.TextField(label="New tag name", value=self.tag_name, hint_text="New tag name", autofocus=True, border=ft.InputBorder.NONE, expand=False, margin=ft.Margin.only(left=10, right=10))
+        self.page.show_dialog(ft.AlertDialog(
+            title=ft.Text("Edit tag name"),
+            content=ft.Column(
+                tight=True,
+                controls=[
+                    ft.Container(
+                        padding=5,
+                        content=tag_field,
+                        margin=ft.Margin.only(bottom=10),
+                        border_radius=13,
+                        bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST,
+                    ),
+                    ft.Row(
+                        alignment=ft.Alignment.CENTER,
+                        spacing=3,
+                        wrap=True,
+                        controls=[
+                            ft.Button(
+                                elevation=0, icon=ft.Icons.CHECK_ROUNDED, content=ft.Text("Save", size=16),
+                                height=50, color=ft.Colors.SURFACE, bgcolor=ft.Colors.PRIMARY,
+                                style=ft.ButtonStyle(
+                                    overlay_color=ft.Colors.ON_PRIMARY_CONTAINER,
+                                    shape=ft.RoundedRectangleBorder(
+                                        radius=ft.BorderRadius.only(top_left=50, top_right=25, bottom_left=50, bottom_right=25)
+                                    ),
+                                ),
+                                on_click=lambda e: self.edit_tag_name(tag_field.value),
+                            ),
+                            ft.IconButton(
+                                icon=ft.Icons.CLOSE_ROUNDED, height=50, width=45, alignment=ft.Alignment.CENTER_LEFT,
+                                icon_color=ft.Colors.INVERSE_SURFACE, bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST,
+                                style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=ft.BorderRadius.only(top_left=25, top_right=50, bottom_left=25, bottom_right=50))),
+                                on_click=lambda e: self.page.pop_dialog(),
+                            ),
+                        ],
+                    ),
+                ]
+            ),
+            
+        ))
+
+    def edit_tag_name(self, new_tag_name):
+        if not new_tag_name:
+            self.page.show_dialog(ft.AlertDialog(content=ft.Text("Tag name cannot be empty"), title=ft.Text("Error"), actions=[ft.TextButton("OK", on_click=lambda e: self.page.pop_dialog())]))
+            return
+    
+        if new_tag_name == self.tag_name:
+            self.page.show_dialog(ft.AlertDialog(content=ft.Text("Please enter a different tag name"), title=ft.Text("Error"), actions=[ft.TextButton("OK", on_click=lambda e: self.page.pop_dialog())]))
+            return
+
+        if any(c in new_tag_name for c in '\\/:*"<>|'+"'"):
+            self.page.show_dialog(ft.AlertDialog(
+                title=ft.Text("Error"),
+                content=ft.Text("The name contains invalid characters. (\\ / : * \ < > | ' "+' ")'),
+                actions=[ft.TextButton("OK", on_click=lambda e: self.page.pop_dialog())],
+            ))
+            return
+    
+        if get_qr_image_path(new_tag_name) is not None:
+            self.page.show_dialog(ft.AlertDialog(content=ft.Text("A QR with this tag name already exists"), title=ft.Text("Error"), actions=[ft.TextButton("OK", on_click=lambda e: self.page.pop_dialog())]))
+            return
+    
+        old_path = get_qr_image_path(self.qr_id)
+        ext = os.path.splitext(old_path)[1]
+        new_path = os.path.join(os.path.dirname(old_path), f"{new_tag_name}{ext}")
+        try:
+            os.rename(old_path, new_path)
+
+            self.tag_name = new_tag_name
+            self.qr_id = new_tag_name
+            self.qrpath = new_path
+
+            self.main_container.controls[0].title.value = new_tag_name
+
+            self.page.pop_dialog()
+            self.page.run_task(self._reopen)
+            self.page.update()
+        except Exception as e:
+            self.page.show_dialog(
+                ft.AlertDialog(
+                    content=ft.Text(f"Failed to rename QR: {e}"), 
+                    title=ft.Text("Error"), 
+                    actions=[
+                        ft.TextButton("OK", on_click=lambda e: self.page.pop_dialog())
+                        ]
+                    )
+                )
 
     def copy_content_btn(self, content, small=False):
         async def copy_text_to_clipboard(text):
@@ -1789,10 +1900,33 @@ class QRCodes:
             build_btn.margin = ft.Margin.only(left=-7, right=-7)
         return build_btn
 
-    def clean_bs_up(self):
-        if self.details_bs and self.details_bs in self.page.overlay:
-            self.page.overlay.remove(self.details_bs)
+    def clean_bs_up(self, bs=None):
+        bs = bs or self.details_bs
+        if not bs or bs not in self.page.overlay:
+            return
+
+        async def _close():
+            bs.open = False
             self.page.update()
+            await asyncio.sleep(0.1)
+            if bs in self.page.overlay:
+                self.page.overlay.remove(bs)
+                self.page.update()
+
+        self.page.run_task(_close)
+
+    async def _reopen(self):
+        bs = self.details_bs
+        self.details_bs = None
+        if bs and bs in self.page.overlay:
+            bs.on_dismiss = None  
+            bs.open = False
+            self.page.update()
+            await asyncio.sleep(0.3)  
+            if bs in self.page.overlay:
+                self.page.overlay.remove(bs)
+                self.page.update()
+        self.display_details_bottomsheet()
 
     async def do_share_files_from_paths(self):
         if self.page.web:
@@ -3042,12 +3176,12 @@ def main(page: ft.Page):
             return
 
         try:
-            tag_data = str(os.path.split(src_path)[1].split(".")[0])
+            tag_data = str(os.path.splitext(os.path.basename(src_path))[0])
             counter = 1
-            while os.path.exists(os.path.join(QR_DIR, f"{tag_data}{ext}") or os.path.exists(os.path.join(PINNED_DIR, f"{tag_data}{ext}"))):
-                tag_data = str(os.path.split(src_path)[1].split(".")[0])+f"_{counter}"
+            while os.path.exists(os.path.join(QR_DIR, f"{tag_data}{ext}")) or os.path.exists(os.path.join(PINNED_DIR, f"{tag_data}{ext}")):
+                tag_data = str(os.path.splitext(os.path.basename(src_path))[0])+f"_{counter}"
                 counter += 1
-            new_qr = QRCodes(page, "", all_view, regular_view, pinned_view, details_main_page_view,tip_text,tag_data)
+            new_qr = QRCodes(page, "", all_view, regular_view, pinned_view, details_main_page_view,tip_text,tag_data,load_qrs_func=load_qrs)
             dest_path = os.path.join(QR_DIR, f"{tag_data}{ext}")
             shutil.copy(src_path, dest_path)
 
@@ -3148,7 +3282,7 @@ def main(page: ft.Page):
                 for f in os.listdir(directory):
                     if os.path.splitext(f)[1].lower() in ACCEPTED_FILETYPES:
                         path = os.path.join(directory, f)
-                        files_with_meta.append((path, os.path.splitext(f)[0], is_pinned, os.path.getctime(path)))
+                        files_with_meta.append((path, os.path.splitext(f)[0], is_pinned, get_creation_time(path)))
 
         files_with_meta.sort(key=lambda x: x[3], reverse=SORT_STATE["newest_first"])
 
@@ -3175,8 +3309,8 @@ def main(page: ft.Page):
             if not data:
                 continue
 
-            tag_data = str(os.path.split(path)[1].split(".")[0])
-            qr = QRCodes(page, data, all_view, regular_view, pinned_view,details_main_page_view,tip_text,tag_data)
+            tag_data = str(os.path.splitext(os.path.basename(path))[0])
+            qr = QRCodes(page, data, all_view, regular_view, pinned_view,details_main_page_view,tip_text,tag_data,load_qrs_func=load_qrs)
             qr.fill_color, qr.back_color = get_qr_colors(path)
             qr.qr_id = qr_id
             qr.date = qr.get_qr_date(qr_id)
@@ -3275,7 +3409,7 @@ def main(page: ft.Page):
 
     def create_qr_action():
         create_info = qr_content["content"]
-        new_qr = QRCodes(page, create_info, all_view, regular_view, pinned_view,details_main_page_view,tip_text,tag_input.value)
+        new_qr = QRCodes(page, create_info, all_view, regular_view, pinned_view,details_main_page_view,tip_text,tag_input.value,load_qrs_func=load_qrs)
         new_qr.fill_color, new_qr.back_color = qr_color_scheme_primary.color, qr_color_scheme_secondary.color
         if last_qr_image["img"] is None:
             print("image can't be Nonetype!")
@@ -3293,6 +3427,14 @@ def main(page: ft.Page):
                 content=ft.Text("Please fill in all required fields for the selected QR type."),
                 actions=[ft.TextButton("OK", on_click=lambda e: page.pop_dialog())],
                 actions_alignment="end",
+            ))
+            return
+
+        if any(c in tag_input.value for c in '\\/:*"<>|'+"'"):
+            page.show_dialog(ft.AlertDialog(
+                title=ft.Text("Error"),
+                content=ft.Text("The name contains invalid characters. (\\ / : * \ < > | ' "+' ")'),
+                actions=[ft.TextButton("OK", on_click=lambda e: page.pop_dialog())],
             ))
             return
 
@@ -3338,7 +3480,7 @@ def main(page: ft.Page):
         if full_reset and create_layout:
             qr_content["content"] = "https://"
             for item in [
-                wifi_name, wifi_password, qr_url_input_field, email_address, 
+                wifi_name, tag_input, wifi_password, qr_url_input_field, email_address, 
                 email_subject, email_body, phone_prefix, phone_number, sms_prefix, 
                 sms_number, sms_message, location_lat, location_lng, event_title, 
                 event_location, start_time_picker, end_time_picker
@@ -3906,7 +4048,7 @@ def main(page: ft.Page):
             ft.Container(expand=True, content=ft.Text(value="No QR codes yet! Tap the '+' button to create your first one.", size=16, color=ft.Colors.INVERSE_SURFACE)),
         ]),
         visible=False,
-        padding=15, bgcolor=ft.Colors.INVERSE_PRIMARY, border_radius=30,
+        padding=15, bgcolor=ft.Colors.SECONDARY_CONTAINER, border_radius=30,
         margin=ft.Margin.only(left=0, right=0, top=5, bottom=5),
     )
 
