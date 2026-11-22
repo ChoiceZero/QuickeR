@@ -87,7 +87,7 @@ jobs:
           path: ~/flutter
           key: flutter-linux-${{ runner.os }}
       - name: Build
-        run: uv run flet build linux --yes --verbose --no-rich-output
+        run: uv run flet build linux --yes --verbose --no-rich-output --no-compile-packages
       - name: Package
         run: |
           cd build/linux
@@ -125,7 +125,7 @@ jobs:
           path: C:\Users\runneradmin\flutter
           key: flutter-windows-${{ runner.os }}-v2
       - name: Build
-        run: uv run flet build windows --yes --verbose --no-rich-output
+        run: uv run flet build windows --yes --verbose --no-rich-output --no-compile-packages
         env:
           PYTHONUTF8: "1"
           PYTHONIOENCODING: "utf-8"
@@ -225,7 +225,7 @@ jobs:
       - name: Clean previous build
         run: rm -rf build
       - name: Build
-        run: uv run flet build macos --yes --no-rich-output
+        run: uv run flet build macos --yes --no-rich-output --no-compile-packages
       - name: Remove circular symlinks
         run: find build/macos -type l -lname '*.pod*' -delete
       - name: Check build size
