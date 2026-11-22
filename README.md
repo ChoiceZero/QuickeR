@@ -55,6 +55,14 @@ QuickeR is a platform that lets you create QR codes but without accounts, limits
 >[!TIP]
 >*There is no Android standalone because android works with just .APK.
 
+## Installing on Android with Obtainium
+
+1. In [Obtainium](https://github.com/ImranR98/Obtainium), choose **Add App** and enter `https://github.com/ChoiceZero/QuickeR`.
+2. Source: GitHub. Obtainium picks the `.apk` from the latest release (choose your CPU architecture if asked).
+3. The Android app ID is `io.github.choicezero.quicker`.
+
+Updates require every release to be signed with the same key (set by the `ANDROID_KEYSTORE_*` repository secrets).
+
 ## Tech Stack
 
 **Python moules:** Flet, Qrcode, Pillow and other libraries that base Python includes.
