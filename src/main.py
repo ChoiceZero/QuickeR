@@ -60,10 +60,77 @@ if not os.path.exists(SETTINGS_PATH):
             "Appearance": "System",
             "First_run": "True",
             "GridMode": "True",
-            "Check_updates": True
+            "Check_updates": True,
+            "Language": "en"
         }
         
         f.write(json.dumps(DEFAULT_SETTINGS))
+
+# ---------------------------------------------------------------------------
+# Translations
+# ---------------------------------------------------------------------------
+# English text is the key everywhere (tr("Save QR")). translations.json holds
+# the other languages; a missing entry falls back to the English text.
+
+TRANSLATIONS_PATH = os.path.join(BASE_DIR, "translations.json")
+DEFAULT_LANGUAGE = "en"
+
+
+def load_translations():
+    """Returns ({code: native name}, {english text: {code: translation}})."""
+    try:
+        with open(TRANSLATIONS_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        languages = data.get("languages") or {}
+        if DEFAULT_LANGUAGE not in languages:
+            languages = {DEFAULT_LANGUAGE: "English", **languages}
+        return languages, data.get("strings") or {}
+    except (OSError, ValueError) as ex:
+        print(f"Could not load translations: {ex}")
+        return {DEFAULT_LANGUAGE: "English"}, {}
+
+
+LANGUAGES, TRANSLATION_STRINGS = load_translations()
+I18N = {"code": DEFAULT_LANGUAGE, "table": {}}
+STARTUP = {"update_checked": False}
+
+
+def set_language(code):
+    """Activates a language (unknown codes fall back to English)."""
+    if code not in LANGUAGES:
+        code = DEFAULT_LANGUAGE
+    I18N["code"] = code
+    I18N["table"] = {} if code == DEFAULT_LANGUAGE else {
+        text: variants[code] for text, variants in TRANSLATION_STRINGS.items() if variants.get(code)
+    }
+    return code
+
+
+def read_saved_language():
+    try:
+        with open(SETTINGS_PATH, "r", encoding="utf-8") as f:
+            return json.load(f).get("Language", DEFAULT_LANGUAGE)
+    except (OSError, ValueError):
+        return DEFAULT_LANGUAGE
+
+
+def tr(text, **values):
+    """Translates `text` into the active language. Named placeholders are
+    filled in after translating: tr("Saved to {path}", path=p)."""
+    translated = I18N["table"].get(text, text)
+    if not values:
+        return translated
+    try:
+        return translated.format(**values)
+    except (KeyError, IndexError, ValueError):
+        return text.format(**values)
+
+
+def format_ics_datetime(value):
+    """Turns an iCalendar date-time (20260131T093000) into readable text."""
+    day, clock = value.split("T")[:2]
+    return tr("Day: {date} Time: {time}", date=f"{day[:4]}-{day[4:6]}-{day[6:8]}", time=f"{clock[:2]}:{clock[2:4]}")
+
 
 APP_VERSION = "__VERSION__"
 RELEASES_API_URL = "https://api.github.com/repos/ChoiceZero/QuickeR/releases?per_page=20"
@@ -564,7 +631,7 @@ class QRCodes:
         self.img.save(os.path.join(QR_DIR, f"{self.qr_id}.png"))
         self.display_qr(False)
         snack = ft.SnackBar(
-            content=ft.Text("¡QR code generated!"),
+            content=ft.Text(tr("¡QR code generated!")),
             show_close_icon=True,
         )
         self.page.show_dialog(snack)
@@ -576,7 +643,7 @@ class QRCodes:
     def _leading_icon_and_name(self):
         url = self.url or ""
         if is_vcard(url):
-            name = parse_vcard(url)["name"] or "Contact"
+            name = parse_vcard(url)["name"] or tr("Contact")
             icon = ft.Icons.CONTACT_PAGE_ROUNDED
         elif "WIFI:S:" in url:
             name = url.split(":")[2].split(";")[0]
@@ -585,7 +652,7 @@ class QRCodes:
             try:
                 name = url.split("\n")[3].split(":")[1]
             except IndexError:
-                name = "Event"
+                name = tr("Event")
             icon = ft.Icons.CALENDAR_TODAY_ROUNDED
         elif "mailto:" in url:
             name = url.split("?")[0].split(":")[1]
@@ -659,14 +726,14 @@ class QRCodes:
 
     def delete_qr_action(self, e):
         delete_dialog = ft.AlertDialog(
-            title=ft.Text("Are you sure you want to delete this QR code?"),
+            title=ft.Text(tr("Are you sure you want to delete this QR code?")),
             alignment=ft.Alignment.CENTER,
             content=ft.Text(
-                "This action cannot be undone.\nHowever, you can always generate a new QR code with the same URL."
+                tr("This action cannot be undone.\nHowever, you can always generate a new QR code with the same URL.")
             ),
             actions=[
-                ft.Button(content="Cancel", on_click=lambda e: self.page.pop_dialog()),
-                ft.Button(icon=ft.Icons.DELETE, bgcolor=ft.Colors.RED_900, color=ft.Colors.WHITE, content="Delete", on_click=lambda e: asyncio.ensure_future(self.delete_qr())),
+                ft.Button(content=tr("Cancel"), on_click=lambda e: self.page.pop_dialog()),
+                ft.Button(icon=ft.Icons.DELETE, bgcolor=ft.Colors.RED_900, color=ft.Colors.WHITE, content=tr("Delete"), on_click=lambda e: asyncio.ensure_future(self.delete_qr())),
             ],
             open=True,
         )
@@ -698,7 +765,7 @@ class QRCodes:
             self.page.overlay.remove(self.details_bs)
 
         self.details_main_page_view.alignment = ft.MainAxisAlignment.CENTER
-        self.details_main_page_view.content.controls[0] = ft.Text(value="Click on an item to view details!", font_family="MaterialRoundedBold", size=16, color=ft.Colors.GREY_500)
+        self.details_main_page_view.content.controls[0] = ft.Text(value=tr("Click on an item to view details!"), font_family="MaterialRoundedBold", size=16, color=ft.Colors.GREY_500)
         self.page.pop_dialog()
         self.page.update()
         if not self.all_view.controls:
@@ -707,9 +774,9 @@ class QRCodes:
 
     def download_qr_action(self):
         self.filetext = ft.TextField(
-            hint_text="Enter filename here", 
+            hint_text=tr("Enter filename here"), 
             #expand=True, 
-            label="Filename",
+            label=tr("Filename"),
             value=self.tag_name,
             autofocus=True,
             width=310,
@@ -717,7 +784,7 @@ class QRCodes:
             margin=ft.Margin.only(left=10,right=10),
         )
         download_dialog = ft.AlertDialog(
-            title=ft.Text("Export Options"),
+            title=ft.Text(tr("Export Options")),
             on_dismiss=lambda e: self.handle_download_dialog_dismissed(),
             alignment=ft.Alignment.CENTER,
             content=ft.Column(
@@ -739,7 +806,7 @@ class QRCodes:
                         wrap=True,
                         controls=[
                             ft.Button(
-                                elevation=0, icon=ft.Icons.IMAGE_ROUNDED, content=ft.Text("Gallery", size=16),
+                                elevation=0, icon=ft.Icons.IMAGE_ROUNDED, content=ft.Text(tr("Gallery"), size=16),
                                 height=50, color=ft.Colors.SURFACE, bgcolor=ft.Colors.PRIMARY,
                                 style=ft.ButtonStyle(
                                     overlay_color=ft.Colors.ON_PRIMARY_CONTAINER,
@@ -751,7 +818,7 @@ class QRCodes:
                             ),
                             ft.Button(
                                 elevation=0, icon=ft.Icons.FOLDER_COPY_ROUNDED, 
-                                content=ft.Text("Folder", size=16),
+                                content=ft.Text(tr("Folder"), size=16),
                                 height=50, color=ft.Colors.SURFACE, 
                                 bgcolor=ft.Colors.PRIMARY,
                                 style=ft.ButtonStyle(
@@ -763,7 +830,7 @@ class QRCodes:
                                 on_click=lambda e: asyncio.ensure_future(self.export_to_folder()),
                             ),
                             ft.Button(
-                                elevation=0, icon=ft.Icons.FILE_COPY_ROUNDED, content=ft.Text(".STL", size=16),
+                                elevation=0, icon=ft.Icons.FILE_COPY_ROUNDED, content=ft.Text(tr(".STL"), size=16),
                                 height=50, color=ft.Colors.SURFACE, bgcolor=ft.Colors.PRIMARY,
                                 style=ft.ButtonStyle(
                                     overlay_color=ft.Colors.ON_PRIMARY_CONTAINER,
@@ -786,24 +853,24 @@ class QRCodes:
     async def export_to_gallery(self):
         src = get_qr_image_path(self.qr_id)
         if src is None:
-            self.page.show_dialog(ft.AlertDialog(content=ft.Text("QR file not found in internal folder"), title=ft.Text("Error"), actions=[ft.TextButton("OK", on_click=lambda e: self.page.pop_dialog())]))
+            self.page.show_dialog(ft.AlertDialog(content=ft.Text(tr("QR file not found in internal folder")), title=ft.Text(tr("Error")), actions=[ft.TextButton(tr("OK"), on_click=lambda e: self.page.pop_dialog())]))
             return
         if not self.filetext.value:
-            self.page.show_dialog(ft.AlertDialog(content=ft.Text("Please enter a filename first"), title=ft.Text("Filename required"), actions=[ft.TextButton("OK", on_click=lambda e: self.page.pop_dialog())]))
+            self.page.show_dialog(ft.AlertDialog(content=ft.Text(tr("Please enter a filename first")), title=ft.Text(tr("Filename required")), actions=[ft.TextButton(tr("OK"), on_click=lambda e: self.page.pop_dialog())]))
             return        
         self.page.pop_dialog()
 
         if platform.system() == "Android":
             notice_dialog = ft.AlertDialog(
-                title=ft.Text("Save to gallery"),
+                title=ft.Text(tr("Save to gallery")),
                 alignment=ft.Alignment.CENTER,
                 content=ft.Text(
-                    "Android will now ask you where to save the image.\n"
-                    "Choose the 'Pictures', 'DCIM' or 'Camera' folder so it shows up in your gallery app."
+                    tr("Android will now ask you where to save the image.\n"
+                    "Choose the 'Pictures', 'DCIM' or 'Camera' folder so it shows up in your gallery app.")
                 ),
                 actions=[
-                    ft.TextButton("Cancel", on_click=lambda e: self.page.pop_dialog()),
-                    ft.TextButton("Continue", on_click=lambda e: [self.page.pop_dialog(), asyncio.ensure_future(self._export_to_gallery_picker(src))]),
+                    ft.TextButton(tr("Cancel"), on_click=lambda e: self.page.pop_dialog()),
+                    ft.TextButton(tr("Continue"), on_click=lambda e: [self.page.pop_dialog(), asyncio.ensure_future(self._export_to_gallery_picker(src))]),
                 ],
                 actions_alignment="end",
                 open=True,
@@ -815,7 +882,7 @@ class QRCodes:
 
     async def _export_to_gallery_direct(self, src):
         folder_path = get_pictures_folder()
-        load_dialog = self.progress_dialog("Exporting QR...")
+        load_dialog = self.progress_dialog(tr("Exporting QR..."))
         self.page.show_dialog(load_dialog)
         self.page.update()
 
@@ -826,18 +893,18 @@ class QRCodes:
         try:
             shutil.copy(src, f"{folder_path}/{self.filetext.value}{src_ext}")
 
-            load_dialog.title.value = "Export Complete!"
+            load_dialog.title.value = tr("Export Complete!")
             load_dialog.content.controls[0] = ft.IconButton(icon=ft.Icons.CHECK, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.SECONDARY_CONTAINER, icon_color=ft.Colors.PRIMARY))
-            load_dialog.content.controls[1] = ft.Text(value="Success!", size=16, color=ft.Colors.PRIMARY)
-            load_dialog.content.controls[2] = ft.Text(value=f"QR exported to {folder_path}", size=14, color=ft.Colors.GREY_600)
+            load_dialog.content.controls[1] = ft.Text(value=tr("Success!"), size=16, color=ft.Colors.PRIMARY)
+            load_dialog.content.controls[2] = ft.Text(value=tr("QR exported to {folder_path}", folder_path=folder_path), size=14, color=ft.Colors.GREY_600)
             load_dialog.actions[0].visible = True
             load_dialog.modal = False
             self.page.update()
 
         except Exception as ex:
-            load_dialog.title.value = "Error"
+            load_dialog.title.value = tr("Error")
             load_dialog.content.controls[0] = ft.IconButton(icon=ft.Icons.CLOSE, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.RED_200, icon_color=ft.Colors.RED_600))
-            load_dialog.content.controls[1] = ft.Text(value="Error: "+str(ex), size=16, color=ft.Colors.RED_600)
+            load_dialog.content.controls[1] = ft.Text(value=tr("Error: {exception}", exception=ex), size=16, color=ft.Colors.RED_600)
             load_dialog.actions[0].visible = True
             load_dialog.modal = False
             self.page.update()
@@ -845,20 +912,20 @@ class QRCodes:
     async def _export_to_gallery_picker(self, src):
         src = get_qr_image_path(self.qr_id)
         if src is None:
-            self.page.show_dialog(ft.AlertDialog(content=ft.Text("QR file not found in app data"), title=ft.Text("Error"), actions=[ft.TextButton("OK", on_click=lambda e: self.page.pop_dialog())]))
+            self.page.show_dialog(ft.AlertDialog(content=ft.Text(tr("QR file not found in app data")), title=ft.Text(tr("Error")), actions=[ft.TextButton(tr("OK"), on_click=lambda e: self.page.pop_dialog())]))
             return
         if not self.filetext.value:
-            self.page.show_dialog(ft.AlertDialog(content=ft.Text("Please enter a filename first"), title=ft.Text("Filename required"), actions=[ft.TextButton("OK", on_click=lambda e: self.page.pop_dialog())]))
+            self.page.show_dialog(ft.AlertDialog(content=ft.Text(tr("Please enter a filename first")), title=ft.Text(tr("Filename required")), actions=[ft.TextButton(tr("OK"), on_click=lambda e: self.page.pop_dialog())]))
             return
         
         folder_path = await ft.FilePicker().get_directory_path(
-            dialog_title="Select folder to export QR", initial_directory=get_pictures_folder()
+            dialog_title=tr("Select folder to export QR"), initial_directory=get_pictures_folder()
         )
         if not folder_path:
             return
         
         self.page.pop_dialog() 
-        load_dialog = self.progress_dialog("Exporting QR...")
+        load_dialog = self.progress_dialog(tr("Exporting QR..."))
         self.page.show_dialog(load_dialog)
         self.page.update()
         
@@ -869,17 +936,17 @@ class QRCodes:
         try:
             shutil.copy(src, f"{folder_path}/{self.filetext.value}{src_ext}")
         
-            load_dialog.title.value = "Export Complete!"
+            load_dialog.title.value = tr("Export Complete!")
             load_dialog.content.controls[0] = ft.IconButton(icon=ft.Icons.CHECK, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.SECONDARY_CONTAINER, icon_color=ft.Colors.PRIMARY))
-            load_dialog.content.controls[1] = ft.Text(value="Success!", size=16, color=ft.Colors.PRIMARY)
-            load_dialog.content.controls[2] = ft.Text(value=f"QR exported to {folder_path}", size=14, color=ft.Colors.GREY_600)
+            load_dialog.content.controls[1] = ft.Text(value=tr("Success!"), size=16, color=ft.Colors.PRIMARY)
+            load_dialog.content.controls[2] = ft.Text(value=tr("QR exported to {folder_path}", folder_path=folder_path), size=14, color=ft.Colors.GREY_600)
             load_dialog.actions[0].visible = True
             load_dialog.modal = False
             self.page.update()
         except Exception as ex:
-            load_dialog.title.value = "Error"
+            load_dialog.title.value = tr("Error")
             load_dialog.content.controls[0] = ft.IconButton(icon=ft.Icons.CLOSE, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.RED_200, icon_color=ft.Colors.RED_600))
-            load_dialog.content.controls[1] = ft.Text(value="Error: "+str(ex), size=16, color=ft.Colors.RED_600)
+            load_dialog.content.controls[1] = ft.Text(value=tr("Error: {exception}", exception=ex), size=16, color=ft.Colors.RED_600)
             load_dialog.actions[0].visible = True
             load_dialog.modal = False
             self.page.update()
@@ -889,20 +956,20 @@ class QRCodes:
     
         src = get_qr_image_path(self.qr_id)
         if src is None:
-            self.page.show_dialog(ft.AlertDialog(content=ft.Text("QR file not found in app data"), title=ft.Text("Error"), actions=[ft.TextButton("OK", on_click=lambda e: self.page.pop_dialog())]))
+            self.page.show_dialog(ft.AlertDialog(content=ft.Text(tr("QR file not found in app data")), title=ft.Text(tr("Error")), actions=[ft.TextButton(tr("OK"), on_click=lambda e: self.page.pop_dialog())]))
             return
         if not self.filetext.value:
-            self.page.show_dialog(ft.AlertDialog(content=ft.Text("Please enter a filename first"), title=ft.Text("Filename required"), actions=[ft.TextButton("OK", on_click=lambda e: self.page.pop_dialog())]))
+            self.page.show_dialog(ft.AlertDialog(content=ft.Text(tr("Please enter a filename first")), title=ft.Text(tr("Filename required")), actions=[ft.TextButton(tr("OK"), on_click=lambda e: self.page.pop_dialog())]))
             return
 
         folder_path = await ft.FilePicker().get_directory_path(
-            dialog_title="Select folder to export QR", initial_directory=default_dir
+            dialog_title=tr("Select folder to export QR"), initial_directory=default_dir
         )
         if not folder_path:
             return
 
         self.page.pop_dialog() 
-        load_dialog = self.progress_dialog("Exporting QR...")
+        load_dialog = self.progress_dialog(tr("Exporting QR..."))
         self.page.show_dialog(load_dialog)
         self.page.update()
     
@@ -913,36 +980,36 @@ class QRCodes:
         try:
             shutil.copy(src, f"{folder_path}/{self.filetext.value}{src_ext}")
 
-            load_dialog.title.value = "Export Complete!"
+            load_dialog.title.value = tr("Export Complete!")
             load_dialog.content.controls[0] = ft.IconButton(icon=ft.Icons.CHECK, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.SECONDARY_CONTAINER, icon_color=ft.Colors.PRIMARY))
-            load_dialog.content.controls[1] = ft.Text(value="Success!", size=16, color=ft.Colors.PRIMARY)
-            load_dialog.content.controls[2] = ft.Text(value=f"QR exported to {folder_path}", size=14, color=ft.Colors.GREY_600)
+            load_dialog.content.controls[1] = ft.Text(value=tr("Success!"), size=16, color=ft.Colors.PRIMARY)
+            load_dialog.content.controls[2] = ft.Text(value=tr("QR exported to {folder_path}", folder_path=folder_path), size=14, color=ft.Colors.GREY_600)
             load_dialog.actions[0].visible = True
             load_dialog.modal = False
             self.page.update()
         except Exception as ex:
-            load_dialog.title.value = "Error"
+            load_dialog.title.value = tr("Error")
             load_dialog.content.controls[0] = ft.IconButton(icon=ft.Icons.CLOSE, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.RED_200, icon_color=ft.Colors.RED_600))
-            load_dialog.content.controls[1] = ft.Text(value="Error: "+str(ex), size=16, color=ft.Colors.RED_600)
+            load_dialog.content.controls[1] = ft.Text(value=tr("Error: {exception}", exception=ex), size=16, color=ft.Colors.RED_600)
             load_dialog.actions[0].visible = True
             load_dialog.modal = False
             self.page.update()
 
     async def export_to_stl(self):
         if not self.filetext.value:
-            self.page.show_dialog(ft.AlertDialog(content=ft.Text("Please enter a filename first"), title=ft.Text("Filename required"), actions=[ft.TextButton("OK", on_click=lambda e: self.page.pop_dialog())]))
+            self.page.show_dialog(ft.AlertDialog(content=ft.Text(tr("Please enter a filename first")), title=ft.Text(tr("Filename required")), actions=[ft.TextButton(tr("OK"), on_click=lambda e: self.page.pop_dialog())]))
             return
 
         invert_dialog = ft.AlertDialog(
-            title=ft.Text("Invert 3D model?"),
+            title=ft.Text(tr("Invert 3D model?")),
             alignment=ft.Alignment.CENTER,
             content=ft.Text(
-                "By default, the dark squares of the QR are raised, thus the dark area protrudes.\n"
-                "Invert this so the light modules are raised and the dark areas are indented instead?"
+                tr("By default, the dark squares of the QR are raised, thus the dark area protrudes.\n"
+                "Invert this so the light modules are raised and the dark areas are indented instead?")
             ),
             actions=[
-                ft.TextButton("No, keep as is", on_click=lambda e: self._continue_stl_export(False)),
-                ft.TextButton("Yes, invert", on_click=lambda e: self._continue_stl_export(True)),
+                ft.TextButton(tr("No, keep as is"), on_click=lambda e: self._continue_stl_export(False)),
+                ft.TextButton(tr("Yes, invert"), on_click=lambda e: self._continue_stl_export(True)),
             ],
             open=True,
         )
@@ -961,12 +1028,12 @@ class QRCodes:
                 horizontal_alignment="center",
                 tight=True,
                 controls=[
-                    ft.Text(value="Please hang tight, it may take a few seconds.\nDon't close the app.", size=13, color=ft.Colors.GREY_500,margin=ft.Margin.only(bottom=10)),
+                    ft.Text(value=tr("Please hang tight, it may take a few seconds.\nDon't close the app."), size=13, color=ft.Colors.GREY_500,margin=ft.Margin.only(bottom=10)),
                     ft.ProgressRing(),
                     ft.Container(visible=False),
                 ]
             ),
-            actions=[ft.TextButton("Close", on_click=lambda e: self.page.pop_dialog(), visible=False)],
+            actions=[ft.TextButton(tr("Close"), on_click=lambda e: self.page.pop_dialog(), visible=False)],
         )
 
         return dialog
@@ -975,13 +1042,13 @@ class QRCodes:
         default_dir = get_default_browse_dir()
 
         folder_path = await ft.FilePicker().get_directory_path(
-            dialog_title="Select folder to export STL", initial_directory=default_dir
+            dialog_title=tr("Select folder to export STL"), initial_directory=default_dir
         )
         if not folder_path:
             return
 
         self.page.pop_dialog()
-        load_dialog = self.progress_dialog("Exporting STL...")
+        load_dialog = self.progress_dialog(tr("Exporting STL..."))
         self.page.show_dialog(load_dialog)
         self.page.update()
 
@@ -994,17 +1061,17 @@ class QRCodes:
             builder = StlBuilder(self.qr_id, invert=self.stl_invert)
             builder.generate_stl(destination_path)
 
-            load_dialog.title.value = "STL Complete!"
+            load_dialog.title.value = tr("STL Complete!")
             load_dialog.content.controls[0] = ft.IconButton(icon=ft.Icons.CHECK, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.SECONDARY_CONTAINER, icon_color=ft.Colors.PRIMARY))
-            load_dialog.content.controls[1] = ft.Text(value="Success!", size=16, color=ft.Colors.PRIMARY)
-            load_dialog.content.controls[2] = ft.Text(value=f"STL exported to {destination_path}", size=14, color=ft.Colors.GREY_600)
+            load_dialog.content.controls[1] = ft.Text(value=tr("Success!"), size=16, color=ft.Colors.PRIMARY)
+            load_dialog.content.controls[2] = ft.Text(value=tr("STL exported to {destination_path}", destination_path=destination_path), size=14, color=ft.Colors.GREY_600)
             load_dialog.actions[0].visible = True
             load_dialog.modal = False
             self.page.update()
         except Exception as ex:
-            load_dialog.title.value = "Error"
+            load_dialog.title.value = tr("Error")
             load_dialog.content.controls[0] = ft.IconButton(icon=ft.Icons.CLOSE, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.RED_200, icon_color=ft.Colors.RED_600))
-            load_dialog.content.controls[1] = ft.Text(value="Error: "+str(ex), size=16, color=ft.Colors.RED_600)
+            load_dialog.content.controls[1] = ft.Text(value=tr("Error: {exception}", exception=ex), size=16, color=ft.Colors.RED_600)
             load_dialog.actions[0].visible = True
             load_dialog.modal = False
             self.page.update()
@@ -1080,18 +1147,18 @@ class QRCodes:
                 contact = parse_vcard(url)
                 rows = []
                 if contact["name"]:
-                    rows.append((ft.Icons.PERSON_ROUNDED, contact["name"], "Full name"))
+                    rows.append((ft.Icons.PERSON_ROUNDED, contact["name"], tr("Full name")))
                 if contact["org"]:
-                    rows.append((ft.Icons.BUSINESS_ROUNDED, contact["org"], "Organization"))
+                    rows.append((ft.Icons.BUSINESS_ROUNDED, contact["org"], tr("Organization")))
                 if contact["title"]:
-                    rows.append((ft.Icons.BADGE_ROUNDED, contact["title"], "Job title"))
-                rows += [(ft.Icons.CALL_ROUNDED, v, "Phone number") for v in contact["phones"]]
-                rows += [(ft.Icons.EMAIL_ROUNDED, v, "Email address") for v in contact["emails"]]
-                rows += [(ft.Icons.LANGUAGE_ROUNDED, v, "Website") for v in contact["urls"]]
+                    rows.append((ft.Icons.BADGE_ROUNDED, contact["title"], tr("Job title")))
+                rows += [(ft.Icons.CALL_ROUNDED, v, tr("Phone number")) for v in contact["phones"]]
+                rows += [(ft.Icons.EMAIL_ROUNDED, v, tr("Email address")) for v in contact["emails"]]
+                rows += [(ft.Icons.LANGUAGE_ROUNDED, v, tr("Website")) for v in contact["urls"]]
                 if contact["address"]:
-                    rows.append((ft.Icons.HOME_ROUNDED, contact["address"], "Address"))
+                    rows.append((ft.Icons.HOME_ROUNDED, contact["address"], tr("Address")))
                 if contact["note"]:
-                    rows.append((ft.Icons.SHORT_TEXT_ROUNDED, contact["note"], "Note"))
+                    rows.append((ft.Icons.SHORT_TEXT_ROUNDED, contact["note"], tr("Note")))
                 if not rows:
                     raise ValueError("No contact details found in the vCard")
                 layout = ft.Column(
@@ -1133,7 +1200,7 @@ class QRCodes:
                                         ),
                                         ft.Column(spacing=-3,expand=True,controls=[
                                             ft.Text(value=url.split(";")[0].split(":")[2], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                            ft.Text(value="Network name", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                            ft.Text(value=tr("Network name"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                         ]),
                                         self.copy_content_btn(url.split(";")[0].split(":")[2])
                                     ]
@@ -1159,8 +1226,8 @@ class QRCodes:
                                             )
                                         ),
                                         ft.Column(spacing=-3,expand=True,controls=[
-                                            ft.Text(value="No password", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                            ft.Text(value="Password", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                            ft.Text(value=tr("No password"), size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                            ft.Text(value=tr("Password"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                         ]),
                                     ]
                                 ),
@@ -1193,7 +1260,7 @@ class QRCodes:
                                         ),
                                         ft.Column(spacing=-3,expand=True,controls=[
                                             ft.Text(value=url.split(";")[0].split(":")[2], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                            ft.Text(value="Network name", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                            ft.Text(value=tr("Network name"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                         ]),
                                         self.copy_content_btn(url.split(";")[0].split(":")[2])
                                     ]
@@ -1220,7 +1287,7 @@ class QRCodes:
                                         ),
                                         ft.Column(spacing=-3,expand=True,controls=[
                                             ft.Text(value=url.split(";")[1].split(":")[1], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                            ft.Text(value="Protocol", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                            ft.Text(value=tr("Protocol"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                         ]),
                                         self.copy_content_btn(url.split(";")[1].split(":")[1])
                                     ]
@@ -1247,7 +1314,7 @@ class QRCodes:
                                         ),
                                         ft.Column(spacing=-3,expand=True,controls=[
                                             ft.Text(value=url.split(";")[2].split(":")[1], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                            ft.Text(value="Password", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                            ft.Text(value=tr("Password"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                         ]),
                                         self.copy_content_btn(url.split(";")[2].split(":")[1])
                                     ]
@@ -1281,7 +1348,7 @@ class QRCodes:
                                     ),
                                     ft.Column(spacing=-3,expand=True,controls=[
                                         ft.Text(value=url.split("\n")[3].split(":")[1], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                        ft.Text(value="Event name", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                        ft.Text(value=tr("Event name"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                     ]),
                                     self.copy_content_btn(url.split("\n")[3].split(":")[1])
                                 ]
@@ -1308,7 +1375,7 @@ class QRCodes:
                                     ),
                                     ft.Column(spacing=-3,expand=True,controls=[
                                         ft.Text(value=url.split("\n")[4].split(":")[1], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                        ft.Text(value="Location name", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                        ft.Text(value=tr("Location name"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                     ]),
                                     self.copy_content_btn(url.split("\n")[4].split(":")[1])
                                 ]
@@ -1334,10 +1401,10 @@ class QRCodes:
                                         )
                                     ),
                                     ft.Column(spacing=-3,expand=True,controls=[
-                                        ft.Text(value=f"Day: {url.split("\n")[5].split(":")[1].split('T')[0][:4]}-{url.split("\n")[5].split(":")[1].split('T')[0][4:6]}-{url.split("\n")[5].split(":")[1].split('T')[0][6:8]} Time: {url.split("\n")[5].split(":")[1].split('T')[1][:2]}:{url.split("\n")[5].split(":")[1].split('T')[1][2:4]}", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                        ft.Text(value="Start time", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                        ft.Text(value=format_ics_datetime(url.split("\n")[5].split(":")[1]), size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                        ft.Text(value=tr("Start time"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                     ]),
-                                    self.copy_content_btn(f"Day: {url.split('\n')[5].split(':')[1].split('T')[0][:4]}-{url.split('\n')[5].split(':')[1].split('T')[0][4:6]}-{url.split('\n')[5].split(':')[1].split('T')[0][6:8]} Time: {url.split('\n')[5].split(':')[1].split('T')[1][:2]}:{url.split('\n')[5].split(':')[1].split('T')[1][2:4]}")
+                                    self.copy_content_btn(format_ics_datetime(url.split("\n")[5].split(":")[1]))
                                 ]
                             ),
                         ),
@@ -1361,10 +1428,10 @@ class QRCodes:
                                         )
                                     ),
                                     ft.Column(spacing=-3,expand=True,controls=[
-                                        ft.Text(value=f"Day: {url.split("\n")[6].split(":")[1].split('T')[0][:4]}-{url.split("\n")[6].split(":")[1].split('T')[0][4:6]}-{url.split("\n")[6].split(":")[1].split('T')[0][6:8]} Time: {url.split("\n")[6].split(":")[1].split('T')[1][:2]}:{url.split("\n")[6].split(":")[1].split('T')[1][2:4]}", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                        ft.Text(value="End time", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                        ft.Text(value=format_ics_datetime(url.split("\n")[6].split(":")[1]), size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                        ft.Text(value=tr("End time"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                     ]),
-                                    self.copy_content_btn(f"Day: {url.split('\n')[6].split(':')[1].split('T')[0][:4]}-{url.split('\n')[6].split(':')[1].split('T')[0][4:6]}-{url.split('\n')[6].split(':')[1].split('T')[0][6:8]} Time: {url.split('\n')[6].split(':')[1].split('T')[1][:2]}:{url.split('\n')[6].split(':')[1].split('T')[1][2:4]}"),
+                                    self.copy_content_btn(format_ics_datetime(url.split("\n")[6].split(":")[1])),
                                 ]
                             ),
                         )
@@ -1397,7 +1464,7 @@ class QRCodes:
                                         ),
                                         ft.Column(spacing=-3,expand=True,controls=[
                                             ft.Text(value=url.split("?")[0].split(":")[1], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                            ft.Text(value="Receiver's address", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                            ft.Text(value=tr("Receiver's address"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                         ]),
                                         self.copy_content_btn(url.split("?")[0].split(":")[1])
                                     ]
@@ -1424,7 +1491,7 @@ class QRCodes:
                                         ),
                                         ft.Column(spacing=-3,expand=True,controls=[
                                             ft.Text(value=urllib.parse.unquote(url.split("?")[0].split(":")[1]), size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                            ft.Text(value="Subject", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                            ft.Text(value=tr("Subject"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                         ]),
                                         self.copy_content_btn(urllib.parse.unquote(url.split("?")[0].split(":")[1])),
                                     ]
@@ -1451,7 +1518,7 @@ class QRCodes:
                                         ),
                                         ft.Column(spacing=-3,expand=True,controls=[
                                             ft.Text(value=urllib.parse.unquote(url.split("=")[1].split("&")[0]), size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                            ft.Text(value="Body", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                            ft.Text(value=tr("Body"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                         ]),
                                         self.copy_content_btn(urllib.parse.unquote(url.split("=")[1].split("&")[0])),
                                     ]
@@ -1481,7 +1548,7 @@ class QRCodes:
                                 ),
                                 ft.Column(spacing=-3,expand=True,controls=[
                                     ft.Text(value=url.split(":")[1], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                    ft.Text(value="Receiver's address", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                    ft.Text(value=tr("Receiver's address"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                 ]),
                                 self.copy_content_btn(url.split(":")[1])
                             ]
@@ -1513,7 +1580,7 @@ class QRCodes:
                                     ),
                                     ft.Column(spacing=-3,expand=True,controls=[
                                         ft.Text(value=f"+{url.split(":")[1]}", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                        ft.Text(value="Receiver's phone number", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                        ft.Text(value=tr("Receiver's phone number"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                     ]),
                                     self.copy_content_btn(f"+{url.split(':')[1]}")
                                 ]
@@ -1540,7 +1607,7 @@ class QRCodes:
                                     ),
                                     ft.Column(spacing=-3,expand=True,controls=[
                                         ft.Text(value=url.split(":", 2)[2], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                        ft.Text(value="Preset message", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                        ft.Text(value=tr("Preset message"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                     ]),
                                     self.copy_content_btn(url.split(":", 2)[2]),
                                 ]
@@ -1570,7 +1637,7 @@ class QRCodes:
                             ),
                             ft.Column(spacing=-3,expand=True,controls=[
                                 ft.Text(value=url.split(":")[1], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                ft.Text(value="Phone number", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                ft.Text(value=tr("Phone number"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                             ]),
                             self.copy_content_btn(url.split(":")[1])
                         ]
@@ -1602,7 +1669,7 @@ class QRCodes:
                                     ),
                                     ft.Column(spacing=-3,expand=True,controls=[
                                         ft.Text(value=f"{url.split(":")[1].split(',')[0]}", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                        ft.Text(value="Latitude", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                        ft.Text(value=tr("Latitude"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                     ]),
                                     self.copy_content_btn(f"{url.split(":")[1].split(',')[0]}")
                                 ]
@@ -1629,7 +1696,7 @@ class QRCodes:
                                     ),
                                     ft.Column(spacing=-3,expand=True,controls=[
                                         ft.Text(value=f"{url.split(":")[1].split(',')[1]}", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                        ft.Text(value="Longitude", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                        ft.Text(value=tr("Longitude"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                     ]),
                                     self.copy_content_btn(f"{url.split(":")[1].split(',')[1]}"),
                                 ]
@@ -1659,7 +1726,7 @@ class QRCodes:
                             ),
                             ft.Column(spacing=-3,expand=True,controls=[
                                 ft.Text(value=url, size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                ft.Text(value="Content", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                ft.Text(value=tr("Content"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                             ]),
                             self.copy_content_btn(url),
                         ]
@@ -1673,7 +1740,7 @@ class QRCodes:
                     layout,
                     ft.Container(
                         margin=ft.Margin.only(left=20, right=20,top=15),
-                        content=ft.Text(value="If the QR was imported from a different source, it may have a different structure and thus diplay an error or incorrect information. If that is not the case, open a bug report issue on the GitHub repository.", size=15, color=ft.Colors.GREY_500)
+                        content=ft.Text(value=tr("If the QR was imported from a different source, it may have a different structure and thus diplay an error or incorrect information. If that is not the case, open a bug report issue on the GitHub repository."), size=15, color=ft.Colors.GREY_500)
                     )
                 ]
             )
@@ -1706,7 +1773,7 @@ class QRCodes:
                                 ),
                                 ft.Column(spacing=-3,expand=True,controls=[
                                     ft.Text(value=url, size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                    ft.Text(value="Failed to unpack, raw content shown", size=15, color=ft.Colors.RED_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                    ft.Text(value=tr("Failed to unpack, raw content shown"), size=15, color=ft.Colors.RED_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                 ]),
                                 self.copy_content_btn(url),
                             ]
@@ -1715,14 +1782,14 @@ class QRCodes:
                     ft.Container(
                         content=ft.Row(controls=[
                             ft.Icon(icon=ft.Icons.ERROR_OUTLINE_OUTLINED, color=ft.Colors.WHITE),
-                            ft.Container(expand=True, content=ft.Text(value=f"Error: {str(ex)}", size=16, color=ft.Colors.WHITE)),
+                            ft.Container(expand=True, content=ft.Text(value=tr("Error: {exception}", exception=ex), size=16, color=ft.Colors.WHITE)),
                         ]),
                         padding=15, bgcolor=ft.Colors.RED_500, border_radius=30,
                         margin=ft.Margin.only(left=20, right=20),
                     ),
                     ft.Container(
                         margin=ft.Margin.only(left=40, right=40,top=15),
-                        content=ft.Text(value="If the QR was imported from a different source, it may have a different structure and thus diplay an error. If this is the case, you may ignore the error message. If not, please open a bug report issue on the GitHub repository.", size=15, color=ft.Colors.GREY_500)
+                        content=ft.Text(value=tr("If the QR was imported from a different source, it may have a different structure and thus diplay an error. If this is the case, you may ignore the error message. If not, please open a bug report issue on the GitHub repository."), size=15, color=ft.Colors.GREY_500)
                     ),
                 ]
             )
@@ -1749,7 +1816,7 @@ class QRCodes:
                         ),
                         ft.Button(
                             margin=ft.Margin.only(left=15),
-                            elevation=0, icon=ft.Icons.DOWNLOAD, content=ft.Text("Export options", size=16),
+                            elevation=0, icon=ft.Icons.DOWNLOAD, content=ft.Text(tr("Export options"), size=16),
                             height=50, color=ft.Colors.SURFACE, bgcolor=ft.Colors.PRIMARY,
                             style=ft.ButtonStyle(
                                 overlay_color=ft.Colors.ON_PRIMARY_CONTAINER,
@@ -1790,7 +1857,7 @@ class QRCodes:
                             expand=True,
                             controls=[
                                 ft.Button(
-                                    elevation=0, icon=ft.Icons.DOWNLOAD, content=ft.Text("Export options", size=16),
+                                    elevation=0, icon=ft.Icons.DOWNLOAD, content=ft.Text(tr("Export options"), size=16),
                                     height=50, color=ft.Colors.SURFACE, bgcolor=ft.Colors.PRIMARY,
                                     style=ft.ButtonStyle(
                                         overlay_color=ft.Colors.ON_PRIMARY_CONTAINER,
@@ -1859,15 +1926,15 @@ class QRCodes:
         self.qrpath = get_qr_image_path(self.qr_id)
         
         if self.qrpath is None:
-            self.page.show_dialog(ft.SnackBar(content=ft.Text("QR file not found"),show_close_icon=True))
+            self.page.show_dialog(ft.SnackBar(content=ft.Text(tr("QR file not found")),show_close_icon=True))
             return
 
         qr = ft.Image(src=self.qrpath, border_radius=10, width=get_image_size(), height=get_image_size())
         if os.path.dirname(self.qrpath) == PINNED_DIR:
             self.pin_button.icon = ft.Icons.PUSH_PIN_ROUNDED
 
-        fill_text = self.fill_color or "Unknown"
-        back_text = self.back_color or "Unknown"
+        fill_text = self.fill_color or tr("Unknown")
+        back_text = self.back_color or tr("Unknown")
 
         self.about_content = ft.Column(
             horizontal_alignment="center", 
@@ -1912,7 +1979,7 @@ class QRCodes:
                                 tight=True,
                                 controls=[
                                     ft.Icon(icon=ft.Icons.CALENDAR_MONTH_ROUNDED, color=ft.Colors.INVERSE_SURFACE, size=20,margin=ft.Margin.only(right=-5)),
-                                    ft.Text(value="Creation date", size=15, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD),margin=ft.Margin.only(right=20)),
+                                    ft.Text(value=tr("Creation date"), size=15, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD),margin=ft.Margin.only(right=20)),
                                     ft.Container(
                                         content=ft.Text(value=str(self.qr_date), size=15, color=ft.Colors.INVERSE_SURFACE),
                                     ),
@@ -1932,7 +1999,7 @@ class QRCodes:
                 ft.Divider(color=ft.Colors.INVERSE_SURFACE, thickness=0.2, leading_indent=20, trailing_indent=20, height=50),
                 ft.ExpansionTile(
                     width=600,
-                    title=ft.Row(controls=[ft.Icon(icon=ft.Icons.INFO_ROUNDED), ft.Text(value="QR technical details", size=16)]),
+                    title=ft.Row(controls=[ft.Icon(icon=ft.Icons.INFO_ROUNDED), ft.Text(value=tr("QR technical details"), size=16)]),
                     tile_padding=ft.Padding.only(left=20, right=20, top=10, bottom=10),
                     controls_padding=ft.Padding.only(left=10, right=10, bottom=10),
                     bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, collapsed_bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
@@ -1948,7 +2015,7 @@ class QRCodes:
                             content=ft.Column(controls=[
                                 ft.Row(spacing=5,controls=[
                                     ft.Icon(icon=ft.Icons.CODE_ROUNDED, color=ft.Colors.INVERSE_SURFACE, size=30),
-                                    ft.Text(value="Raw data", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                    ft.Text(value=tr("Raw data"), size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
                                     ft.Container(expand=True),
                                     self.copy_content_btn(str(self.url)),
                                 ]),
@@ -1962,7 +2029,7 @@ class QRCodes:
                             content=ft.Column(controls=[
                                 ft.Row(spacing=5,controls=[
                                     ft.Icon(icon=ft.Icons.FOLDER_ROUNDED, color=ft.Colors.INVERSE_SURFACE, size=30),
-                                    ft.Text(value="Internal path", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                    ft.Text(value=tr("Internal path"), size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
                                     ft.Container(expand=True),
                                     self.copy_content_btn(str(self.qrpath)),
                                 ]),
@@ -1973,7 +2040,7 @@ class QRCodes:
                 ),
                 ft.ExpansionTile(
                     width=600,
-                    title=ft.Row(controls=[ft.Icon(icon=ft.Icons.COLOR_LENS_ROUNDED), ft.Text(value="Color scheme", size=16)]),
+                    title=ft.Row(controls=[ft.Icon(icon=ft.Icons.COLOR_LENS_ROUNDED), ft.Text(value=tr("Color scheme"), size=16)]),
                     tile_padding=ft.Padding.only(left=20, right=20, top=10, bottom=10),
                     controls_padding=ft.Padding.only(left=20, right=20, bottom=20),
                     bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, collapsed_bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
@@ -1982,8 +2049,8 @@ class QRCodes:
                     collapsed_shape=ft.RoundedRectangleBorder(side=ft.BorderSide(style=ft.BorderStyle.NONE), radius=20),
                     controls=ft.Column(expand=True, controls=[
                         ft.Container(height=0.2, bgcolor=ft.Colors.INVERSE_SURFACE, margin=ft.Margin.only(bottom=5, top=0)),
-                        ft.Row(controls=[ft.Text(value="Primary:"), ft.Container(expand=True), ft.Text(value=fill_text),self.copy_content_btn(fill_text, small=True)]),
-                        ft.Row(controls=[ft.Text(value="Background:"), ft.Container(expand=True), ft.Text(value=back_text),self.copy_content_btn(back_text, small=True)]),
+                        ft.Row(controls=[ft.Text(value=tr("Primary:")), ft.Container(expand=True), ft.Text(value=fill_text),self.copy_content_btn(fill_text, small=True)]),
+                        ft.Row(controls=[ft.Text(value=tr("Background:")), ft.Container(expand=True), ft.Text(value=back_text),self.copy_content_btn(back_text, small=True)]),
                     ]),
                 ),
                 ft.Container(height=50)
@@ -2008,9 +2075,9 @@ class QRCodes:
             self.page.update()
 
     def edit_tag_name_dialog(self):
-        tag_field = ft.TextField(label="New tag name", value=self.tag_name, hint_text="New tag name", autofocus=True, border=ft.InputBorder.NONE, expand=False, margin=ft.Margin.only(left=10, right=10))
+        tag_field = ft.TextField(label=tr("New tag name"), value=self.tag_name, hint_text=tr("New tag name"), autofocus=True, border=ft.InputBorder.NONE, expand=False, margin=ft.Margin.only(left=10, right=10))
         self.page.show_dialog(ft.AlertDialog(
-            title=ft.Text("Edit tag name"),
+            title=ft.Text(tr("Edit tag name")),
             content=ft.Column(
                 tight=True,
                 controls=[
@@ -2027,7 +2094,7 @@ class QRCodes:
                         wrap=True,
                         controls=[
                             ft.Button(
-                                elevation=0, icon=ft.Icons.CHECK_ROUNDED, content=ft.Text("Save", size=16),
+                                elevation=0, icon=ft.Icons.CHECK_ROUNDED, content=ft.Text(tr("Save"), size=16),
                                 height=50, color=ft.Colors.SURFACE, bgcolor=ft.Colors.PRIMARY,
                                 style=ft.ButtonStyle(
                                     overlay_color=ft.Colors.ON_PRIMARY_CONTAINER,
@@ -2052,23 +2119,23 @@ class QRCodes:
 
     def edit_tag_name(self, new_tag_name):
         if not new_tag_name:
-            self.page.show_dialog(ft.AlertDialog(content=ft.Text("Tag name cannot be empty"), title=ft.Text("Error"), actions=[ft.TextButton("OK", on_click=lambda e: self.page.pop_dialog())]))
+            self.page.show_dialog(ft.AlertDialog(content=ft.Text(tr("Tag name cannot be empty")), title=ft.Text(tr("Error")), actions=[ft.TextButton(tr("OK"), on_click=lambda e: self.page.pop_dialog())]))
             return
     
         if new_tag_name == self.tag_name:
-            self.page.show_dialog(ft.AlertDialog(content=ft.Text("Please enter a different tag name"), title=ft.Text("Error"), actions=[ft.TextButton("OK", on_click=lambda e: self.page.pop_dialog())]))
+            self.page.show_dialog(ft.AlertDialog(content=ft.Text(tr("Please enter a different tag name")), title=ft.Text(tr("Error")), actions=[ft.TextButton(tr("OK"), on_click=lambda e: self.page.pop_dialog())]))
             return
 
         if any(c in new_tag_name for c in '\\/:*"<>|'+"'"):
             self.page.show_dialog(ft.AlertDialog(
-                title=ft.Text("Error"),
-                content=ft.Text("The name contains invalid characters. (\\ / : * \ < > | ' "+' ")'),
-                actions=[ft.TextButton("OK", on_click=lambda e: self.page.pop_dialog())],
+                title=ft.Text(tr("Error")),
+                content=ft.Text(tr("The name contains invalid characters.") + " (\\ / : * \\ < > | ' \")"),
+                actions=[ft.TextButton(tr("OK"), on_click=lambda e: self.page.pop_dialog())],
             ))
             return
     
         if get_qr_image_path(new_tag_name) is not None:
-            self.page.show_dialog(ft.AlertDialog(content=ft.Text("A QR with this tag name already exists"), title=ft.Text("Error"), actions=[ft.TextButton("OK", on_click=lambda e: self.page.pop_dialog())]))
+            self.page.show_dialog(ft.AlertDialog(content=ft.Text(tr("A QR with this tag name already exists")), title=ft.Text(tr("Error")), actions=[ft.TextButton(tr("OK"), on_click=lambda e: self.page.pop_dialog())]))
             return
     
         old_path = get_qr_image_path(self.qr_id)
@@ -2089,10 +2156,10 @@ class QRCodes:
         except Exception as e:
             self.page.show_dialog(
                 ft.AlertDialog(
-                    content=ft.Text(f"Failed to rename QR: {e}"), 
-                    title=ft.Text("Error"), 
+                    content=ft.Text(tr("Failed to rename QR: {e}", e=e)), 
+                    title=ft.Text(tr("Error")), 
                     actions=[
-                        ft.TextButton("OK", on_click=lambda e: self.page.pop_dialog())
+                        ft.TextButton(tr("OK"), on_click=lambda e: self.page.pop_dialog())
                         ]
                     )
                 )
@@ -2150,24 +2217,25 @@ class QRCodes:
 
         file_path = get_qr_image_path(self.qr_id)
         if file_path is None:
-            self.page.show_dialog(ft.AlertDialog(content=ft.Text("QR file not found"), title=ft.Text("Error"), actions=[ft.TextButton("OK", on_click=lambda e: self.page.pop_dialog())]))
+            self.page.show_dialog(ft.AlertDialog(content=ft.Text(tr("QR file not found")), title=ft.Text(tr("Error")), actions=[ft.TextButton(tr("OK"), on_click=lambda e: self.page.pop_dialog())]))
             return
 
         try:
             result = await self.share.share_files(
                 [ft.ShareFile.from_path(os.path.abspath(file_path))],
-                text="Shared via QuickeR: "+self._leading_icon_and_name()[1],
+                text=tr("Shared via QuickeR: {name}", name=self._leading_icon_and_name()[1]),
             )
             self.status.value = f"Share status: {result.status}"
         except Exception as ex:
-            self.page.show_dialog(ft.AlertDialog(content=ft.Text(f"Share not supported on this platform: {ex}"), title=ft.Text("Error"), actions=[ft.TextButton("OK", on_click=lambda e: self.page.pop_dialog())]))
+            self.page.show_dialog(ft.AlertDialog(content=ft.Text(tr("Share not supported on this platform: {ex}", ex=ex)), title=ft.Text(tr("Error")), actions=[ft.TextButton(tr("OK"), on_click=lambda e: self.page.pop_dialog())]))
 
 
 # ---------------------------------------------------------------------------
 # App
 # ---------------------------------------------------------------------------
 
-def main(page: ft.Page):
+def main(page: ft.Page, show_settings=False):
+    set_language(read_saved_language())
     page.title = "QuickeR"
 
     last_qr_image = {"img": None}
@@ -2221,7 +2289,7 @@ def main(page: ft.Page):
                     #style=ft.ProgressRingStyle(stroke_cap=ft.StrokeCap.ROUND),
                 ),
                 ft.Text(
-                    value="Loading content...", 
+                    value=tr("Loading content..."), 
                     color=ft.Colors.GREY_400
                 ),
             ]
@@ -2282,7 +2350,7 @@ def main(page: ft.Page):
                                 style=ft.TextStyle(weight=ft.FontWeight.BOLD)
                             ),
                             ft.Text(
-                                value="Your QRs, made quicker.", 
+                                value=tr("Your QRs, made quicker."), 
                                 color=ft.Colors.GREY_400
                             ),
                         ]
@@ -2307,7 +2375,7 @@ def main(page: ft.Page):
                     content=ft.Row(
                         alignment=ft.MainAxisAlignment.CENTER,
                         controls=[
-                            ft.Text("Get Started",size=20, weight=ft.FontWeight.BOLD),
+                            ft.Text(tr("Get Started"),size=20, weight=ft.FontWeight.BOLD),
                             ft.Icon(icon=ft.Icons.ARROW_FORWARD_ROUNDED, size=25)
                         ]
                     ),
@@ -2334,7 +2402,7 @@ def main(page: ft.Page):
                 ft.Button(
                     align=ft.Alignment.TOP_LEFT,
                     margin=ft.Margin.only(left=10, top=10),
-                    content="Back",
+                    content=tr("Back"),
                     style=ft.ButtonStyle(elevation=0, shadow_color=ft.Colors.TRANSPARENT, bgcolor=ft.Colors.SECONDARY_CONTAINER),
                     icon=ft.Icons.ARROW_BACK_ROUNDED,
                     on_click=lambda e: invert_change_views(tutorial["Tutorial"])
@@ -2355,7 +2423,7 @@ def main(page: ft.Page):
                                 icon_color=ft.Colors.PRIMARY,
                             ),
                             ft.Text(
-                                value="Customization", 
+                                value=tr("Customization"), 
                                 size=25, 
                                 font_family="MaterialRoundedBold", 
                                 color=ft.Colors.INVERSE_SURFACE, 
@@ -2390,8 +2458,8 @@ def main(page: ft.Page):
                                                     )
                                                 ),
                                                 ft.Column(spacing=-3,expand=True,controls=[
-                                                    ft.Text(value="Appearance", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                                    ft.Text(value="Select the appearance mode of the app", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                                    ft.Text(value=tr("Appearance"), size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                                    ft.Text(value=tr("Select the appearance mode of the app"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                                 ]),
                                             ]
                                         ),
@@ -2421,8 +2489,8 @@ def main(page: ft.Page):
                                                     )
                                                 ),
                                                 ft.Column(spacing=-3,expand=True,controls=[
-                                                    ft.Text(value="Color scheme", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                                    ft.Text(value="Select the colors of the app", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                                    ft.Text(value=tr("Color scheme"), size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                                    ft.Text(value=tr("Select the colors of the app"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                                 ]),
                                             ]
                                         ),
@@ -2439,7 +2507,7 @@ def main(page: ft.Page):
                     content=ft.Row(
                         alignment=ft.MainAxisAlignment.CENTER,
                         controls=[
-                            ft.Text("Next",size=20, weight=ft.FontWeight.BOLD),
+                            ft.Text(tr("Next"),size=20, weight=ft.FontWeight.BOLD),
                             ft.Icon(icon=ft.Icons.ARROW_FORWARD_ROUNDED, size=25)
                         ]
                     ),
@@ -2467,7 +2535,7 @@ def main(page: ft.Page):
                 ft.Button(
                     align=ft.Alignment.TOP_LEFT,
                     margin=ft.Margin.only(left=10, top=10),
-                    content="Back",
+                    content=tr("Back"),
                     style=ft.ButtonStyle(elevation=0, shadow_color=ft.Colors.TRANSPARENT, bgcolor=ft.Colors.SECONDARY_CONTAINER),
                     icon=ft.Icons.ARROW_BACK_ROUNDED,
                     on_click=lambda e: invert_change_views(tutorial["Tutorial"])
@@ -2488,14 +2556,14 @@ def main(page: ft.Page):
                                 icon_color=ft.Colors.PRIMARY,
                             ),
                             ft.Text(
-                                value="Tutorial", 
+                                value=tr("Tutorial"), 
                                 size=25, 
                                 font_family="MaterialRoundedBold", 
                                 color=ft.Colors.INVERSE_SURFACE, 
                                 style=ft.TextStyle(weight=ft.FontWeight.BOLD)
                             ),
                             ft.Text(
-                                value="Want to learn how to use QuickeR?", 
+                                value=tr("Want to learn how to use QuickeR?"), 
                                 color=ft.Colors.GREY_400
                             ),
                         ]
@@ -2512,7 +2580,7 @@ def main(page: ft.Page):
                             content=ft.Row(
                                 alignment=ft.MainAxisAlignment.CENTER,
                                 controls=[
-                                    ft.Text("Tutorial",size=20, weight=ft.FontWeight.BOLD),
+                                    ft.Text(tr("Tutorial"),size=20, weight=ft.FontWeight.BOLD),
                                     ft.Icon(icon=ft.Icons.ARROW_FORWARD_ROUNDED, size=25)
                                 ]
                             ),
@@ -2553,7 +2621,7 @@ def main(page: ft.Page):
                 ft.Button(
                     align=ft.Alignment.TOP_LEFT,
                     margin=ft.Margin.only(left=10, top=10),
-                    content="Back",
+                    content=tr("Back"),
                     style=ft.ButtonStyle(elevation=0, shadow_color=ft.Colors.TRANSPARENT, bgcolor=ft.Colors.SECONDARY_CONTAINER),
                     icon=ft.Icons.ARROW_BACK_ROUNDED,
                     on_click=lambda e: invert_change_views(tutorial["Tutorial"])
@@ -2575,7 +2643,7 @@ def main(page: ft.Page):
                                 icon_color=ft.Colors.PRIMARY,
                             ),
                             ft.Text(
-                                value="Creating a QR", 
+                                value=tr("Creating a QR"), 
                                 size=25, 
                                 font_family="MaterialRoundedBold", 
                                 color=ft.Colors.INVERSE_SURFACE, 
@@ -2587,13 +2655,13 @@ def main(page: ft.Page):
                                 horizontal_alignment="left",
                                 controls=[
                                     ft.Text(
-                                        value="Steps to create your first QR code", 
+                                        value=tr("Steps to create your first QR code"), 
                                         color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=19,font_family="MaterialRoundedBold"),
                                         margin=ft.Margin.only(bottom=5)
                                     ),
                                     ft.Text(
-                                        value="1. Click on the '+' button.\n2. Expand the 'Main content' section.\n3. Select the QR code type you want to create.\n4. Enter the required data.",
+                                        value=tr("1. Click on the '+' button.\n2. Expand the 'Main content' section.\n3. Select the QR code type you want to create.\n4. Enter the required data."),
                                         color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=15),
                                         margin=ft.Margin.only(bottom=10)
@@ -2613,7 +2681,7 @@ def main(page: ft.Page):
                                                     alignment=ft.MainAxisAlignment.START,
                                                     controls=[
                                                         ft.Icon(icon=ft.Icons.INFO_OUTLINED, size=20, color=ft.Colors.INVERSE_SURFACE),
-                                                        ft.Text(value="Optional", size=17, color=ft.Colors.INVERSE_SURFACE)
+                                                        ft.Text(value=tr("Optional"), size=17, color=ft.Colors.INVERSE_SURFACE)
                                                     ]
                                                 ),
                                                 ft.Container(
@@ -2623,14 +2691,14 @@ def main(page: ft.Page):
                                                     content=ft.Text(
                                                         size=15,
                                                         color=ft.Colors.GREY_500,
-                                                        value="- Change error correction level           \nOn the 'Customization' section:\n- Add a custom logo\n- Change the QR's colors"
+                                                        value=tr("- Change error correction level           \nOn the 'Customization' section:\n- Add a custom logo\n- Change the QR's colors")
                                                     )
                                                 )
                                             ]
                                         )
                                     ),
                                     ft.Text(
-                                        value="5. Click on 'Save' button.",
+                                        value=tr("5. Click on 'Save' button."),
                                         color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=15),
                                         margin=ft.Margin.only(bottom=10)
@@ -2646,7 +2714,7 @@ def main(page: ft.Page):
                     content=ft.Row(
                         alignment=ft.MainAxisAlignment.CENTER,
                         controls=[
-                            ft.Text("Next",size=20, weight=ft.FontWeight.BOLD),
+                            ft.Text(tr("Next"),size=20, weight=ft.FontWeight.BOLD),
                             ft.Icon(icon=ft.Icons.ARROW_FORWARD_ROUNDED, size=25)
                         ]
                     ),
@@ -2673,7 +2741,7 @@ def main(page: ft.Page):
                 ft.Button(
                     align=ft.Alignment.TOP_LEFT,
                     margin=ft.Margin.only(left=10, top=10),
-                    content="Back",
+                    content=tr("Back"),
                     style=ft.ButtonStyle(elevation=0, shadow_color=ft.Colors.TRANSPARENT, bgcolor=ft.Colors.SECONDARY_CONTAINER),
                     icon=ft.Icons.ARROW_BACK_ROUNDED,
                     on_click=lambda e: invert_change_views(tutorial["Tutorial"])
@@ -2695,7 +2763,7 @@ def main(page: ft.Page):
                                 icon_color=ft.Colors.PRIMARY,
                             ),
                             ft.Text(
-                                value="Library", 
+                                value=tr("Library"), 
                                 size=25, 
                                 font_family="MaterialRoundedBold", 
                                 color=ft.Colors.INVERSE_SURFACE, 
@@ -2707,37 +2775,37 @@ def main(page: ft.Page):
                                 horizontal_alignment="left",
                                 controls=[
                                     ft.Text(
-                                        value="Filtering and order", 
+                                        value=tr("Filtering and order"), 
                                         color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=19,font_family="MaterialRoundedBold"),
                                         margin=ft.Margin.only(bottom=5)
                                     ),
                                     ft.Text(
-                                        value="Order:\nBy default, QRs are ordered from newest to oldest. To toggle the order, click on the arrow button.\n\nFilter:\nTo filter by the pinned state, select the corresponding option.",
+                                        value=tr("Order:\nBy default, QRs are ordered from newest to oldest. To toggle the order, click on the arrow button.\n\nFilter:\nTo filter by the pinned state, select the corresponding option."),
                                         color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=15),
                                         margin=ft.Margin.only(bottom=10)
                                     ),
                                     ft.Text(
-                                        value="Viewing QRs, actions and details", 
+                                        value=tr("Viewing QRs, actions and details"), 
                                         color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=19,font_family="MaterialRoundedBold"),
                                         margin=ft.Margin.only(bottom=5)
                                     ),
                                     ft.Text(
-                                        value="To view a QR, its actions and its details, click on its row/entry.\n\nActions:\n- Delete\n- Export\n- Share\n- Pin\n\nThe info is in their respective sections.",
+                                        value=tr("To view a QR, its actions and its details, click on its row/entry.\n\nActions:\n- Delete\n- Export\n- Share\n- Pin\n\nThe info is in their respective sections."),
                                         color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=15),
                                         margin=ft.Margin.only(bottom=10)
                                     ),
                                     ft.Text(
-                                        value="Exporting", 
+                                        value=tr("Exporting"), 
                                         color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=19,font_family="MaterialRoundedBold"),
                                         margin=ft.Margin.only(bottom=5)
                                     ),
                                     ft.Text(
-                                        value="There are three options to export a QR:\n- Export to gallery\n- Export to folder\n- Export to 3D model (.stl) -> protruding or insetting\n\nThe images are always exported in .png format.\nA filename is required.",
+                                        value=tr("There are three options to export a QR:\n- Export to gallery\n- Export to folder\n- Export to 3D model (.stl) -> protruding or insetting\n\nThe images are always exported in .png format.\nA filename is required."),
                                         color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=15),
                                         margin=ft.Margin.only(bottom=10)
@@ -2753,7 +2821,7 @@ def main(page: ft.Page):
                     content=ft.Row(
                         alignment=ft.MainAxisAlignment.CENTER,
                         controls=[
-                            ft.Text("Next",size=20, weight=ft.FontWeight.BOLD),
+                            ft.Text(tr("Next"),size=20, weight=ft.FontWeight.BOLD),
                             ft.Icon(icon=ft.Icons.ARROW_FORWARD_ROUNDED, size=25)
                         ]
                     ),
@@ -2780,7 +2848,7 @@ def main(page: ft.Page):
                 ft.Button(
                     align=ft.Alignment.TOP_LEFT,
                     margin=ft.Margin.only(left=10, top=10),
-                    content="Back",
+                    content=tr("Back"),
                     style=ft.ButtonStyle(elevation=0, shadow_color=ft.Colors.TRANSPARENT, bgcolor=ft.Colors.SECONDARY_CONTAINER),
                     icon=ft.Icons.ARROW_BACK_ROUNDED,
                     on_click=lambda e: invert_change_views(tutorial["Tutorial"])
@@ -2802,7 +2870,7 @@ def main(page: ft.Page):
                                 icon_color=ft.Colors.PRIMARY,
                             ),
                             ft.Text(
-                                value="External codes", 
+                                value=tr("External codes"), 
                                 size=25, 
                                 font_family="MaterialRoundedBold", 
                                 color=ft.Colors.INVERSE_SURFACE, 
@@ -2814,13 +2882,13 @@ def main(page: ft.Page):
                                 horizontal_alignment="left",
                                 controls=[
                                     ft.Text(
-                                        value="Adding an external QR code", 
+                                        value=tr("Adding an external QR code"), 
                                         color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=19,font_family="MaterialRoundedBold"),
                                         margin=ft.Margin.only(bottom=5)
                                     ),
                                     ft.Text(
-                                        value="Steps:\n1. Click on the image icon above the '+'.\n2. Select an image from your device.\nDone! The QR code will be automatically added to the library.",
+                                        value=tr("Steps:\n1. Click on the image icon above the '+'.\n2. Select an image from your device.\nDone! The QR code will be automatically added to the library."),
                                         color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=15),
                                         margin=ft.Margin.only(bottom=10)
@@ -2836,7 +2904,7 @@ def main(page: ft.Page):
                     content=ft.Row(
                         alignment=ft.MainAxisAlignment.CENTER,
                         controls=[
-                            ft.Text("Next",size=20, weight=ft.FontWeight.BOLD),
+                            ft.Text(tr("Next"),size=20, weight=ft.FontWeight.BOLD),
                             ft.Icon(icon=ft.Icons.ARROW_FORWARD_ROUNDED, size=25)
                         ]
                     ),
@@ -2863,7 +2931,7 @@ def main(page: ft.Page):
                 ft.Button(
                     align=ft.Alignment.TOP_LEFT,
                     margin=ft.Margin.only(left=10, top=10),
-                    content="Back",
+                    content=tr("Back"),
                     style=ft.ButtonStyle(elevation=0, shadow_color=ft.Colors.TRANSPARENT, bgcolor=ft.Colors.SECONDARY_CONTAINER),
                     icon=ft.Icons.ARROW_BACK_ROUNDED,
                     on_click=lambda e: invert_change_views(tutorial["Tutorial"])
@@ -2885,7 +2953,7 @@ def main(page: ft.Page):
                                 icon_color=ft.Colors.PRIMARY,
                             ),
                             ft.Text(
-                                value="Settings", 
+                                value=tr("Settings"), 
                                 size=25, 
                                 font_family="MaterialRoundedBold", 
                                 color=ft.Colors.INVERSE_SURFACE, 
@@ -2897,37 +2965,37 @@ def main(page: ft.Page):
                                 horizontal_alignment="left",
                                 controls=[
                                     ft.Text(
-                                        value="Customizing", 
+                                        value=tr("Customizing"), 
                                         color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=19,font_family="MaterialRoundedBold"),
                                         margin=ft.Margin.only(bottom=5)
                                     ),
                                     ft.Text(
-                                        value="Cusmizations:\n- The app's theme mode -> Light/Dark/System (Default)\n- The app's theme color",
+                                        value=tr("Cusmizations:\n- The app's theme mode -> Light/Dark/System (Default)\n- The app's theme color"),
                                         color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=15),
                                         margin=ft.Margin.only(bottom=10)
                                     ),
                                     ft.Text(
-                                        value="Tools", 
+                                        value=tr("Tools"), 
                                         color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=19,font_family="MaterialRoundedBold"),
                                         margin=ft.Margin.only(bottom=5)
                                     ),
                                     ft.Text(
-                                        value="Tools available:\n- Export library to zip\n- Import library from zip\n- Clear library",
+                                        value=tr("Tools available:\n- Export library to zip\n- Import library from zip\n- Clear library"),
                                         color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=15),
                                         margin=ft.Margin.only(bottom=10)
                                     ),
                                     ft.Text(
-                                        value="Other", 
+                                        value=tr("Other"), 
                                         color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=19,font_family="MaterialRoundedBold"),
                                         margin=ft.Margin.only(bottom=5)
                                     ),
                                     ft.Text(
-                                        value="- This tutorial",
+                                        value=tr("- This tutorial"),
                                         color=ft.Colors.GREY_500,
                                         style=ft.TextStyle(size=15),
                                         margin=ft.Margin.only(bottom=10)
@@ -2943,7 +3011,7 @@ def main(page: ft.Page):
                     content=ft.Row(
                         alignment=ft.MainAxisAlignment.CENTER,
                         controls=[
-                            ft.Text("Finish",size=20, weight=ft.FontWeight.BOLD),
+                            ft.Text(tr("Finish"),size=20, weight=ft.FontWeight.BOLD),
                             ft.Icon(icon=ft.Icons.ARROW_FORWARD_ROUNDED, size=25)
                         ]
                     ),
@@ -2970,7 +3038,7 @@ def main(page: ft.Page):
                 ft.Button(
                     align=ft.Alignment.TOP_LEFT,
                     margin=ft.Margin.only(left=10,top=10),
-                    content="Back",
+                    content=tr("Back"),
                     style=ft.ButtonStyle(elevation=0, shadow_color=ft.Colors.TRANSPARENT, bgcolor=ft.Colors.SECONDARY_CONTAINER),
                     icon=ft.Icons.ARROW_BACK_ROUNDED,
                     on_click=lambda e: invert_change_views(tutorial["Tutorial"])
@@ -2991,14 +3059,14 @@ def main(page: ft.Page):
                                 icon_color=ft.Colors.PRIMARY,
                             ),
                             ft.Text(
-                                value="That's it!", 
+                                value=tr("That's it!"), 
                                 size=25, 
                                 font_family="MaterialRoundedBold", 
                                 color=ft.Colors.INVERSE_SURFACE, 
                                 style=ft.TextStyle(weight=ft.FontWeight.BOLD)
                             ),
                             ft.Text(
-                                value="The app doesn't need permissions.", 
+                                value=tr("The app doesn't need permissions."), 
                                 color=ft.Colors.GREY_400
                             ),
                         ]
@@ -3010,7 +3078,7 @@ def main(page: ft.Page):
                     content=ft.Row(
                         alignment=ft.MainAxisAlignment.CENTER,
                         controls=[
-                            ft.Text("Proceed to app",size=20, weight=ft.FontWeight.BOLD),
+                            ft.Text(tr("Proceed to app"),size=20, weight=ft.FontWeight.BOLD),
                             ft.Icon(icon=ft.Icons.ARROW_FORWARD_ROUNDED, size=25)
                         ]
                     ),
@@ -3163,12 +3231,12 @@ def main(page: ft.Page):
                 horizontal_alignment="center",
                 tight=True,
                 controls=[
-                    ft.Text(value="Please hang tight, it may take a few seconds.\nDon't close the app.", size=13, color=ft.Colors.GREY_500,margin=ft.Margin.only(bottom=10)),
+                    ft.Text(value=tr("Please hang tight, it may take a few seconds.\nDon't close the app."), size=13, color=ft.Colors.GREY_500,margin=ft.Margin.only(bottom=10)),
                     ft.ProgressRing(),
                     ft.Container(visible=False),
                 ]
             ),
-            actions=[ft.TextButton("Close", on_click=lambda e: page.pop_dialog(), visible=False)],
+            actions=[ft.TextButton(tr("Close"), on_click=lambda e: page.pop_dialog(), visible=False)],
         )
 
         return dialog
@@ -3257,11 +3325,11 @@ def main(page: ft.Page):
         if latest_version is None or latest_version <= current:
             return
         page.show_dialog(ft.AlertDialog(
-            title=ft.Row(controls=[ft.Icon(icon=ft.Icons.SYSTEM_UPDATE_ROUNDED), ft.Text(value="Update available", size=20)]),
-            content=ft.Text(f"A new version of QuickeR is available: v{latest['version']} (you have v{APP_VERSION}). Do you want to download it?"),
+            title=ft.Row(controls=[ft.Icon(icon=ft.Icons.SYSTEM_UPDATE_ROUNDED), ft.Text(value=tr("Update available"), size=20)]),
+            content=ft.Text(tr("A new version of QuickeR is available: v{latest} (you have v{current}). Do you want to download it?", latest=latest['version'], current=APP_VERSION)),
             actions=[
-                ft.TextButton("Later", on_click=lambda e: page.pop_dialog()),
-                ft.TextButton("Download", on_click=lambda e: (page.pop_dialog(), asyncio.ensure_future(open_url(latest["url"], "BLANK")))),
+                ft.TextButton(tr("Later"), on_click=lambda e: page.pop_dialog()),
+                ft.TextButton(tr("Download"), on_click=lambda e: (page.pop_dialog(), asyncio.ensure_future(open_url(latest["url"], "BLANK")))),
             ],
             actions_alignment="end",
         ))
@@ -3273,19 +3341,30 @@ def main(page: ft.Page):
         data["Check_updates"] = value
         json_writer(data)
 
+    def language_changed(code):
+        """Saves the language and rebuilds the whole UI in it."""
+        data = json_reader()
+        if data is None or code == data.get("Language", DEFAULT_LANGUAGE):
+            return
+        data["Language"] = code
+        json_writer(data)
+        page.controls.clear()
+        page.overlay.clear()
+        main(page, show_settings=True)
+
     async def copy_text_to_clipboard(text):
         await ft.Clipboard().set(text)
         page.show_dialog(ft.AlertDialog(
-            title=ft.Text("Text copied"),
-            content=ft.Text("The text has been copied to the clipboard."),
-            actions=[ft.TextButton("OK", on_click=lambda e: page.pop_dialog())],
+            title=ft.Text(tr("Text copied")),
+            content=ft.Text(tr("The text has been copied to the clipboard.")),
+            actions=[ft.TextButton(tr("OK"), on_click=lambda e: page.pop_dialog())],
             actions_alignment="end",
         ))
 
     def clear_app_data():
         def clear_data_confirmed():
             page.pop_dialog()
-            page.show_dialog(ft.AlertDialog(title=ft.Text("Clearing data..."), content=ft.ProgressRing(width=50, height=50), actions=[], open=True))
+            page.show_dialog(ft.AlertDialog(title=ft.Text(tr("Clearing data...")), content=ft.ProgressRing(width=50, height=50), actions=[], open=True))
             if os.path.exists(QR_DIR):
                 shutil.rmtree(QR_DIR)
             if os.path.exists(PINNED_DIR):
@@ -3295,20 +3374,20 @@ def main(page: ft.Page):
             all_view.controls.clear()
             pinned_view.controls.clear()
             regular_view.controls.clear()
-            details_main_page_view.content = ft.Text(value="Click on an item to view details!",font_family="MaterialRoundedBold",size=16,color=ft.Colors.GREY_500)
+            details_main_page_view.content = ft.Text(value=tr("Click on an item to view details!"),font_family="MaterialRoundedBold",size=16,color=ft.Colors.GREY_500)
             details_main_page_view.alignment = ft.MainAxisAlignment.CENTER
             page.update()
             page.pop_dialog()
-            page.show_dialog(ft.SnackBar(content=ft.Text("All data cleared successfully."), show_close_icon=True))
+            page.show_dialog(ft.SnackBar(content=ft.Text(tr("All data cleared successfully.")), show_close_icon=True))
             if tip_text.visible == False:
                 tip_text.visible = True
 
         page.show_dialog(ft.AlertDialog(
-            title=ft.Text("Are you sure you want to clear all data?"),
-            content=ft.Text("This will delete all QR codes and reset the app to its default state. This action cannot be undone."),
+            title=ft.Text(tr("Are you sure you want to clear all data?")),
+            content=ft.Text(tr("This will delete all QR codes and reset the app to its default state. This action cannot be undone.")),
             actions=[
-                ft.TextButton("Cancel", on_click=lambda e: page.pop_dialog()),
-                ft.TextButton("Clear Data", on_click=lambda e: clear_data_confirmed()),
+                ft.TextButton(tr("Cancel"), on_click=lambda e: page.pop_dialog()),
+                ft.TextButton(tr("Clear Data"), on_click=lambda e: clear_data_confirmed()),
             ],
             actions_alignment="end",
             open=True,
@@ -3317,12 +3396,12 @@ def main(page: ft.Page):
     async def export_library_to_zip():
         default_dir = get_default_browse_dir()
         folder_path = await ft.FilePicker().get_directory_path(
-            dialog_title="Select folder to export library", initial_directory=default_dir
+            dialog_title=tr("Select folder to export library"), initial_directory=default_dir
         )
         if not folder_path:
             return
 
-        load_dialog = progress_dialog("Exporting codes...")
+        load_dialog = progress_dialog(tr("Exporting codes..."))
         page.show_dialog(load_dialog)
         
         await asyncio.sleep(0.1)
@@ -3337,18 +3416,18 @@ def main(page: ft.Page):
                             if os.path.splitext(f)[1].lower() in ACCEPTED_FILETYPES:
                                 zipf.write(os.path.join(directory, f), arcname=f"{arc_folder}/{f}")
 
-            load_dialog.title.value = "Export Complete!"
+            load_dialog.title.value = tr("Export Complete!")
             load_dialog.content.controls[0] = ft.IconButton(icon=ft.Icons.CHECK, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.SECONDARY_CONTAINER, icon_color=ft.Colors.PRIMARY))
-            load_dialog.content.controls[1] = ft.Text(value="Success!", size=16, color=ft.Colors.PRIMARY)
-            load_dialog.content.controls[2] = ft.Text(value=f"Library exported to {zip_path}", size=16,color=ft.Colors.GREY_600)
+            load_dialog.content.controls[1] = ft.Text(value=tr("Success!"), size=16, color=ft.Colors.PRIMARY)
+            load_dialog.content.controls[2] = ft.Text(value=tr("Library exported to {zip_path}", zip_path=zip_path), size=16,color=ft.Colors.GREY_600)
             load_dialog.actions[0].visible = True
             load_dialog.modal = False
             page.update()
 
         except Exception as ex:
-            load_dialog.title.value = "Error"
+            load_dialog.title.value = tr("Error")
             load_dialog.content.controls[0] = ft.IconButton(icon=ft.Icons.CLOSE, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.RED_200, icon_color=ft.Colors.RED_600))
-            load_dialog.content.controls[1] = ft.Text(value="Error: "+str(ex), size=16, color=ft.Colors.RED_600)
+            load_dialog.content.controls[1] = ft.Text(value=tr("Error: {exception}", exception=ex), size=16, color=ft.Colors.RED_600)
             load_dialog.actions[0].visible = True
             load_dialog.modal = False
             page.update()
@@ -3359,7 +3438,7 @@ def main(page: ft.Page):
             return
 
         skipped_files = []
-        load_dialog = progress_dialog("Importing codes...")
+        load_dialog = progress_dialog(tr("Importing codes..."))
         page.show_dialog(load_dialog)
 
         await asyncio.sleep(0.1)
@@ -3389,21 +3468,21 @@ def main(page: ft.Page):
                     load_qrs()
 
             if skipped_files:
-                load_dialog.title.value = "Import Complete (with skipped files)!"
+                load_dialog.title.value = tr("Import Complete (with skipped files)!")
                 load_dialog.content.controls[0] = ft.IconButton(icon=ft.Icons.WARNING, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.AMBER_200, icon_color=ft.Colors.AMBER_600))
-                load_dialog.content.controls[1] = ft.Text(value=f"Success! Some files were skipped:\n{'\n'.join(skipped_files)}", size=16, color=ft.Colors.PRIMARY)
+                load_dialog.content.controls[1] = ft.Text(value=tr("Success! Some files were skipped:\n{files}", files="\n".join(skipped_files)), size=16, color=ft.Colors.PRIMARY)
             else:
-                load_dialog.title.value = "Import Complete!"
+                load_dialog.title.value = tr("Import Complete!")
                 load_dialog.content.controls[0] = ft.IconButton(icon=ft.Icons.CHECK, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.SECONDARY_CONTAINER, icon_color=ft.Colors.PRIMARY))
-                load_dialog.content.controls[1] = ft.Text(value="Success!", size=16, color=ft.Colors.PRIMARY)
+                load_dialog.content.controls[1] = ft.Text(value=tr("Success!"), size=16, color=ft.Colors.PRIMARY)
             load_dialog.actions[0].visible = True
             load_dialog.modal = False
             page.update()
 
         except Exception as ex:
-            load_dialog.title.value = "Error"
+            load_dialog.title.value = tr("Error")
             load_dialog.content.controls[0] = ft.IconButton(icon=ft.Icons.CLOSE, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.RED_200, icon_color=ft.Colors.RED_600))
-            load_dialog.content.controls[1] = ft.Text(value="Error: "+str(ex), size=16, color=ft.Colors.RED_600)
+            load_dialog.content.controls[1] = ft.Text(value=tr("Error: {exception}", exception=ex), size=16, color=ft.Colors.RED_600)
             load_dialog.actions[0].visible = True
             load_dialog.modal = False
             page.update()
@@ -3421,7 +3500,7 @@ def main(page: ft.Page):
         src_path = files[0].path
         ext = os.path.splitext(src_path)[1].lower()
         if ext not in ACCEPTED_FILETYPES:
-            page.show_dialog(ft.AlertDialog(content=ft.Text("Unsupported file type."), title=ft.Text("Error"), actions=[ft.TextButton("OK", on_click=lambda e: page.pop_dialog())]))
+            page.show_dialog(ft.AlertDialog(content=ft.Text(tr("Unsupported file type.")), title=ft.Text(tr("Error")), actions=[ft.TextButton(tr("OK"), on_click=lambda e: page.pop_dialog())]))
             return
 
         try:
@@ -3450,16 +3529,16 @@ def main(page: ft.Page):
                 tip_text.visible = False
                 page.update()
 
-            page.show_dialog(ft.SnackBar(content=ft.Text("QR code imported successfully."), show_close_icon=True))
+            page.show_dialog(ft.SnackBar(content=ft.Text(tr("QR code imported successfully.")), show_close_icon=True))
 
         except Exception as ex:
             page.show_dialog(ft.AlertDialog(
-                title=ft.Text("Error"),
+                title=ft.Text(tr("Error")),
                 content=ft.Row([
                     ft.IconButton(icon=ft.Icons.CLOSE, icon_size=20, padding=10,style=ft.ButtonStyle(shape=ft.CircleBorder(), bgcolor=ft.Colors.RED_200, icon_color=ft.Colors.RED_600)),
-                    ft.Text("Error: "+str(ex))
+                    ft.Text(tr("Error: {exception}", exception=ex))
                 ]),
-                actions=[ft.TextButton("OK", on_click=lambda e: page.pop_dialog())]
+                actions=[ft.TextButton(tr("OK"), on_click=lambda e: page.pop_dialog())]
             ))
 
     # -------------------------------------------------------------
@@ -3675,39 +3754,39 @@ def main(page: ft.Page):
     def qr_create_triggered():
         if not input_checker():
             page.show_dialog(ft.AlertDialog(
-                title=ft.Text("Missing required fields"),
-                content=ft.Text("Please fill in all required fields for the selected QR type."),
-                actions=[ft.TextButton("OK", on_click=lambda e: page.pop_dialog())],
+                title=ft.Text(tr("Missing required fields")),
+                content=ft.Text(tr("Please fill in all required fields for the selected QR type.")),
+                actions=[ft.TextButton(tr("OK"), on_click=lambda e: page.pop_dialog())],
                 actions_alignment="end",
             ))
             return
 
         if any(c in tag_input.value for c in '\\/:*"<>|'+"'"):
             page.show_dialog(ft.AlertDialog(
-                title=ft.Text("Error"),
-                content=ft.Text("The name contains invalid characters. (\\ / : * \ < > | ' "+' ")'),
-                actions=[ft.TextButton("OK", on_click=lambda e: page.pop_dialog())],
+                title=ft.Text(tr("Error")),
+                content=ft.Text(tr("The name contains invalid characters.") + " (\\ / : * \\ < > | ' \")"),
+                actions=[ft.TextButton(tr("OK"), on_click=lambda e: page.pop_dialog())],
             ))
             return
 
         contrast_result = check_qr_contrast(qr_color_scheme_primary.color, qr_color_scheme_secondary.color)
         if contrast_result == 1:
             page.show_dialog(ft.AlertDialog(
-                title=ft.Text("Low contrast"),
-                content=ft.Text("The selected colors have low contrast. This may result in a QR code that is difficult to scan. Do you want to continue?"),
+                title=ft.Text(tr("Low contrast")),
+                content=ft.Text(tr("The selected colors have low contrast. This may result in a QR code that is difficult to scan. Do you want to continue?")),
                 actions=[
-                    ft.TextButton("Cancel", on_click=lambda e: page.pop_dialog()),
-                    ft.TextButton("Continue", on_click=lambda e: [page.pop_dialog(), create_qr_action()]),
+                    ft.TextButton(tr("Cancel"), on_click=lambda e: page.pop_dialog()),
+                    ft.TextButton(tr("Continue"), on_click=lambda e: [page.pop_dialog(), create_qr_action()]),
                 ],
                 actions_alignment="end",
             ))
         elif contrast_result == 2:
             page.show_dialog(ft.AlertDialog(
-                title=ft.Text("Moderate contrast"),
-                content=ft.Text("The selected colors have moderate contrast. This may result in a QR code that is difficult to scan. Do you want to continue?"),
+                title=ft.Text(tr("Moderate contrast")),
+                content=ft.Text(tr("The selected colors have moderate contrast. This may result in a QR code that is difficult to scan. Do you want to continue?")),
                 actions=[
-                    ft.TextButton("Cancel", on_click=lambda e: page.pop_dialog()),
-                    ft.TextButton("Continue", on_click=lambda e: [page.pop_dialog(), create_qr_action()]),
+                    ft.TextButton(tr("Cancel"), on_click=lambda e: page.pop_dialog()),
+                    ft.TextButton(tr("Continue"), on_click=lambda e: [page.pop_dialog(), create_qr_action()]),
                 ],
                 actions_alignment="end",
             ))
@@ -3801,8 +3880,8 @@ def main(page: ft.Page):
             wifi_area.visible = True
         elif selected == "Text/URL":
             input_row.visible = True
-            qr_url_input_field.hint_text = "Enter URL or text here"
-            qr_url_input_field.label = "Enter URL or text"
+            qr_url_input_field.hint_text = tr("Enter URL or text here")
+            qr_url_input_field.label = tr("Enter URL or text")
         elif selected == "Email":
             email_adv_checkbox.value = False
             email_general_content.visible = True
@@ -3925,9 +4004,9 @@ def main(page: ft.Page):
     appearance_setting = ft.SegmentedButton(
         selected=["1"], on_change=lambda e: on_mode_change(e), show_selected_icon=True,
         segments=[
-            ft.Segment(value="1", label=ft.Text("System"), icon=ft.Icon(ft.Icons.MONITOR)),
-            ft.Segment(value="2", label=ft.Text("Light"), icon=ft.Icon(ft.Icons.WB_SUNNY_ROUNDED)),
-            ft.Segment(value="3", label=ft.Text("Dark"), icon=ft.Icon(ft.Icons.DARK_MODE_ROUNDED)),
+            ft.Segment(value="1", label=ft.Text(tr("System")), icon=ft.Icon(ft.Icons.MONITOR)),
+            ft.Segment(value="2", label=ft.Text(tr("Light")), icon=ft.Icon(ft.Icons.WB_SUNNY_ROUNDED)),
+            ft.Segment(value="3", label=ft.Text(tr("Dark")), icon=ft.Icon(ft.Icons.DARK_MODE_ROUNDED)),
         ],
     )
 
@@ -3937,43 +4016,43 @@ def main(page: ft.Page):
         border_radius=50, fill_color=ft.Colors.SURFACE_CONTAINER_LOW, filled=True,
         on_select=lambda e: type_trigger(e), border_width=0, value="Text/URL",
         options=[
-            ft.DropdownOption(text="Text/URL", leading_icon=ft.Icons.TEXT_FIELDS_ROUNDED),
-            ft.DropdownOption(text="WIFI", leading_icon=ft.Icons.WIFI_ROUNDED),
-            ft.DropdownOption(text="Email", leading_icon=ft.Icons.MAIL_OUTLINE_ROUNDED),
-            ft.DropdownOption(text="Phone", leading_icon=ft.Icons.PHONE_ANDROID_ROUNDED),
-            ft.DropdownOption(text="Location", leading_icon=ft.Icons.PIN_DROP_ROUNDED),
-            ft.DropdownOption(text="SMS", leading_icon=ft.Icons.MESSAGE_ROUNDED),
-            ft.DropdownOption(text="Event", leading_icon=ft.Icons.STAR_BORDER_ROUNDED),
-            ft.DropdownOption(text="Contact", leading_icon=ft.Icons.CONTACT_PAGE_ROUNDED),
+            ft.DropdownOption(key="Text/URL", text=tr("Text/URL"), leading_icon=ft.Icons.TEXT_FIELDS_ROUNDED),
+            ft.DropdownOption(key="WIFI", text=tr("WIFI"), leading_icon=ft.Icons.WIFI_ROUNDED),
+            ft.DropdownOption(key="Email", text=tr("Email"), leading_icon=ft.Icons.MAIL_OUTLINE_ROUNDED),
+            ft.DropdownOption(key="Phone", text=tr("Phone"), leading_icon=ft.Icons.PHONE_ANDROID_ROUNDED),
+            ft.DropdownOption(key="Location", text=tr("Location"), leading_icon=ft.Icons.PIN_DROP_ROUNDED),
+            ft.DropdownOption(key="SMS", text=tr("SMS"), leading_icon=ft.Icons.MESSAGE_ROUNDED),
+            ft.DropdownOption(key="Event", text=tr("Event"), leading_icon=ft.Icons.STAR_BORDER_ROUNDED),
+            ft.DropdownOption(key="Contact", text=tr("Contact"), leading_icon=ft.Icons.CONTACT_PAGE_ROUNDED),
         ],
     )
 
     # WIFI
-    wifi_name = ft.TextField(expand=True, border_width=0, hint_text="Enter network name", on_change=lambda e: prop_changed())
+    wifi_name = ft.TextField(expand=True, border_width=0, hint_text=tr("Enter network name"), on_change=lambda e: prop_changed())
     wifi_protocol_dropdown = ft.Dropdown(
         border_radius=50, fill_color=ft.Colors.SURFACE_CONTAINER_LOW, filled=True, value="WPA2", border_width=0,
         on_select=lambda e: wifi_protocol_changed(e),
         options=[
             ft.DropdownOption(text="WPA2"), ft.DropdownOption(text="WPA"),
-            ft.DropdownOption(text="WEP"), ft.DropdownOption(text="No password"),
+            ft.DropdownOption(text="WEP"), ft.DropdownOption(key="No password", text=tr("No password")),
         ],
     )
-    wifi_password = ft.TextField(expand=True, border_width=0, hint_text="Enter network password", on_change=lambda e: prop_changed())
+    wifi_password = ft.TextField(expand=True, border_width=0, hint_text=tr("Enter network password"), on_change=lambda e: prop_changed())
     wifi_password_setting = ft.Column(visible=True, controls=[
         ft.Divider(color=ft.Colors.GREY),
-        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.PASSWORD_ROUNDED), ft.Text(value="WIFI password", size=20)]),
+        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.PASSWORD_ROUNDED), ft.Text(value=tr("WIFI password"), size=20)]),
         ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=wifi_password),
     ])
     wifi_area = ft.Column(visible=False, controls=[
-        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.TEXT_FIELDS_ROUNDED), ft.Text(value="Network name", size=20)]),
+        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.TEXT_FIELDS_ROUNDED), ft.Text(value=tr("Network name"), size=20)]),
         ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=wifi_name),
         ft.Divider(color=ft.Colors.GREY),
-        ft.Row(controls=[ft.Icon(icon=ft.Icons.SHIELD), ft.Text(value="WIFI security protocol", size=20)]),
+        ft.Row(controls=[ft.Icon(icon=ft.Icons.SHIELD), ft.Text(value=tr("WIFI security protocol"), size=20)]),
         ft.Container(
             content=ft.Row(tight=True, margin=ft.Margin.only(right=7),controls=[
                 ft.Icon(icon=ft.Icons.INFO_OUTLINE_ROUNDED, color=ft.Colors.INVERSE_SURFACE),
                 ft.Container(expand=False, content=ft.Text(
-                    value="If your network has no password, select it here!",
+                    value=tr("If your network has no password, select it here!"),
                     size=16, color=ft.Colors.INVERSE_SURFACE,
                 )),
             ]),
@@ -3985,29 +4064,29 @@ def main(page: ft.Page):
     ])
 
     # Email
-    email_address = ft.TextField(expand=True, border_width=0, hint_text="Enter address", on_change=lambda e: prop_changed())
+    email_address = ft.TextField(expand=True, border_width=0, hint_text=tr("Enter address"), on_change=lambda e: prop_changed())
     email_adv_checkbox = ft.Switch(value=False, on_change=lambda e: email_checkbox_changed())
     email_general_content = ft.Column(visible=False, controls=[
-        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.MAIL_ROUNDED), ft.Text(value="Address", size=20)]),
+        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.MAIL_ROUNDED), ft.Text(value=tr("Address"), size=20)]),
         ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=email_address),
         ft.Divider(thickness=0.5,color=ft.Colors.GREY_500),
-        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.TEXT_FIELDS_ROUNDED), ft.Text(value="Advanced options", size=20), email_adv_checkbox]),
+        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.TEXT_FIELDS_ROUNDED), ft.Text(value=tr("Advanced options"), size=20), email_adv_checkbox]),
     ])
-    email_subject = ft.TextField(expand=True, border_width=0, hint_text="Enter subject", on_change=lambda e: prop_changed())
-    email_body = ft.TextField(expand=True, border_width=0, hint_text="Enter body", multiline=True, on_change=lambda e: prop_changed())
+    email_subject = ft.TextField(expand=True, border_width=0, hint_text=tr("Enter subject"), on_change=lambda e: prop_changed())
+    email_body = ft.TextField(expand=True, border_width=0, hint_text=tr("Enter body"), multiline=True, on_change=lambda e: prop_changed())
     email_adv_content = ft.Column(visible=False, controls=[
-        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.SUBJECT_ROUNDED), ft.Text(value="Subject", size=20)]),
+        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.SUBJECT_ROUNDED), ft.Text(value=tr("Subject"), size=20)]),
         ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=email_subject),
         ft.Divider(thickness=0.2,color=ft.Colors.GREY_400),
-        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.TEXT_FIELDS_ROUNDED), ft.Text(value="Body", size=20)]),
+        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.TEXT_FIELDS_ROUNDED), ft.Text(value=tr("Body"), size=20)]),
         ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=email_body),
     ])
 
     # Phone
     phone_prefix = ft.TextField(border_width=0, hint_text="123", width=80, max_length=4, counter=ft.Container(), keyboard_type=ft.KeyboardType.NUMBER, on_change=lambda e: prop_changed())
-    phone_number = ft.TextField(expand=True, border_width=0, hint_text="Enter phone number", keyboard_type=ft.KeyboardType.NUMBER, on_change=lambda e: prop_changed())
+    phone_number = ft.TextField(expand=True, border_width=0, hint_text=tr("Enter phone number"), keyboard_type=ft.KeyboardType.NUMBER, on_change=lambda e: prop_changed())
     phone_general_content = ft.Column(visible=False, controls=[
-        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.CALL_ROUNDED), ft.Text(value="Phone number", size=20)]),
+        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.CALL_ROUNDED), ft.Text(value=tr("Phone number"), size=20)]),
         ft.Row(expand=True, controls=[
             ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=ft.Row(tight=True,margin=ft.Margin(right=-15),controls=[ft.Text("+", margin=ft.Margin(left=15,right=-20), size=15), phone_prefix])),
             ft.Container(expand=True, border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=phone_number),
@@ -4016,29 +4095,29 @@ def main(page: ft.Page):
 
     # SMS
     sms_prefix = ft.TextField(border_width=0, hint_text="123", width=80, max_length=4, counter=ft.Container(), keyboard_type=ft.KeyboardType.NUMBER, on_change=lambda e: prop_changed())
-    sms_number = ft.TextField(expand=True, border_width=0, hint_text="Enter phone number", keyboard_type=ft.KeyboardType.NUMBER, on_change=lambda e: prop_changed())
-    sms_message = ft.TextField(expand=True, border_width=0, hint_text="Enter message", multiline=True, on_change=lambda e: prop_changed())
+    sms_number = ft.TextField(expand=True, border_width=0, hint_text=tr("Enter phone number"), keyboard_type=ft.KeyboardType.NUMBER, on_change=lambda e: prop_changed())
+    sms_message = ft.TextField(expand=True, border_width=0, hint_text=tr("Enter message"), multiline=True, on_change=lambda e: prop_changed())
     sms_general_content = ft.Column(visible=False, controls=[
-        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.SMS_ROUNDED), ft.Text(value="Phone number", size=20)]),
+        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.SMS_ROUNDED), ft.Text(value=tr("Phone number"), size=20)]),
         ft.Row(controls=[
             ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=ft.Row(tight=True,margin=ft.Margin(right=-15),controls=[ft.Text("+", margin=ft.Margin(left=15,right=-20), size=15), sms_prefix])),
             ft.Container(border_radius=10, expand=True, bgcolor=ft.Colors.SURFACE_CONTAINER, content=sms_number),
         ]),
         ft.Divider(thickness=0.5, color=ft.Colors.GREY_500),
-        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.MESSAGE_ROUNDED), ft.Text(value="Message", size=20)]),
+        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.MESSAGE_ROUNDED), ft.Text(value=tr("Message"), size=20)]),
         ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=sms_message),
     ])
 
     # Location
-    location_lat = ft.TextField(expand=True, border_width=0, hint_text="Latitude", keyboard_type=ft.KeyboardType.NUMBER, on_change=lambda e: prop_changed())
-    location_lng = ft.TextField(expand=True, border_width=0, hint_text="Longitude", keyboard_type=ft.KeyboardType.NUMBER, on_change=lambda e: prop_changed())
+    location_lat = ft.TextField(expand=True, border_width=0, hint_text=tr("Latitude"), keyboard_type=ft.KeyboardType.NUMBER, on_change=lambda e: prop_changed())
+    location_lng = ft.TextField(expand=True, border_width=0, hint_text=tr("Longitude"), keyboard_type=ft.KeyboardType.NUMBER, on_change=lambda e: prop_changed())
     location_general_content = ft.Column(visible=False, controls=[
-        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.PIN_DROP_ROUNDED), ft.Text(value="Coordinates", size=20)]),
+        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.PIN_DROP_ROUNDED), ft.Text(value=tr("Coordinates"), size=20)]),
         ft.Container(
             content=ft.Row(tight=True, margin=ft.Margin.only(right=7),controls=[
                 ft.Icon(icon=ft.Icons.INFO_OUTLINE_ROUNDED, color=ft.Colors.INVERSE_SURFACE),
                 ft.Container(expand=True, content=ft.Text(
-                    value="Please enter the coordinates in decimal format (e.g., 43.03500, -2.77988).",
+                    value=tr("Please enter the coordinates in decimal format (e.g., 43.03500, -2.77988)."),
                     size=16, color=ft.Colors.INVERSE_SURFACE,
                 )),
             ]),
@@ -4050,8 +4129,8 @@ def main(page: ft.Page):
     ])
 
     # Event
-    event_title = ft.TextField(expand=True, border_width=0, hint_text="Event title", on_change=lambda e: prop_changed())
-    event_location = ft.TextField(expand=True, border_width=0, hint_text="Location name", on_change=lambda e: prop_changed())
+    event_title = ft.TextField(expand=True, border_width=0, hint_text=tr("Event title"), on_change=lambda e: prop_changed())
+    event_location = ft.TextField(expand=True, border_width=0, hint_text=tr("Location name"), on_change=lambda e: prop_changed())
     date_picker = ft.DateRangePicker(open=False, on_change=lambda e: prop_changed())
     start_time_picker = ft.TimePicker(open=False, on_change=lambda e: prop_changed())
     end_time_picker = ft.TimePicker(open=False, on_change=lambda e: prop_changed())
@@ -4059,21 +4138,21 @@ def main(page: ft.Page):
     page.overlay.append(start_time_picker)
     page.overlay.append(end_time_picker)
 
-    date_picker_button = ft.Button(content="Date period", icon=ft.Icons.CALENDAR_MONTH_ROUNDED, on_click=lambda e: open_date_picker(e), style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), bgcolor={"": ft.Colors.SURFACE_CONTAINER}), tooltip="Pick date range")
-    start_time_picker_button = ft.Button(content="Start time", icon=ft.Icons.ACCESS_TIME_ROUNDED, on_click=lambda e: open_start_time(e), style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), bgcolor={"": ft.Colors.SURFACE_CONTAINER}), tooltip="Pick start time")
-    end_time_picker_button = ft.Button(content="End time", icon=ft.Icons.ACCESS_TIME_ROUNDED, on_click=lambda e: open_end_time(e), style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), bgcolor={"": ft.Colors.SURFACE_CONTAINER}), tooltip="Pick end time")
+    date_picker_button = ft.Button(content=tr("Date period"), icon=ft.Icons.CALENDAR_MONTH_ROUNDED, on_click=lambda e: open_date_picker(e), style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), bgcolor={"": ft.Colors.SURFACE_CONTAINER}), tooltip=tr("Pick date range"))
+    start_time_picker_button = ft.Button(content=tr("Start time"), icon=ft.Icons.ACCESS_TIME_ROUNDED, on_click=lambda e: open_start_time(e), style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), bgcolor={"": ft.Colors.SURFACE_CONTAINER}), tooltip=tr("Pick start time"))
+    end_time_picker_button = ft.Button(content=tr("End time"), icon=ft.Icons.ACCESS_TIME_ROUNDED, on_click=lambda e: open_end_time(e), style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), bgcolor={"": ft.Colors.SURFACE_CONTAINER}), tooltip=tr("Pick end time"))
     event_general_content = ft.Column(visible=False, controls=[
-        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.STAR_BORDER_ROUNDED), ft.Text(value="Event title", size=20)]),
+        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.STAR_BORDER_ROUNDED), ft.Text(value=tr("Event title"), size=20)]),
         ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=event_title),
         ft.Divider(thickness=0.2, color=ft.Colors.GREY_400),
-        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.PIN_DROP_ROUNDED), ft.Text(value="Location", size=20)]),
+        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.PIN_DROP_ROUNDED), ft.Text(value=tr("Location"), size=20)]),
         ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=event_location),
         ft.Divider(thickness=0.2, color=ft.Colors.GREY_400),
-        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.ACCESS_TIME_ROUNDED), ft.Text(value="Date and time", size=20)]),
+        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.ACCESS_TIME_ROUNDED), ft.Text(value=tr("Date and time"), size=20)]),
         ft.Container(
             content=ft.Row(tight=True, margin=ft.Margin.only(right=7),controls=[
                 ft.Icon(icon=ft.Icons.INFO_OUTLINE_ROUNDED, color=ft.Colors.INVERSE_SURFACE),
-                ft.Container(expand=False, content=ft.Text(value="Please tap the buttons below and set the data!", size=16, color=ft.Colors.INVERSE_SURFACE)),
+                ft.Container(expand=False, content=ft.Text(value=tr("Please tap the buttons below and set the data!"), size=16, color=ft.Colors.INVERSE_SURFACE)),
             ]),
             padding=15, bgcolor=ft.Colors.SECONDARY_CONTAINER, border_radius=30,
             margin=ft.Margin.only(left=0, right=0, top=5, bottom=5),
@@ -4082,29 +4161,29 @@ def main(page: ft.Page):
     ])
 
     # Contact (vCard)
-    contact_first_name = ft.TextField(expand=True, border_width=0, hint_text="First name", on_change=lambda e: prop_changed())
-    contact_last_name = ft.TextField(expand=True, border_width=0, hint_text="Last name", on_change=lambda e: prop_changed())
-    contact_org = ft.TextField(expand=True, border_width=0, hint_text="Organization (optional)", on_change=lambda e: prop_changed())
-    contact_job_title = ft.TextField(expand=True, border_width=0, hint_text="Job title (optional)", on_change=lambda e: prop_changed())
+    contact_first_name = ft.TextField(expand=True, border_width=0, hint_text=tr("First name"), on_change=lambda e: prop_changed())
+    contact_last_name = ft.TextField(expand=True, border_width=0, hint_text=tr("Last name"), on_change=lambda e: prop_changed())
+    contact_org = ft.TextField(expand=True, border_width=0, hint_text=tr("Organization (optional)"), on_change=lambda e: prop_changed())
+    contact_job_title = ft.TextField(expand=True, border_width=0, hint_text=tr("Job title (optional)"), on_change=lambda e: prop_changed())
     contact_phone_prefix = ft.TextField(border_width=0, hint_text="123", width=80, max_length=4, counter=ft.Container(), keyboard_type=ft.KeyboardType.NUMBER, on_change=lambda e: prop_changed())
-    contact_phone_number = ft.TextField(expand=True, border_width=0, hint_text="Phone number (optional)", keyboard_type=ft.KeyboardType.NUMBER, on_change=lambda e: prop_changed())
-    contact_email = ft.TextField(expand=True, border_width=0, hint_text="Email address (optional)", keyboard_type=ft.KeyboardType.EMAIL, on_change=lambda e: prop_changed())
-    contact_website = ft.TextField(expand=True, border_width=0, hint_text="Website (optional)", keyboard_type=ft.KeyboardType.URL, on_change=lambda e: prop_changed())
-    contact_street = ft.TextField(expand=True, border_width=0, hint_text="Street (optional)", on_change=lambda e: prop_changed())
-    contact_city = ft.TextField(expand=True, border_width=0, hint_text="City (optional)", on_change=lambda e: prop_changed())
-    contact_postal = ft.TextField(expand=True, border_width=0, hint_text="Postal code (optional)", on_change=lambda e: prop_changed())
-    contact_country = ft.TextField(expand=True, border_width=0, hint_text="Country (optional)", on_change=lambda e: prop_changed())
+    contact_phone_number = ft.TextField(expand=True, border_width=0, hint_text=tr("Phone number (optional)"), keyboard_type=ft.KeyboardType.NUMBER, on_change=lambda e: prop_changed())
+    contact_email = ft.TextField(expand=True, border_width=0, hint_text=tr("Email address (optional)"), keyboard_type=ft.KeyboardType.EMAIL, on_change=lambda e: prop_changed())
+    contact_website = ft.TextField(expand=True, border_width=0, hint_text=tr("Website (optional)"), keyboard_type=ft.KeyboardType.URL, on_change=lambda e: prop_changed())
+    contact_street = ft.TextField(expand=True, border_width=0, hint_text=tr("Street (optional)"), on_change=lambda e: prop_changed())
+    contact_city = ft.TextField(expand=True, border_width=0, hint_text=tr("City (optional)"), on_change=lambda e: prop_changed())
+    contact_postal = ft.TextField(expand=True, border_width=0, hint_text=tr("Postal code (optional)"), on_change=lambda e: prop_changed())
+    contact_country = ft.TextField(expand=True, border_width=0, hint_text=tr("Country (optional)"), on_change=lambda e: prop_changed())
     contact_fields = [
         contact_first_name, contact_last_name, contact_org, contact_job_title,
         contact_phone_prefix, contact_phone_number, contact_email, contact_website,
         contact_street, contact_city, contact_postal, contact_country,
     ]
     contact_general_content = ft.Column(visible=False, controls=[
-        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.PERSON_ROUNDED), ft.Text(value="Name", size=20)]),
+        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.PERSON_ROUNDED), ft.Text(value=tr("Name"), size=20)]),
         ft.Container(
             content=ft.Row(tight=True, margin=ft.Margin.only(right=7), controls=[
                 ft.Icon(icon=ft.Icons.INFO_OUTLINE_ROUNDED, color=ft.Colors.INVERSE_SURFACE),
-                ft.Container(expand=True, content=ft.Text(value="A first or last name is required. Every other field is optional.", size=16, color=ft.Colors.INVERSE_SURFACE)),
+                ft.Container(expand=True, content=ft.Text(value=tr("A first or last name is required. Every other field is optional."), size=16, color=ft.Colors.INVERSE_SURFACE)),
             ]),
             padding=15, bgcolor=ft.Colors.SECONDARY_CONTAINER, border_radius=30,
             margin=ft.Margin.only(left=0, right=0, top=5, bottom=5),
@@ -4112,28 +4191,28 @@ def main(page: ft.Page):
         ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=contact_first_name),
         ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=contact_last_name),
         ft.Divider(thickness=0.2, color=ft.Colors.GREY_400),
-        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.BUSINESS_ROUNDED), ft.Text(value="Work", size=20)]),
+        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.BUSINESS_ROUNDED), ft.Text(value=tr("Work"), size=20)]),
         ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=contact_org),
         ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=contact_job_title),
         ft.Divider(thickness=0.2, color=ft.Colors.GREY_400),
-        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.CALL_ROUNDED), ft.Text(value="Phone number", size=20)]),
+        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.CALL_ROUNDED), ft.Text(value=tr("Phone number"), size=20)]),
         ft.Row(controls=[
             ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=ft.Row(tight=True, margin=ft.Margin(right=-15), controls=[ft.Text("+", margin=ft.Margin(left=15, right=-20), size=15), contact_phone_prefix])),
             ft.Container(border_radius=10, expand=True, bgcolor=ft.Colors.SURFACE_CONTAINER, content=contact_phone_number),
         ]),
         ft.Divider(thickness=0.2, color=ft.Colors.GREY_400),
-        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.EMAIL_ROUNDED), ft.Text(value="Email and website", size=20)]),
+        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.EMAIL_ROUNDED), ft.Text(value=tr("Email and website"), size=20)]),
         ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=contact_email),
         ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=contact_website),
         ft.Divider(thickness=0.2, color=ft.Colors.GREY_400),
-        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.HOME_ROUNDED), ft.Text(value="Address", size=20)]),
+        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.HOME_ROUNDED), ft.Text(value=tr("Address"), size=20)]),
         ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=contact_street),
         ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=contact_city),
         ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=contact_postal),
         ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=contact_country),
     ])
 
-    qr_url_input_field = ft.TextField(expand=True, border_width=0, hint_text="Enter URL or text", on_change=lambda e: prop_changed())
+    qr_url_input_field = ft.TextField(expand=True, border_width=0, hint_text=tr("Enter URL or text"), on_change=lambda e: prop_changed())
     error_correction_dropdown = ft.Dropdown(
         border_radius=50, fill_color=ft.Colors.SURFACE_CONTAINER_LOW, filled=True, value="M (15%)", border_width=0,
         on_select=lambda e: prop_changed(),
@@ -4143,23 +4222,23 @@ def main(page: ft.Page):
     qr_color_scheme_secondary = MaterialPicker(on_color_change=lambda e: prop_changed(), color="white")
 
     input_row = ft.Column(controls=[
-        ft.Row(controls=[ft.Icon(icon=ft.Icons.SHORT_TEXT_ROUNDED), ft.Text(value="Content", size=20)]),
+        ft.Row(controls=[ft.Icon(icon=ft.Icons.SHORT_TEXT_ROUNDED), ft.Text(value=tr("Content"), size=20)]),
         ft.Container(border_radius=10, expand=True, bgcolor=ft.Colors.SURFACE_CONTAINER, content=qr_url_input_field),
     ])
 
     save_qr_button = ft.Button(
-        elevation=0, icon=ft.Icons.CHECK, content=ft.Text("Save QR", size=16),
+        elevation=0, icon=ft.Icons.CHECK, content=ft.Text(tr("Save QR"), size=16),
         height=50, color=ft.Colors.SURFACE, bgcolor=ft.Colors.PRIMARY,
         style=ft.ButtonStyle(overlay_color=ft.Colors.ON_PRIMARY_CONTAINER,shape=ft.RoundedRectangleBorder(radius=ft.BorderRadius.only(top_left=50, top_right=25, bottom_left=50, bottom_right=25))),
         on_click=lambda e: qr_create_triggered(),
     )
 
     tag_input = ft.TextField(
-        hint_text="Name your QR code",
+        hint_text=tr("Name your QR code"),
         width=600,
         border=ft.InputBorder.NONE,
         margin=ft.Margin.only(left=10),
-        label="Name your QR code"
+        label=tr("Name your QR code")
     )
 
     tag_field = ft.Container(
@@ -4189,7 +4268,7 @@ def main(page: ft.Page):
             ft.Divider(color=ft.Colors.INVERSE_SURFACE, thickness=0.2, leading_indent=20, trailing_indent=20, height=50),
             tag_field,
             ft.ExpansionTile(
-                title=ft.Row(controls=[ft.Icon(icon=ft.Icons.EDIT_ATTRIBUTES_ROUNDED), ft.Text(value="Main content", size=16)]),
+                title=ft.Row(controls=[ft.Icon(icon=ft.Icons.EDIT_ATTRIBUTES_ROUNDED), ft.Text(value=tr("Main content"), size=16)]),
                 tile_padding=ft.Padding.only(left=20, right=20, top=10, bottom=10),
                 controls_padding=ft.Padding.only(left=20, right=20, bottom=20),
                 bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, collapsed_bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
@@ -4199,7 +4278,7 @@ def main(page: ft.Page):
                 expanded=True,
                 controls=ft.Column(controls=[
                     ft.Container(height=0.2, bgcolor=ft.Colors.INVERSE_SURFACE, margin=ft.Margin.only(left=0, right=0, top=0, bottom=5)),
-                    ft.Row(tight=True, col={"xs": 12, "lg": 3}, controls=[ft.Icon(icon=ft.Icons.ARROW_DROP_DOWN_CIRCLE_OUTLINED), ft.Text(value="QR Type", size=20)]),
+                    ft.Row(tight=True, col={"xs": 12, "lg": 3}, controls=[ft.Icon(icon=ft.Icons.ARROW_DROP_DOWN_CIRCLE_OUTLINED), ft.Text(value=tr("QR Type"), size=20)]),
                     ft.Container(col={"xs": 12, "lg": 2}, content=qr_type_dropdown),
                     ft.Container(height=0.2, bgcolor=ft.Colors.INVERSE_SURFACE, margin=ft.Margin.only(left=0, right=0, top=0, bottom=5)),
                     wifi_area,
@@ -4213,13 +4292,13 @@ def main(page: ft.Page):
                     contact_general_content,
                     ft.Container(height=0.2, bgcolor=ft.Colors.INVERSE_SURFACE, margin=ft.Margin.only(left=0, right=0, top=0, bottom=5)),
                     ft.Row(wrap=True, alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[
-                        ft.Row(controls=[ft.Icon(icon=ft.Icons.CHECK_CIRCLE_OUTLINE_ROUNDED), ft.Text(value="Error correction level", size=20)]),
+                        ft.Row(controls=[ft.Icon(icon=ft.Icons.CHECK_CIRCLE_OUTLINE_ROUNDED), ft.Text(value=tr("Error correction level"), size=20)]),
                         error_correction_dropdown,
                     ]),
                 ]),
             ),
             ft.ExpansionTile(
-                title=ft.Row(controls=[ft.Icon(icon=ft.Icons.COLOR_LENS_ROUNDED), ft.Text(value="Customization", size=16)]),
+                title=ft.Row(controls=[ft.Icon(icon=ft.Icons.COLOR_LENS_ROUNDED), ft.Text(value=tr("Customization"), size=16)]),
                 tile_padding=ft.Padding.only(left=20, right=20, top=10, bottom=10),
                 controls_padding=ft.Padding.only(left=20, right=20, bottom=20),
                 bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, collapsed_bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
@@ -4228,12 +4307,12 @@ def main(page: ft.Page):
                 collapsed_shape=ft.RoundedRectangleBorder(side=ft.BorderSide(style=ft.BorderStyle.NONE), radius=20),
                 controls=ft.Column(controls=[
                     ft.Container(height=0.2, bgcolor=ft.Colors.INVERSE_SURFACE, margin=ft.Margin.only(left=0, right=0, top=0, bottom=5)),
-                    ft.Row(controls=[ft.Icon(icon=ft.Icons.ADD_PHOTO_ALTERNATE_ROUNDED), ft.Text(value="Logo/Branding", size=20)]),
+                    ft.Row(controls=[ft.Icon(icon=ft.Icons.ADD_PHOTO_ALTERNATE_ROUNDED), ft.Text(value=tr("Logo/Branding"), size=20)]),
                     ft.Container(
                         content=ft.Row(controls=[
                             ft.Icon(icon=ft.Icons.WARNING_ROUNDED, color=ft.Colors.WHITE),
                             ft.Container(expand=True, content=ft.Text(
-                                value="As logos take up a big chunk of the QR's area, scanability may be greatly reduced. Thus, error correction is overrided to level H, though no guarantees it will work.",
+                                value=tr("As logos take up a big chunk of the QR's area, scanability may be greatly reduced. Thus, error correction is overrided to level H, though no guarantees it will work."),
                                 size=16, color=ft.Colors.WHITE,
                             )),
                         ]),
@@ -4244,7 +4323,7 @@ def main(page: ft.Page):
                         content=ft.Row(controls=[
                             ft.Icon(icon=ft.Icons.INFO_OUTLINE_ROUNDED, color=ft.Colors.INVERSE_SURFACE),
                             ft.Container(expand=True, content=ft.Text(
-                                value="Square images should be used. Else, the logo will be squished to fit. This may change in the future.",
+                                value=tr("Square images should be used. Else, the logo will be squished to fit. This may change in the future."),
                                 size=16, color=ft.Colors.INVERSE_SURFACE,
                             )),
                         ]),
@@ -4253,7 +4332,7 @@ def main(page: ft.Page):
                     ),
                     ft.Row(alignment=ft.MainAxisAlignment.CENTER, spacing=3, controls=[
                         ft.Button(
-                            elevation=0, icon=ft.Icons.IMAGE_ROUNDED, content=ft.Text("Pick Logo", size=16),
+                            elevation=0, icon=ft.Icons.IMAGE_ROUNDED, content=ft.Text(tr("Pick Logo"), size=16),
                             height=50, color=ft.Colors.SURFACE, bgcolor=ft.Colors.PRIMARY,
                             style=ft.ButtonStyle(
                                 overlay_color=ft.Colors.ON_PRIMARY_CONTAINER,
@@ -4276,9 +4355,9 @@ def main(page: ft.Page):
                         ),
                     ]),
                     ft.Divider(thickness=0.2, color=ft.Colors.INVERSE_SURFACE),
-                    ft.Row(controls=[ft.Icon(icon=ft.Icons.COLOR_LENS_ROUNDED), ft.Text(value="Color scheme", size=20)]),
-                    ft.ExpansionTile(title="Primary color:",tile_padding=ft.Padding(left=15,right=15), controls=qr_color_scheme_primary, bgcolor=ft.Colors.SURFACE_CONTAINER_LOW, collapsed_bgcolor=ft.Colors.SURFACE_CONTAINER_LOW, shape=ft.RoundedRectangleBorder(side=ft.BorderSide(style=ft.BorderStyle.NONE), radius=15), collapsed_shape=ft.RoundedRectangleBorder(side=ft.BorderSide(style=ft.BorderStyle.NONE), radius=15)),
-                    ft.ExpansionTile(title="Background color:", tile_padding=ft.Padding(left=15,right=15), controls=qr_color_scheme_secondary, bgcolor=ft.Colors.SURFACE_CONTAINER_LOW, collapsed_bgcolor=ft.Colors.SURFACE_CONTAINER_LOW, shape=ft.RoundedRectangleBorder(side=ft.BorderSide(style=ft.BorderStyle.NONE), radius=15), collapsed_shape=ft.RoundedRectangleBorder(side=ft.BorderSide(style=ft.BorderStyle.NONE), radius=15)),
+                    ft.Row(controls=[ft.Icon(icon=ft.Icons.COLOR_LENS_ROUNDED), ft.Text(value=tr("Color scheme"), size=20)]),
+                    ft.ExpansionTile(title=tr("Primary color:"),tile_padding=ft.Padding(left=15,right=15), controls=qr_color_scheme_primary, bgcolor=ft.Colors.SURFACE_CONTAINER_LOW, collapsed_bgcolor=ft.Colors.SURFACE_CONTAINER_LOW, shape=ft.RoundedRectangleBorder(side=ft.BorderSide(style=ft.BorderStyle.NONE), radius=15), collapsed_shape=ft.RoundedRectangleBorder(side=ft.BorderSide(style=ft.BorderStyle.NONE), radius=15)),
+                    ft.ExpansionTile(title=tr("Background color:"), tile_padding=ft.Padding(left=15,right=15), controls=qr_color_scheme_secondary, bgcolor=ft.Colors.SURFACE_CONTAINER_LOW, collapsed_bgcolor=ft.Colors.SURFACE_CONTAINER_LOW, shape=ft.RoundedRectangleBorder(side=ft.BorderSide(style=ft.BorderStyle.NONE), radius=15), collapsed_shape=ft.RoundedRectangleBorder(side=ft.BorderSide(style=ft.BorderStyle.NONE), radius=15)),
                 ]),
             ),
             ft.Container(height=50),
@@ -4320,7 +4399,7 @@ def main(page: ft.Page):
                     #style=ft.ProgressRingStyle(stroke_cap=ft.StrokeCap.ROUND),
                 ),
                 ft.Text(
-                    value="Loading content...", 
+                    value=tr("Loading content..."), 
                     color=ft.Colors.GREY_400
                 ),
             ]
@@ -4332,9 +4411,9 @@ def main(page: ft.Page):
     pinned_view = ft.Column(scroll=ft.ScrollMode.AUTO, expand=True, horizontal_alignment=ft.CrossAxisAlignment.STRETCH, controls=[])
 
     pin_filter_buttongroup = ft.Row(spacing=3, controls=[
-        ft.Button(elevation=0, icon=ft.Icons.CLEAR_ALL_ROUNDED, content=ft.Text("All", font_family="MaterialRoundedLight", size=14), height=40, color=ft.Colors.INVERSE_SURFACE, bgcolor=ft.Colors.SECONDARY_CONTAINER, style=ft.ButtonStyle(shape=ft.StadiumBorder()), on_click=lambda e: on_buttongroup_change(e)),
-        ft.Button(elevation=0, icon=ft.Icons.PUSH_PIN_ROUNDED, content=ft.Text("Pinned", font_family="MaterialRoundedLight", size=14), height=40, color=ft.Colors.INVERSE_SURFACE, bgcolor=ft.Colors.SURFACE_CONTAINER, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)), on_click=lambda e: on_buttongroup_change(e)),
-        ft.Button(elevation=0, icon=ft.Icons.PUSH_PIN_OUTLINED, content=ft.Text("Unpinned", font_family="MaterialRoundedLight", size=14), height=40, bgcolor=ft.Colors.SURFACE_CONTAINER, color=ft.Colors.INVERSE_SURFACE, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=ft.BorderRadius.only(top_left=25, top_right=50, bottom_left=25, bottom_right=50))), on_click=lambda e: on_buttongroup_change(e)),
+        ft.Button(elevation=0, icon=ft.Icons.CLEAR_ALL_ROUNDED, content=ft.Text(tr("All"), font_family="MaterialRoundedLight", size=14), height=40, color=ft.Colors.INVERSE_SURFACE, bgcolor=ft.Colors.SECONDARY_CONTAINER, style=ft.ButtonStyle(shape=ft.StadiumBorder()), on_click=lambda e: on_buttongroup_change(e)),
+        ft.Button(elevation=0, icon=ft.Icons.PUSH_PIN_ROUNDED, content=ft.Text(tr("Pinned"), font_family="MaterialRoundedLight", size=14), height=40, color=ft.Colors.INVERSE_SURFACE, bgcolor=ft.Colors.SURFACE_CONTAINER, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)), on_click=lambda e: on_buttongroup_change(e)),
+        ft.Button(elevation=0, icon=ft.Icons.PUSH_PIN_OUTLINED, content=ft.Text(tr("Unpinned"), font_family="MaterialRoundedLight", size=14), height=40, bgcolor=ft.Colors.SURFACE_CONTAINER, color=ft.Colors.INVERSE_SURFACE, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=ft.BorderRadius.only(top_left=25, top_right=50, bottom_left=25, bottom_right=50))), on_click=lambda e: on_buttongroup_change(e)),
     ])
 
     order_toggle_button = ft.IconButton(
@@ -4351,7 +4430,7 @@ def main(page: ft.Page):
             alignment=ft.MainAxisAlignment.CENTER,
             controls=[
                 ft.Text(
-                    value="No QR codes yet! Tap the '+' button to create your first one.",
+                    value=tr("No QR codes yet! Tap the '+' button to create your first one."),
                     font_family="MaterialRoundedBold",
                     size=16,
                     color=ft.Colors.GREY_500
@@ -4368,7 +4447,7 @@ def main(page: ft.Page):
     tip_text = ft.Container(
         content=ft.Row(controls=[
             ft.Icon(icon=ft.Icons.INFO_OUTLINE_ROUNDED, color=ft.Colors.INVERSE_SURFACE),
-            ft.Container(expand=True, content=ft.Text(value="No QR codes yet! Tap the '+' button to create your first one.", size=16, color=ft.Colors.INVERSE_SURFACE)),
+            ft.Container(expand=True, content=ft.Text(value=tr("No QR codes yet! Tap the '+' button to create your first one."), size=16, color=ft.Colors.INVERSE_SURFACE)),
         ]),
         visible=False,
         padding=15, bgcolor=ft.Colors.SECONDARY_CONTAINER, border_radius=30,
@@ -4415,6 +4494,13 @@ def main(page: ft.Page):
         on_change=lambda e: update_check_changed(e.control.value),
     )
 
+    language_dropdown = ft.Dropdown(
+        border_radius=50, fill_color=ft.Colors.SURFACE_CONTAINER_LOW, filled=True, border_width=0,
+        value=I18N["code"],
+        options=[ft.DropdownOption(key=code, text=name) for code, name in LANGUAGES.items()],
+        on_select=lambda e: language_changed(e.control.value),
+    )
+
     settings_view = ft.Container(
         bgcolor=ft.Colors.SURFACE,
         offset=ft.Offset(1.1, 0),
@@ -4453,7 +4539,7 @@ def main(page: ft.Page):
                                     style=ft.TextStyle(weight=ft.FontWeight.BOLD)
                                 ),
                                 ft.Text(
-                                    value="Your QRs, made quicker.", 
+                                    value=tr("Your QRs, made quicker."), 
                                     color=ft.Colors.GREY_400
                                 ),
                             ]
@@ -4535,7 +4621,7 @@ def main(page: ft.Page):
                             ]
                         )
                     ),
-                    ft.Row(alignment="center", controls=ft.Text(value="Help the project", size=18, color=ft.Colors.PRIMARY),margin=ft.Margin.only(left=0, right=0, top=20)),
+                    ft.Row(alignment="center", controls=ft.Text(value=tr("Help the project"), size=18, color=ft.Colors.PRIMARY),margin=ft.Margin.only(left=0, right=0, top=20)),
                     ft.ExpansionTile(
                         bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, collapsed_bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
                         margin=ft.Margin.only(bottom=5),
@@ -4558,8 +4644,8 @@ def main(page: ft.Page):
                                 )
                             ),
                             ft.Column(spacing=-3,expand=True,controls=[
-                                ft.Text(value="Support QuickeR", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                ft.Text(value="Support the project and help it grow!", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                ft.Text(value=tr("Support QuickeR"), size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                ft.Text(value=tr("Support the project and help it grow!"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                             ]
                         ),
                         ]),
@@ -4569,10 +4655,10 @@ def main(page: ft.Page):
                                 content=ft.Column(controls=[
                                     ft.Row(controls=[
                                         ft.Icon(icon=ft.Icons.PAYMENT_ROUNDED, color=ft.Colors.INVERSE_SURFACE),
-                                        ft.Text(value="Tip", size=25, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                        ft.Container(content=ft.Text(value="ONE TIME", size=10, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)), margin=ft.Margin.only(left=5), bgcolor=ft.Colors.TERTIARY_CONTAINER, border=ft.Border.all(width=3, color=ft.Colors.TERTIARY), border_radius=10, padding=5),
+                                        ft.Text(value=tr("Tip"), size=25, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                        ft.Container(content=ft.Text(value=tr("ONE TIME"), size=10, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)), margin=ft.Margin.only(left=5), bgcolor=ft.Colors.TERTIARY_CONTAINER, border=ft.Border.all(width=3, color=ft.Colors.TERTIARY), border_radius=10, padding=5),
                                     ]),
-                                    ft.Text(value="If you want to support the project, you can do so by leaving a tip via Buy Me a Coffee or GitHub Sponsors.", size=15, color=ft.Colors.INVERSE_SURFACE),
+                                    ft.Text(value=tr("If you want to support the project, you can do so by leaving a tip via Buy Me a Coffee or GitHub Sponsors."), size=15, color=ft.Colors.INVERSE_SURFACE),
                                     ft.Row(wrap=True,alignment="center", controls=ft.Row(wrap=True,tight=True, controls=[
                                         ft.Button(margin=ft.Margin.only(top=10), content=ft.Text(value="Buy Me a Coffee"), icon=ft.Icons.COFFEE_ROUNDED, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=10, bgcolor=ft.Colors.PRIMARY, color=ft.Colors.SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER), on_click=lambda e: asyncio.ensure_future(open_url("https://www.buymeacoffee.com/choicezero", "BLANK"))),
                                         ft.Button(margin=ft.Margin.only(top=10), content=ft.Text(value="GitHub Sponsors"), icon=ft.CupertinoIcons.HEART_FILL, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=10, bgcolor=ft.Colors.PRIMARY, color=ft.Colors.SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER), on_click=lambda e: asyncio.ensure_future(open_url("https://github.com/sponsors/ChoiceZero", "BLANK"))),
@@ -4582,25 +4668,25 @@ def main(page: ft.Page):
                             ft.Container(
                                 border_radius=20, margin=ft.Margin.only(left=10, right=10), bgcolor=ft.Colors.SURFACE_CONTAINER_LOW, padding=20,
                                 content=ft.Column(controls=[
-                                    ft.Row(controls=[ft.Icon(icon=ft.Icons.CODE_ROUNDED, color=ft.Colors.INVERSE_SURFACE), ft.Text(value="Contribute", size=25, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD))]),
-                                    ft.Text(value="Contribute code or report bugs in order to improve the project as a community effort.", size=15, color=ft.Colors.INVERSE_SURFACE),
+                                    ft.Row(controls=[ft.Icon(icon=ft.Icons.CODE_ROUNDED, color=ft.Colors.INVERSE_SURFACE), ft.Text(value=tr("Contribute"), size=25, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD))]),
+                                    ft.Text(value=tr("Contribute code or report bugs in order to improve the project as a community effort."), size=15, color=ft.Colors.INVERSE_SURFACE),
                                     ft.Row(wrap=True,alignment="center", controls=ft.Row(wrap=True,tight=True, controls=[
                                         ft.Button(margin=ft.Margin.only(top=10), content=ft.Text(value="QuickeR-Web"), icon=ft.Image(os.path.join(ASSET_DIR, "github-white-icon.webp"), color=ft.Colors.SURFACE, width=20, height=20), on_click=lambda e: asyncio.ensure_future(open_url("https://github.com/ChoiceZero/QuickeR", "BLANK")), style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=10, bgcolor=ft.Colors.PRIMARY, color=ft.Colors.SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER)),
-                                        ft.Button(content=ft.Text(value="Report a bug"), icon=ft.Icons.BUG_REPORT_ROUNDED, margin=ft.Margin.only(top=10), on_click=lambda e: asyncio.ensure_future(open_url("https://github.com/ChoiceZero/QuickeR/issues", "BLANK")), style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=10, bgcolor=ft.Colors.PRIMARY, color=ft.Colors.SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER)),
+                                        ft.Button(content=ft.Text(value=tr("Report a bug")), icon=ft.Icons.BUG_REPORT_ROUNDED, margin=ft.Margin.only(top=10), on_click=lambda e: asyncio.ensure_future(open_url("https://github.com/ChoiceZero/QuickeR/issues", "BLANK")), style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=10, bgcolor=ft.Colors.PRIMARY, color=ft.Colors.SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER)),
                                     ])),
                                 ]),
                             ),
                             ft.Container(
                                 border_radius=20, margin=ft.Margin.only(left=10, right=10, bottom=10), bgcolor=ft.Colors.SURFACE_CONTAINER_LOW, padding=20,
                                 content=ft.Column(controls=[
-                                    ft.Row(controls=[ft.Icon(icon=ft.Icons.SHARE_ROUNDED, color=ft.Colors.INVERSE_SURFACE), ft.Text(value="Share the app", size=25, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD))]),
-                                    ft.Text(value="Help spread the word about the app and recommend it to others. The more users, the more interest in the project!", size=15, color=ft.Colors.INVERSE_SURFACE),
-                                    ft.Button(content=ft.Text(value="Copy link to clipboard"), icon=ft.Icons.COPY_ALL_ROUNDED, margin=ft.Margin.only(top=10), on_click=lambda e: asyncio.ensure_future(copy_text_to_clipboard("https://choicezero.github.io/QuickeR-Web/")), style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=10, bgcolor=ft.Colors.PRIMARY, color=ft.Colors.SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER)),
+                                    ft.Row(controls=[ft.Icon(icon=ft.Icons.SHARE_ROUNDED, color=ft.Colors.INVERSE_SURFACE), ft.Text(value=tr("Share the app"), size=25, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD))]),
+                                    ft.Text(value=tr("Help spread the word about the app and recommend it to others. The more users, the more interest in the project!"), size=15, color=ft.Colors.INVERSE_SURFACE),
+                                    ft.Button(content=ft.Text(value=tr("Copy link to clipboard")), icon=ft.Icons.COPY_ALL_ROUNDED, margin=ft.Margin.only(top=10), on_click=lambda e: asyncio.ensure_future(copy_text_to_clipboard("https://choicezero.github.io/QuickeR-Web/")), style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=10, bgcolor=ft.Colors.PRIMARY, color=ft.Colors.SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER)),
                                 ]),
                             ),
                         ])],
                     ),
-                    ft.Row(alignment="center", controls=ft.Text(value="Customization", size=18, color=ft.Colors.PRIMARY)),
+                    ft.Row(alignment="center", controls=ft.Text(value=tr("Customization"), size=18, color=ft.Colors.PRIMARY)),
                     ft.ExpansionTile(
                         bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, collapsed_bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
                         margin=ft.Margin.only(bottom=5),
@@ -4625,12 +4711,43 @@ def main(page: ft.Page):
                                     )
                                 ),
                                 ft.Column(spacing=-3,expand=True,controls=[
-                                    ft.Text(value="Appearance", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                    ft.Text(value="Select the appearance mode of the app", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                    ft.Text(value=tr("Appearance"), size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                    ft.Text(value=tr("Select the appearance mode of the app"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                 ]),
                             ]
                         ),
                         controls=[ft.Column(controls=appearance_setting)]
+                    ),
+                    ft.ExpansionTile(
+                        bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, collapsed_bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
+                        margin=ft.Margin.only(bottom=5,top=-12),
+                        width=600,
+                        on_change=lambda e: autocollapse_expansion_tiles(e),
+                        align=ft.Alignment.CENTER,
+                        controls_padding=ft.Padding.only(left=20, right=20, top=10, bottom=20), 
+                        tile_padding=ft.Padding.only(left=20, right=20, top=10, bottom=10),
+                        shape=ft.RoundedRectangleBorder(side=ft.BorderSide(style=ft.BorderStyle.NONE), radius=ft.BorderRadius.only(top_left=8, top_right=8, bottom_left=8, bottom_right=8)),
+                        collapsed_shape=ft.RoundedRectangleBorder(side=ft.BorderSide(style=ft.BorderStyle.NONE), radius=ft.BorderRadius.only(top_left=8, top_right=8, bottom_left=8, bottom_right=8)),
+                        title=ft.Row(
+                            controls=[
+                                ft.IconButton(
+                                    disabled=True,
+                                    icon=ft.Icons.COLOR_LENS_ROUNDED, 
+                                    style=ft.ButtonStyle(
+                                        shape=ft.CircleBorder(), 
+                                        padding=10, 
+                                        bgcolor=ft.Colors.SECONDARY_CONTAINER, 
+                                        icon_color=ft.Colors.PRIMARY, 
+                                        icon_size=20
+                                    )
+                                ),
+                                ft.Column(spacing=-3,expand=True,controls=[
+                                    ft.Text(value=tr("Color scheme"), size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                    ft.Text(value=tr("Select the colors of the app"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                ]),
+                            ]
+                        ),
+                        controls=[ft.Column(tight=True,controls=themes_row)]
                     ),
                     ft.ExpansionTile(
                         bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, collapsed_bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
@@ -4646,7 +4763,7 @@ def main(page: ft.Page):
                             controls=[
                                 ft.IconButton(
                                     disabled=True,
-                                    icon=ft.Icons.COLOR_LENS_ROUNDED, 
+                                    icon=ft.Icons.LANGUAGE_ROUNDED, 
                                     style=ft.ButtonStyle(
                                         shape=ft.CircleBorder(), 
                                         padding=10, 
@@ -4656,14 +4773,14 @@ def main(page: ft.Page):
                                     )
                                 ),
                                 ft.Column(spacing=-3,expand=True,controls=[
-                                    ft.Text(value="Color scheme", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                    ft.Text(value="Select the colors of the app", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                    ft.Text(value=tr("Language"), size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                    ft.Text(value=tr("Select the language of the app"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                 ]),
                             ]
                         ),
-                        controls=[ft.Column(tight=True,controls=themes_row)]
+                        controls=[ft.Column(tight=True,controls=[language_dropdown])]
                     ),
-                    ft.Row(alignment="center", controls=ft.Text(value="Technical", size=18, color=ft.Colors.PRIMARY)),
+                    ft.Row(alignment="center", controls=ft.Text(value=tr("Technical"), size=18, color=ft.Colors.PRIMARY)),
                     ft.ExpansionTile(
                         bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, collapsed_bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
                         margin=ft.Margin.only(bottom=5),
@@ -4686,8 +4803,8 @@ def main(page: ft.Page):
                                 )
                             ),
                             ft.Column(spacing=-3,expand=True,controls=[
-                                ft.Text(value="Import/Export", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                ft.Text(value="Save or upload data", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                ft.Text(value=tr("Import/Export"), size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                ft.Text(value=tr("Save or upload data"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                             ]
                         ),
                         ]),
@@ -4697,11 +4814,11 @@ def main(page: ft.Page):
                                 content=ft.Column(controls=[
                                     ft.Row(controls=[
                                         ft.Icon(icon=ft.Icons.FILE_UPLOAD_ROUNDED, color=ft.Colors.INVERSE_SURFACE),
-                                        ft.Text(value="Export", size=25, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                        ft.Text(value=tr("Export"), size=25, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
                                     ]),
-                                    ft.Text(value="Export your QR code library to a .ZIP file.", size=15, color=ft.Colors.INVERSE_SURFACE),
+                                    ft.Text(value=tr("Export your QR code library to a .ZIP file."), size=15, color=ft.Colors.INVERSE_SURFACE),
                                     ft.Button(
-                                        content=ft.Text(value="Export Library", color=ft.Colors.SURFACE, size=16), color=ft.Colors.SURFACE, icon=ft.Icons.FOLDER_ZIP_ROUNDED,
+                                        content=ft.Text(value=tr("Export Library"), color=ft.Colors.SURFACE, size=16), color=ft.Colors.SURFACE, icon=ft.Icons.FOLDER_ZIP_ROUNDED,
                                         on_click=lambda e: asyncio.ensure_future(export_library_to_zip()),
                                         style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=20, icon_size=20, bgcolor=ft.Colors.PRIMARY, icon_color=ft.Colors.SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER),
                                     ),
@@ -4711,10 +4828,10 @@ def main(page: ft.Page):
                                 border_radius=20, margin=ft.Margin.only(left=10, right=10), bgcolor=ft.Colors.SURFACE_CONTAINER, padding=20,
                                 content=ft.Column(
                                     controls=[
-                                    ft.Row(controls=[ft.Icon(icon=ft.Icons.SAVE_ALT_ROUNDED, color=ft.Colors.INVERSE_SURFACE), ft.Text(value="Import", size=25, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD))]),
-                                    ft.Text(value="Select a .ZIP file to import. The containing QR codes will be added to your library, not replace the existing ones. If you want to add your own codes, they have to be image files (PNG, JPG, JPEG, WEBP or SVG).", size=15, color=ft.Colors.INVERSE_SURFACE),
+                                    ft.Row(controls=[ft.Icon(icon=ft.Icons.SAVE_ALT_ROUNDED, color=ft.Colors.INVERSE_SURFACE), ft.Text(value=tr("Import"), size=25, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD))]),
+                                    ft.Text(value=tr("Select a .ZIP file to import. The containing QR codes will be added to your library, not replace the existing ones. If you want to add your own codes, they have to be image files (PNG, JPG, JPEG, WEBP or SVG)."), size=15, color=ft.Colors.INVERSE_SURFACE),
                                     ft.Button(
-                                        content=ft.Text(value="Import Library", color=ft.Colors.SURFACE, size=16), color=ft.Colors.SURFACE, icon=ft.Icons.CREATE_NEW_FOLDER_ROUNDED,
+                                        content=ft.Text(value=tr("Import Library"), color=ft.Colors.SURFACE, size=16), color=ft.Colors.SURFACE, icon=ft.Icons.CREATE_NEW_FOLDER_ROUNDED,
                                         on_click=lambda e: asyncio.ensure_future(import_library_from_zip()),
                                         style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=20, icon_size=20, bgcolor=ft.Colors.SECONDARY, icon_color=ft.Colors.SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER),
                                     ),
@@ -4724,10 +4841,10 @@ def main(page: ft.Page):
                             ft.Container(
                                 border_radius=20, margin=ft.Margin.only(left=10, right=10, bottom=10), bgcolor=ft.Colors.RED_700, padding=20,
                                 content=ft.Column(controls=[
-                                    ft.Row(controls=[ft.Icon(icon=ft.Icons.DELETE_ROUNDED, color=ft.Colors.WHITE), ft.Text(value="Clear data", size=25, color=ft.Colors.WHITE, style=ft.TextStyle(weight=ft.FontWeight.BOLD))]),
-                                    ft.Text(value="This will clear every QR code stored. This action is irreversible!", size=15, color=ft.Colors.WHITE),
+                                    ft.Row(controls=[ft.Icon(icon=ft.Icons.DELETE_ROUNDED, color=ft.Colors.WHITE), ft.Text(value=tr("Clear data"), size=25, color=ft.Colors.WHITE, style=ft.TextStyle(weight=ft.FontWeight.BOLD))]),
+                                    ft.Text(value=tr("This will clear every QR code stored. This action is irreversible!"), size=15, color=ft.Colors.WHITE),
                                     ft.Button(
-                                        content=ft.Text(value="Delete all data", color=ft.Colors.BLACK, size=16), color=ft.Colors.INVERSE_SURFACE, icon=ft.Icons.DELETE_ROUNDED,
+                                        content=ft.Text(value=tr("Delete all data"), color=ft.Colors.BLACK, size=16), color=ft.Colors.INVERSE_SURFACE, icon=ft.Icons.DELETE_ROUNDED,
                                         on_click=lambda e: clear_app_data(),
                                         style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=50), padding=20, icon_size=20, bgcolor=ft.Colors.RED_100, icon_color=ft.Colors.BLACK, overlay_color=ft.Colors.RED_200),
                                     ),
@@ -4756,8 +4873,8 @@ def main(page: ft.Page):
                                     )
                                 ),
                                 ft.Column(spacing=-3,expand=True,controls=[
-                                    ft.Text(value="Updates", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                    ft.Text(value="Check for new stable releases on startup", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                    ft.Text(value=tr("Updates"), size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                    ft.Text(value=tr("Check for new stable releases on startup"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                 ]),
                                 update_check_switch,
                             ]
@@ -4785,14 +4902,14 @@ def main(page: ft.Page):
                                     )
                                 ),
                                 ft.Column(spacing=-3,expand=True,controls=[
-                                    ft.Text(value="Tutorial", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                    ft.Text(value="Go through the setup process again", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                    ft.Text(value=tr("Tutorial"), size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                    ft.Text(value=tr("Go through the setup process again"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                 ]),
                                 ft.Icon(icon=ft.Icons.OPEN_IN_NEW_ROUNDED, color=ft.Colors.INVERSE_SURFACE, size=20),
                             ]
                         ),
                     ),
-                    ft.Row(alignment="center", controls=ft.Text(value="About", size=18, color=ft.Colors.PRIMARY)),
+                    ft.Row(alignment="center", controls=ft.Text(value=tr("About"), size=18, color=ft.Colors.PRIMARY)),
                     ft.Container(
                         bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
                         width=600,
@@ -4814,8 +4931,8 @@ def main(page: ft.Page):
                                     )
                                 ),
                                 ft.Column(spacing=-3,expand=True,controls=[
-                                    ft.Text(value="QuickeR Web", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                    ft.Text(value="Check out the web app!", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                    ft.Text(value=tr("QuickeR Web"), size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                    ft.Text(value=tr("Check out the web app!"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                 ]),
                                 ft.Icon(icon=ft.Icons.OPEN_IN_NEW_ROUNDED, color=ft.Colors.INVERSE_SURFACE, size=20),
                             ]
@@ -4844,8 +4961,8 @@ def main(page: ft.Page):
                                     )
                                 ),
                                 ft.Column(spacing=-3,expand=True,controls=[
-                                    ft.Text(value="Github repository", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                    ft.Text(value="Source code, bugs and release notes", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                    ft.Text(value=tr("Github repository"), size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                    ft.Text(value=tr("Source code, bugs and release notes"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                 ]),
                                 ft.Icon(icon=ft.Icons.OPEN_IN_NEW_ROUNDED, color=ft.Colors.INVERSE_SURFACE, size=20),
                             ]
@@ -4874,7 +4991,7 @@ def main(page: ft.Page):
                                 ),
                                 ft.Column(spacing=-3,expand=True,controls=[
                                     ft.Text(value="Unax Martinez Llorente", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                    ft.Text(value="Developer (aka ChoiceZero)", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                    ft.Text(value=tr("Developer (aka ChoiceZero)"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                 ]),
                                 ft.Icon(icon=ft.Icons.OPEN_IN_NEW_ROUNDED, color=ft.Colors.INVERSE_SURFACE, size=20),
                             ]
@@ -4902,8 +5019,8 @@ def main(page: ft.Page):
                                     )
                                 ),
                                 ft.Column(spacing=-3,expand=True,controls=[
-                                    ft.Text(value="MIT License", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                    ft.Text(value="View the license terms", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                    ft.Text(value=tr("MIT License"), size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                    ft.Text(value=tr("View the license terms"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                 ]),
                                 ft.Icon(icon=ft.Icons.OPEN_IN_NEW_ROUNDED, color=ft.Colors.INVERSE_SURFACE, size=20),
                             ]
@@ -4933,22 +5050,22 @@ def main(page: ft.Page):
                                     )
                                 ),
                                 ft.Column(spacing=-3,expand=True,controls=[
-                                    ft.Text(value="Privacy", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                    ft.Text(value="See privacy details", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                    ft.Text(value=tr("Privacy"), size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                    ft.Text(value=tr("See privacy details"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
                                 ]),
                             ]
                         ),
                         controls=[
                             ft.Column(
                                 controls=[
-                                    ft.Row(wrap=True,spacing=70,controls=[ft.Row(tight=True,controls=[ft.Icon(icon=ft.Icons.DISABLED_VISIBLE_ROUNDED, size=15, color=ft.Colors.PRIMARY), ft.Text(value="Private", size=15, color=ft.Colors.GREY_400)]),     ft.Text(value="No telemetry or analytics are used.", size=15, color=ft.Colors.INVERSE_SURFACE)]),
-                                    ft.Row(wrap=True,spacing=40,controls=[ft.Row(tight=True,controls=[ft.Icon(icon=ft.Icons.EDIT_ROUNDED, size=15, color=ft.Colors.PRIMARY), ft.Text(value="Open source", size=15, color=ft.Colors.GREY_400)]), ft.Text(value="Fully open source and auditable.", size=15, color=ft.Colors.INVERSE_SURFACE)]),
-                                    ft.Row(wrap=True,spacing=60,controls=[ft.Row(tight=True,controls=[ft.Icon(icon=ft.Icons.VERIFIED_USER_ROUNDED, size=15, color=ft.Colors.PRIMARY), ft.Text(value="Personal", size=15, color=ft.Colors.GREY_400)]), ft.Text(value="No private data is collected or stored.", size=15, color=ft.Colors.INVERSE_SURFACE)]),
+                                    ft.Row(wrap=True,spacing=70,controls=[ft.Row(tight=True,controls=[ft.Icon(icon=ft.Icons.DISABLED_VISIBLE_ROUNDED, size=15, color=ft.Colors.PRIMARY), ft.Text(value=tr("Private"), size=15, color=ft.Colors.GREY_400)]),     ft.Text(value=tr("No telemetry or analytics are used."), size=15, color=ft.Colors.INVERSE_SURFACE)]),
+                                    ft.Row(wrap=True,spacing=40,controls=[ft.Row(tight=True,controls=[ft.Icon(icon=ft.Icons.EDIT_ROUNDED, size=15, color=ft.Colors.PRIMARY), ft.Text(value=tr("Open source"), size=15, color=ft.Colors.GREY_400)]), ft.Text(value=tr("Fully open source and auditable."), size=15, color=ft.Colors.INVERSE_SURFACE)]),
+                                    ft.Row(wrap=True,spacing=60,controls=[ft.Row(tight=True,controls=[ft.Icon(icon=ft.Icons.VERIFIED_USER_ROUNDED, size=15, color=ft.Colors.PRIMARY), ft.Text(value=tr("Personal"), size=15, color=ft.Colors.GREY_400)]), ft.Text(value=tr("No private data is collected or stored."), size=15, color=ft.Colors.INVERSE_SURFACE)]),
                                 ]
                             )
                         ]
                     ),
-                    ft.Row(alignment=ft.MainAxisAlignment.CENTER, controls=[ft.Text(value="Made with ❤️ in the Basque Country, Spain.", size=15, color=ft.Colors.GREY_400)]),
+                    ft.Row(alignment=ft.MainAxisAlignment.CENTER, controls=[ft.Text(value=tr("Made with ❤️ in the Basque Country, Spain."), size=15, color=ft.Colors.GREY_400)]),
                     ft.Row(alignment=ft.MainAxisAlignment.CENTER, controls=[ft.Text(value="© 2026 Unax Martinez Llorente.", size=15, color=ft.Colors.GREY_400)]),
                     ft.Container(height=50),
                 ],
@@ -4963,7 +5080,7 @@ def main(page: ft.Page):
                             icon=ft.Icons.ARROW_BACK, on_click=lambda e: swap_views(),
                             style=ft.ButtonStyle(shape=ft.CircleBorder(), padding=10, bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST, icon_color=ft.Colors.INVERSE_SURFACE, icon_size=20),
                             margin=ft.Margin.only(left=10, right=0, top=0, bottom=0)),
-                        ft.Text(value="Settings", size=25, font_family="MaterialRoundedBold", align=ft.Alignment.CENTER, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                        ft.Text(value=tr("Settings"), size=25, font_family="MaterialRoundedBold", align=ft.Alignment.CENTER, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
                     ]
                 ),
             )
@@ -5009,12 +5126,18 @@ def main(page: ft.Page):
     page.remove(loading_screen)
 
     render_tutorial()
-    asyncio.ensure_future(check_for_updates())
+    if not STARTUP["update_checked"]:
+        STARTUP["update_checked"] = True
+        asyncio.ensure_future(check_for_updates())
 
     load_qrs()
     theme_init_loader()
     appearance_loader()
     display_preview_qr(qr_content["content"], "black", "white", ERROR_CORRECTION_MAP["M (15%)"])
+
+    if show_settings:
+        settings_view.offset = ft.Offset(0, 0)
+        page.update()
 
 
 ft.run(main)
