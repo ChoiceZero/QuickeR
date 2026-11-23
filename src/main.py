@@ -34,7 +34,8 @@ def get_app_storage_dir() -> str:
     - Android: BASE_DIR is already inside the app's private storage, so it's writable.
     - Linux: ~/.local/share/QuickeR (or $XDG_DATA_HOME). AppImage, .deb and
       .rpm installs run from a read-only location (squashfs mount / /usr).
-    - Windows: keep it next to the script, as before.
+    - Windows: %LOCALAPPDATA%\\QuickeR. The installer puts the app in
+      Program Files, which standard users can't write to.
     """
     system = platform.system()
     if system == "Darwin":
@@ -43,6 +44,11 @@ def get_app_storage_dir() -> str:
         return str(path)
     elif system == "Linux" and not os.environ.get("ANDROID_DATA"):
         base = os.environ.get("XDG_DATA_HOME") or str(Path.home() / ".local" / "share")
+        path = Path(base) / "QuickeR"
+        path.mkdir(parents=True, exist_ok=True)
+        return str(path)
+    elif system == "Windows":
+        base = os.environ.get("LOCALAPPDATA") or os.environ.get("APPDATA") or str(Path.home())
         path = Path(base) / "QuickeR"
         path.mkdir(parents=True, exist_ok=True)
         return str(path)
