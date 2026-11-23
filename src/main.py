@@ -1916,6 +1916,9 @@ class QRCodes:
         self.page.run_task(_close)
 
     async def _reopen(self):
+        # Let the rename dialog finish closing first; popping it and the
+        # bottom sheet at the same time freezes the app.
+        await asyncio.sleep(0.3)
         bs = self.details_bs
         self.details_bs = None
         if bs and bs in self.page.overlay:
