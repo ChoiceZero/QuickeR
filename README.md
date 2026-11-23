@@ -99,6 +99,36 @@ Updates require every release to be signed with the same key (set by the `ANDROI
 >[!NOTE]
 >Builds up to v1.1.2 were each signed with a different throwaway key, so Android refuses to update over them. If the install fails with a conflict, uninstall the old QuickeR once; every build after that is signed with the same key and updates in place.
 
+## Installing on Linux (.deb / .rpm)
+
+Each release ships `quicker_<version>_amd64.deb` and `quicker-<version>-1.x86_64.rpm`, next to the AppImage and the zip.
+
+```bash
+# Debian / Ubuntu
+sudo apt install ./quicker_*_amd64.deb
+
+# Fedora / openSUSE
+sudo dnf install ./quicker-*.x86_64.rpm
+```
+
+The app is installed in `/opt/quicker`, with a `quicker` command and a menu entry.
+
+### Verifying the signature
+
+When the release was built with a signing key, the packages are signed and the public key is attached as `QuickeR-signing-key.asc`.
+
+```bash
+# .rpm
+sudo rpm --import QuickeR-signing-key.asc
+rpm -K quicker-*.x86_64.rpm
+
+# .deb (needs the dpkg-sig package)
+gpg --import QuickeR-signing-key.asc
+dpkg-sig --verify quicker_*_amd64.deb
+```
+
+Maintainers: to enable signing, set the `LINUX_PACKAGE_GPG_PRIVATE_KEY` repository secret to the output of `gpg --armor --export-secret-keys <KEYID>` and `LINUX_PACKAGE_GPG_PASSPHRASE` to its passphrase. Without them the packages are still built, unsigned. The packages are built by [`scripts/build-linux-packages.sh`](scripts/build-linux-packages.sh) with [nfpm](https://nfpm.goreleaser.com).
+
 ## Translations
 
 All UI texts live in [`src/translations.json`](src/translations.json). The English text is the key, and each entry holds the translation for every other language (a missing translation falls back to English). In the code, texts are written as `tr("Save QR")`, and texts with variables as `tr("Saved to {path}", path=path)`.
