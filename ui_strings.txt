@@ -1,0 +1,246 @@
+¡QR code generated!
+QR file not found
+QR code imported successfully.
+All data cleared successfully.
+Are you sure you want to delete this QR code?
+This action cannot be undone. However, you can always generate a new QR code with the same URL.
+Cancel
+Delete
+Export Options
+Enter filename here
+Filename
+Gallery
+Folder
+.STL
+QR file not found in internal folder
+QR file not found in app data
+Please enter a filename first
+Filename required
+Error
+OK
+Save to gallery
+Android will now ask you where to save the image. Choose the 'Pictures', 'DCIM' or 'Camera' folder so it shows up in your gallery app.
+Continue
+Exporting QR...
+Exporting STL...
+Exporting codes...
+Importing codes...
+Please hang tight, it may take a few seconds. Don't close the app.
+Close
+Export Complete!
+Success!
+QR exported to {folder_path}
+STL Complete!
+STL exported to {destination_path}
+Library exported to {zip_path}
+Import Complete!
+Import Complete (with skipped files)!
+Success! Some files were skipped: {files}
+Error: {exception}
+Invert 3D model?
+By default, the dark squares of the QR are raised, thus the dark area protrudes. Invert this so the light modules are raised and the dark areas are indented instead?
+No, keep as is
+Yes, invert
+Edit tag name
+New tag name
+Save
+Tag name cannot be empty
+Please enter a different tag name
+The name contains invalid characters. (\ / : * \ < > | ' ")
+A QR with this tag name already exists
+Failed to rename QR: {e}
+Share not supported on this platform: {ex}
+Shared via QuickeR: {name}
+Text copied
+The text has been copied to the clipboard.
+Are you sure you want to clear all data?
+This will delete all QR codes and reset the app to its default state. This action cannot be undone.
+Clear Data
+Clearing data...
+Unsupported file type.
+Missing required fields
+Please fill in all required fields for the selected QR type.
+Low contrast
+The selected colors have low contrast. This may result in a QR code that is difficult to scan. Do you want to continue?
+Moderate contrast
+The selected colors have moderate contrast. This may result in a QR code that is difficult to scan. Do you want to continue?
+Select folder to export QR
+Select folder to export STL
+Select folder to export library
+QuickeR
+Loading content...
+No QR codes yet! Tap the '+' button to create your first one.
+Click on an item to view details!
+All
+Pinned
+Unpinned
+Unknown
+Export options
+Creation date
+QR technical details
+Raw data
+Internal path
+Color scheme
+Primary:
+Background:
+Network name
+Password
+No password
+Protocol
+Event name
+Location name
+Start time
+End time
+Receiver's address
+Subject
+Body
+Receiver's phone number
+Preset message
+Phone number
+Latitude
+Longitude
+Content
+Day: {date} Time: {time}
+Failed to unpack, raw content shown
+If the QR was imported from a different source, it may have a different structure and thus diplay an error or incorrect information. If that is not the case, open a bug report issue on the GitHub repository.
+If the QR was imported from a different source, it may have a different structure and thus diplay an error. If this is the case, you may ignore the error message. If not, please open a bug report issue on the GitHub repository.
+Name your QR code
+Save QR
+Main content
+QR Type
+Text/URL
+WIFI
+Email
+Phone
+Location
+SMS
+Event
+Error correction level
+L (7%)
+M (15%)
+Q (25%)
+H (30%)
+Enter network name
+WIFI security protocol
+If your network has no password, select it here!
+WPA2
+WPA
+WEP
+WIFI password
+Enter network password
+Enter address
+Advanced options
+Enter subject
+Enter body
+Enter phone number
+123
+Enter message
+Coordinates
+Please enter the coordinates in decimal format (e.g., 43.03500, -2.77988).
+Event title
+Date and time
+Please tap the buttons below and set the data!
+Date period
+Pick date range
+Pick start time
+Pick end time
+Enter URL or text
+Enter URL or text here
+Customization
+Logo/Branding
+As logos take up a big chunk of the QR's area, scanability may be greatly reduced. Thus, error correction is overrided to level H, though no guarantees it will work.
+Square images should be used. Else, the logo will be squished to fit. This may change in the future.
+Pick Logo
+Primary color:
+Background color:
+Settings
+Your QRs, made quicker.
+MIT
+v{APP_VERSION}
+ChoiceZero
+Material 3
+Help the project
+Support QuickeR
+Support the project and help it grow!
+Tip
+ONE TIME
+If you want to support the project, you can do so by leaving a tip via Buy Me a Coffee or GitHub Sponsors.
+Buy Me a Coffee
+GitHub Sponsors
+Contribute
+Contribute code or report bugs in order to improve the project as a community effort.
+QuickeR-Web
+Report a bug
+Share the app
+Help spread the word about the app and recommend it to others. The more users, the more interest in the project!
+Copy link to clipboard
+Appearance
+Select the appearance mode of the app
+System
+Light
+Dark
+Select the colors of the app
+Technical
+Import/Export
+Save or upload data
+Export
+Export your QR code library to a .ZIP file.
+Export Library
+Import
+Select a .ZIP file to import. The containing QR codes will be added to your library, not replace the existing ones. If you want to add your own codes, they have to be image files (PNG, JPG, JPEG, WEBP or SVG).
+Import Library
+Clear data
+This will clear every QR code stored. This action is irreversible!
+Delete all data
+Tutorial
+Go through the setup process again
+About
+QuickeR Web
+Check out the web app!
+Github repository
+Source code, bugs and release notes
+Unax Martinez Llorente
+Developer (aka ChoiceZero)
+MIT License
+View the license terms
+Privacy
+See privacy details
+Private
+No telemetry or analytics are used.
+Open source
+Fully open source and auditable.
+Personal
+No private data is collected or stored.
+Made with ❤️ in the Basque Country, Spain.
+© 2026 Unax Martinez Llorente.
+By Unax Martínez
+Get Started
+Want to learn how to use QuickeR?
+Creating a QR
+Steps to create your first QR code
+1. Click on the '+' button. 2. Expand the 'Main content' section. 3. Select the QR code type you want to create. 4. Enter the required data.
+Optional
+- Change error correction level On the 'Customization' section: - Add a custom logo - Change the QR's colors
+5. Click on 'Save' button.
+Library
+Filtering and order
+Order: By default, QRs are ordered from newest to oldest. To toggle the order, click on the arrow button. Filter: To filter by the pinned state, select the corresponding option.
+Viewing QRs, actions and details
+To view a QR, its actions and its details, click on its row/entry. Actions: - Delete - Export - Share - Pin The info is in their respective sections.
+Exporting
+There are three options to export a QR: - Export to gallery - Export to folder - Export to 3D model (.stl) -> protruding or insetting The images are always exported in .png format. A filename is required.
+External codes
+Adding an external QR code
+Steps: 1. Click on the image icon above the '+'. 2. Select an image from your device. Done! The QR code will be automatically added to the library.
+Customizing
+Cusmizations: - The app's theme mode -> Light/Dark/System (Default) - The app's theme color
+Tools
+Tools available: - Export library to zip - Import library from zip - Clear library
+Other
+- This tutorial
+Finish
+That's it!
+The app doesn't need permissions.
+Proceed to app
+Back
+Next
