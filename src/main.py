@@ -4439,9 +4439,9 @@ def main(page: ft.Page, show_settings=False):
         )
     )
 
-    all_view = ft.Column(scroll=ft.ScrollMode.AUTO, expand=True, horizontal_alignment=ft.CrossAxisAlignment.STRETCH, controls=[])
-    regular_view = ft.Column(scroll=ft.ScrollMode.AUTO, expand=True, horizontal_alignment=ft.CrossAxisAlignment.STRETCH, controls=[])
-    pinned_view = ft.Column(scroll=ft.ScrollMode.AUTO, expand=True, horizontal_alignment=ft.CrossAxisAlignment.STRETCH, controls=[])
+    all_view = ft.ListView(expand=True, spacing=10, controls=[])
+    regular_view = ft.ListView(expand=True, spacing=10, controls=[])
+    pinned_view = ft.ListView(expand=True, spacing=10, controls=[])
 
     pin_filter_buttongroup = ft.Row(spacing=3, controls=[
         ft.Button(elevation=0, icon=ft.Icons.CLEAR_ALL_ROUNDED, content=ft.Text(tr("All"), font_family="MaterialRoundedLight", size=14), height=40, color=ft.Colors.INVERSE_SURFACE, bgcolor=ft.Colors.SECONDARY_CONTAINER, style=ft.ButtonStyle(shape=ft.StadiumBorder()), on_click=lambda e: on_buttongroup_change(e)),
