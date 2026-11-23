@@ -19,6 +19,10 @@ on:
         required: false
       ANDROID_KEY_PASSWORD:
         required: false
+      LINUX_PACKAGE_GPG_PRIVATE_KEY:
+        required: false
+      LINUX_PACKAGE_GPG_PASSPHRASE:
+        required: false
 
 env:
   UV_PYTHON: 3.12
@@ -291,6 +295,63 @@ jobs:
         with:
           name: linux-appimage
           path: QuickeR-linux.AppImage
+
+  build-linux-packages:
+    name: Build .deb and .rpm
+    needs: build-linux
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.sha }}
+
+      - name: Download Linux build
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-build
+          path: dl
+
+      - name: Unpack build
+        run: |
+          mkdir -p build/linux
+          unzip -q dl/QuickeR-linux.zip -d build/linux
+
+      - name: Install nfpm
+        run: |
+          NFPM_VERSION=2.41.0
+          curl -fsSL "https://github.com/goreleaser/nfpm/releases/download/v${NFPM_VERSION}/nfpm_${NFPM_VERSION}_Linux_x86_64.tar.gz" | sudo tar -xz -C /usr/local/bin nfpm
+          nfpm --version
+
+      - name: Prepare signing key
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.LINUX_PACKAGE_GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.LINUX_PACKAGE_GPG_PASSPHRASE }}
+        run: |
+          # Packages are signed only when a key is configured; without one they
+          # are still built, just unsigned.
+          mkdir -p out
+          if [ -z "$GPG_PRIVATE_KEY" ]; then
+            echo "::warning::LINUX_PACKAGE_GPG_PRIVATE_KEY is not set, the .deb/.rpm packages will be unsigned."
+            exit 0
+          fi
+          printf '%s\n' "$GPG_PRIVATE_KEY" > "$RUNNER_TEMP/signing-key.asc"
+          # Also publish the matching public key so users can verify downloads.
+          export GNUPGHOME=$(mktemp -d)
+          printf '%s\n' "$GPG_PRIVATE_KEY" | gpg --batch --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" --import
+          gpg --armor --export > out/QuickeR-signing-key.asc
+          echo "SIGNING_KEY_FILE=$RUNNER_TEMP/signing-key.asc" >> "$GITHUB_ENV"
+          echo "NFPM_PASSPHRASE=$GPG_PASSPHRASE" >> "$GITHUB_ENV"
+
+      - name: Build packages
+        run: |
+          VERSION=$(grep -m1 '^version' pyproject.toml | sed -E 's/version[[:space:]]*=[[:space:]]*"(.*)"/\1/')
+          scripts/build-linux-packages.sh build/linux "$VERSION" out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-packages
+          path: out/*
 
   build-windows-installer:
     name: Build Windows Installer

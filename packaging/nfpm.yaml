@@ -1,0 +1,41 @@
+# nfpm config for the .deb and .rpm packages. Driven by scripts/build-linux-packages.sh,
+# which sets VERSION, BIN_NAME, BUILD_DIR, ICON_PATH, DESKTOP_PATH and (optionally) the key.
+name: quicker
+arch: amd64
+platform: linux
+version: ${VERSION}
+version_schema: none # allow the 4-digit preview versions (x.y.z.N)
+section: utils
+priority: optional
+maintainer: Unax Martinez Llorente <unaxmarti2009@gmail.com>
+description: QR code generator and manager
+homepage: https://github.com/ChoiceZero/QuickeR
+license: MIT
+
+contents:
+  - src: ${BUILD_DIR}/
+    dst: /opt/quicker
+  - src: /opt/quicker/${BIN_NAME}
+    dst: /usr/bin/quicker
+    type: symlink
+  - src: ${DESKTOP_PATH}
+    dst: /usr/share/applications/quicker.desktop
+  - src: ${ICON_PATH}
+    dst: /usr/share/pixmaps/quicker.png
+
+# Flet's Linux runner is a GTK3 app; the rest of its libraries ship in the bundle.
+overrides:
+  deb:
+    depends:
+      - libgtk-3-0
+  rpm:
+    depends:
+      - gtk3
+
+deb:
+  signature:
+    key_file: ${SIGNING_KEY_FILE}
+    type: origin
+rpm:
+  signature:
+    key_file: ${SIGNING_KEY_FILE}

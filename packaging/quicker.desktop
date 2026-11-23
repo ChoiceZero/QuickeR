@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=QuickeR
+Comment=QR code generator and manager
+Exec=quicker
+Icon=quicker
+Type=Application
+Categories=Utility;
+Terminal=false

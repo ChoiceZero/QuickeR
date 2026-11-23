@@ -106,6 +106,7 @@ jobs:
           files: |
             artifacts/linux-build/QuickeR-linux.zip
             artifacts/linux-appimage/QuickeR-linux.AppImage
+            artifacts/linux-packages/*
             artifacts/windows-build/QuickeR-windows.zip
             artifacts/windows-installer/QuickeR-windows-setup.exe
             artifacts/android-build/*.apk
