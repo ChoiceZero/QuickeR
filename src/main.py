@@ -32,11 +32,18 @@ def get_app_storage_dir() -> str:
       (BASE_DIR) is read-only once the app is signed/notarized, and under
       App Sandbox it isn't writable at all, so we never write there.
     - Android: BASE_DIR is already inside the app's private storage, so it's writable.
-    - Linux/Windows: keep it next to the script, as before.
+    - Linux: ~/.local/share/QuickeR (or $XDG_DATA_HOME). AppImage, .deb and
+      .rpm installs run from a read-only location (squashfs mount / /usr).
+    - Windows: keep it next to the script, as before.
     """
     system = platform.system()
     if system == "Darwin":
         path = Path.home() / "Library" / "Application Support" / "QuickeR"
+        path.mkdir(parents=True, exist_ok=True)
+        return str(path)
+    elif system == "Linux" and not os.environ.get("ANDROID_DATA"):
+        base = os.environ.get("XDG_DATA_HOME") or str(Path.home() / ".local" / "share")
+        path = Path(base) / "QuickeR"
         path.mkdir(parents=True, exist_ok=True)
         return str(path)
     else:
