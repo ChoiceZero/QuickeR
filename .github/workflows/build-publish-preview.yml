@@ -54,6 +54,7 @@ jobs:
     uses: ./.github/workflows/build.yml
     with:
       sha: ${{ needs.bump-version.outputs.sha }}
+    secrets: inherit
 
   release:
     name: Publish pre-release
