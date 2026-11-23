@@ -29,6 +29,7 @@ QuickeR is a platform that lets you create QR codes but without accounts, limits
 | Email                         | ✅        |
 | Location                      | ✅        |
 | Event                         | ✅        |
+| Contact (vCard)               | ✅        |
 
 - Allows to place logos in the center of the QR.
 - Allows to change the colors of the QRs.

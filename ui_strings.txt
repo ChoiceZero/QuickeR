@@ -99,6 +99,13 @@ Preset message
 Phone number
 Latitude
 Longitude
+Full name
+Organization
+Job title
+Email address
+Website
+Address
+Note
 Content
 Day: {date} Time: {time}
 Failed to unpack, raw content shown
@@ -115,6 +122,7 @@ Phone
 Location
 SMS
 Event
+Contact
 Error correction level
 L (7%)
 M (15%)
@@ -144,6 +152,21 @@ Date period
 Pick date range
 Pick start time
 Pick end time
+Name
+A first or last name is required. Every other field is optional.
+First name
+Last name
+Work
+Organization (optional)
+Job title (optional)
+Phone number (optional)
+Email and website
+Email address (optional)
+Website (optional)
+Street (optional)
+City (optional)
+Postal code (optional)
+Country (optional)
 Enter URL or text
 Enter URL or text here
 Customization
