@@ -139,6 +139,122 @@ def normalize_picker_date(dt):
         dt = dt.replace(tzinfo=datetime.timezone.utc)
     return dt.astimezone().date()
 
+# ---------------------------------------------------------------------------
+# vCard (contact) helpers
+# ---------------------------------------------------------------------------
+
+def is_vcard(text):
+    return (text or "").lstrip().upper().startswith("BEGIN:VCARD")
+
+
+def vcard_escape(value):
+    """Escapes a vCard TEXT value (RFC 2426 / 6350): \\ ; , and newlines."""
+    value = (value or "").strip()
+    return (
+        value.replace("\\", "\\\\")
+        .replace(";", "\\;")
+        .replace(",", "\\,")
+        .replace("\r\n", "\\n")
+        .replace("\n", "\\n")
+        .replace("\r", "\\n")
+    )
+
+
+def vcard_unescape(value):
+    return re.sub(r"\\(.)", lambda m: "\n" if m.group(1) in "nN" else m.group(1), value or "", flags=re.DOTALL)
+
+
+def vcard_split(value, sep=";"):
+    """Splits a structured vCard value on `sep`, ignoring escaped separators."""
+    parts, current, i = [], [], 0
+    while i < len(value):
+        ch = value[i]
+        if ch == "\\" and i + 1 < len(value):
+            current.append(value[i:i + 2])
+            i += 2
+            continue
+        if ch == sep:
+            parts.append("".join(current))
+            current = []
+        else:
+            current.append(ch)
+        i += 1
+    parts.append("".join(current))
+    return parts
+
+
+def build_vcard(first, last, org, job_title, phone, email, website, street, city, postal, country):
+    """Builds a vCard 3.0 string. Empty optional fields are omitted."""
+    first, last = (first or "").strip(), (last or "").strip()
+    full_name = " ".join(p for p in (first, last) if p)
+    lines = [
+        "BEGIN:VCARD",
+        "VERSION:3.0",
+        f"N:{vcard_escape(last)};{vcard_escape(first)};;;",
+        f"FN:{vcard_escape(full_name)}",
+    ]
+    if (org or "").strip():
+        lines.append(f"ORG:{vcard_escape(org)}")
+    if (job_title or "").strip():
+        lines.append(f"TITLE:{vcard_escape(job_title)}")
+    if (phone or "").strip():
+        lines.append(f"TEL;TYPE=CELL:{phone.strip()}")
+    if (email or "").strip():
+        lines.append(f"EMAIL;TYPE=INTERNET:{email.strip()}")
+    if (website or "").strip():
+        lines.append(f"URL:{website.strip()}")
+    if any((v or "").strip() for v in (street, city, postal, country)):
+        lines.append(
+            f"ADR;TYPE=HOME:;;{vcard_escape(street)};{vcard_escape(city)};;{vcard_escape(postal)};{vcard_escape(country)}"
+        )
+    lines.append("END:VCARD")
+    return "\r\n".join(lines)
+
+
+def parse_vcard(text):
+    """Parses a vCard (2.1, 3.0 or 4.0) into a dict with the fields QuickeR
+    displays: name, org, title, phones, emails, urls, address, note.
+    Tolerates folded lines, property groups (item1.TEL) and parameters."""
+    unfolded = re.sub(r"\r?\n[ \t]", "", text or "")
+    props = []
+    for line in re.split(r"\r\n|\n|\r", unfolded):
+        if ":" not in line:
+            continue
+        head, value = line.split(":", 1)
+        name = head.split(";")[0].split(".")[-1].strip().upper()
+        props.append((name, value.strip()))
+
+    contact = {"name": "", "org": "", "title": "", "phones": [], "emails": [], "urls": [], "address": "", "note": ""}
+    structured_name = ""
+    for name, value in props:
+        if name == "FN" and not contact["name"]:
+            contact["name"] = vcard_unescape(value).strip()
+        elif name == "N" and not structured_name:
+            parts = (vcard_split(value) + [""] * 5)[:5]  # family;given;additional;prefix;suffix
+            family, given, additional, prefix, suffix = (vcard_unescape(p).strip() for p in parts)
+            structured_name = " ".join(p for p in (prefix, given, additional, family, suffix) if p)
+        elif name == "ORG" and not contact["org"]:
+            contact["org"] = ", ".join(p for p in (vcard_unescape(x).strip() for x in vcard_split(value)) if p)
+        elif name == "TITLE" and not contact["title"]:
+            contact["title"] = vcard_unescape(value).strip()
+        elif name == "TEL" and value:
+            contact["phones"].append(vcard_unescape(value).strip())
+        elif name == "EMAIL" and value:
+            contact["emails"].append(vcard_unescape(value).strip())
+        elif name == "URL" and value:
+            contact["urls"].append(value)
+        elif name == "ADR" and not contact["address"]:
+            parts = (vcard_split(value) + [""] * 7)[:7]  # pobox;ext;street;locality;region;postal;country
+            pobox, ext, street, locality, region, postal, country = (vcard_unescape(p).strip() for p in parts)
+            city_line = " ".join(p for p in (postal, locality) if p)
+            contact["address"] = ", ".join(p for p in (pobox, ext, street, city_line, region, country) if p)
+        elif name == "NOTE" and not contact["note"]:
+            contact["note"] = vcard_unescape(value).strip()
+    if not contact["name"]:
+        contact["name"] = structured_name
+    return contact
+
+
 def try_decode_with_preprocessing(image):
     """Tries to decode a QR code by applying several preprocessing steps.
     Returns an empty string if none of them work (never None)."""
@@ -459,7 +575,10 @@ class QRCodes:
 
     def _leading_icon_and_name(self):
         url = self.url or ""
-        if "WIFI:S:" in url:
+        if is_vcard(url):
+            name = parse_vcard(url)["name"] or "Contact"
+            icon = ft.Icons.CONTACT_PAGE_ROUNDED
+        elif "WIFI:S:" in url:
             name = url.split(":")[2].split(";")[0]
             icon = ft.Icons.WIFI_ROUNDED
         elif "BEGIN:VCALENDAR" in url:
@@ -924,10 +1043,70 @@ class QRCodes:
         self.qrpath = get_qr_image_path(self.qr_id)
         self.display_qr(False)
         #self.clean_bs_up(self.details_bs)
+    def _detail_tile(self, icon, value, label, top=8, bottom=8):
+        """One row of the details view: icon, value, caption and a copy button."""
+        return ft.Container(
+            bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
+            width=600,
+            align=ft.Alignment.CENTER,
+            padding=20,
+            border_radius=ft.BorderRadius.only(top_left=top, top_right=top, bottom_left=bottom, bottom_right=bottom),
+            content=ft.Row(
+                controls=[
+                    ft.IconButton(
+                        disabled=True,
+                        icon=icon,
+                        style=ft.ButtonStyle(
+                            shape=ft.CircleBorder(),
+                            padding=10,
+                            bgcolor=ft.Colors.SECONDARY_CONTAINER,
+                            icon_color=ft.Colors.PRIMARY,
+                            icon_size=20,
+                        ),
+                    ),
+                    ft.Column(spacing=-3, expand=True, controls=[
+                        ft.Text(value=value, size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                        ft.Text(value=label, size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                    ]),
+                    self.copy_content_btn(value),
+                ]
+            ),
+        )
+
     def data_unpacker(self):
         url = self.url or ""
         try:
-            if "WIFI:S:" in url:
+            if is_vcard(url):
+                contact = parse_vcard(url)
+                rows = []
+                if contact["name"]:
+                    rows.append((ft.Icons.PERSON_ROUNDED, contact["name"], "Full name"))
+                if contact["org"]:
+                    rows.append((ft.Icons.BUSINESS_ROUNDED, contact["org"], "Organization"))
+                if contact["title"]:
+                    rows.append((ft.Icons.BADGE_ROUNDED, contact["title"], "Job title"))
+                rows += [(ft.Icons.CALL_ROUNDED, v, "Phone number") for v in contact["phones"]]
+                rows += [(ft.Icons.EMAIL_ROUNDED, v, "Email address") for v in contact["emails"]]
+                rows += [(ft.Icons.LANGUAGE_ROUNDED, v, "Website") for v in contact["urls"]]
+                if contact["address"]:
+                    rows.append((ft.Icons.HOME_ROUNDED, contact["address"], "Address"))
+                if contact["note"]:
+                    rows.append((ft.Icons.SHORT_TEXT_ROUNDED, contact["note"], "Note"))
+                if not rows:
+                    raise ValueError("No contact details found in the vCard")
+                layout = ft.Column(
+                    spacing=3,
+                    tight=True,
+                    controls=[
+                        self._detail_tile(
+                            icon, value, label,
+                            top=30 if i == 0 else 8,
+                            bottom=30 if i == len(rows) - 1 else 8,
+                        )
+                        for i, (icon, value, label) in enumerate(rows)
+                    ],
+                )
+            elif "WIFI:S:" in url:
                 if "T:nopass" in url:
                     layout = ft.Column(
                         spacing=3,
@@ -3456,6 +3635,9 @@ def main(page: ft.Page):
         elif qr_type_dropdown.value == "Location":
             if not location_lat.value or not location_lng.value:
                 return False
+        elif qr_type_dropdown.value == "Contact":
+            if not contact_first_name.value.strip() and not contact_last_name.value.strip():
+                return False
         elif qr_type_dropdown.value == "Event":
             if not event_title.value or not event_location.value or not date_picker.start_value or not date_picker.end_value or not start_time_picker.value or not end_time_picker.value:
                 return False
@@ -3553,7 +3735,7 @@ def main(page: ft.Page):
                 wifi_name, tag_input, wifi_password, qr_url_input_field, email_address, 
                 email_subject, email_body, phone_prefix, phone_number, sms_prefix, 
                 sms_number, sms_message, location_lat, location_lng, event_title, 
-                event_location, start_time_picker, end_time_picker
+                event_location, start_time_picker, end_time_picker, *contact_fields
                 ]:
                 item.value = ""
         page.update()
@@ -3603,14 +3785,15 @@ def main(page: ft.Page):
         for area in [
             wifi_area, input_row, email_general_content, email_adv_content,
             phone_general_content, sms_general_content, location_general_content,
-            event_general_content, date_picker_button,
+            event_general_content, date_picker_button, contact_general_content,
         ]:
             area.visible = False
 
         for field in [
             wifi_name, wifi_password, email_address, email_subject, email_body,
             phone_prefix, phone_number, sms_prefix, sms_number, sms_message,
-            location_lat, location_lng, event_title, event_location, qr_url_input_field
+            location_lat, location_lng, event_title, event_location, qr_url_input_field,
+            *contact_fields,
         ]:
             field.value = ""
 
@@ -3632,6 +3815,8 @@ def main(page: ft.Page):
         elif selected == "Event":
             event_general_content.visible = True
             date_picker_button.visible = True
+        elif selected == "Contact":
+            contact_general_content.visible = True
 
         prop_changed()
         page.update()
@@ -3685,6 +3870,20 @@ def main(page: ft.Page):
 
         elif qr_type_dropdown.value == "Location":
             qr_content["content"] = f"geo:{location_lat.value},{location_lng.value}"
+            display_preview_qr(qr_content["content"], color_rgb_1, color_rgb_2, error_correction)
+
+        elif qr_type_dropdown.value == "Contact":
+            phone = ""
+            if contact_phone_number.value.strip():
+                prefix = contact_phone_prefix.value.strip()
+                phone = f"+{prefix}{contact_phone_number.value.strip()}" if prefix else contact_phone_number.value.strip()
+            qr_content["content"] = build_vcard(
+                contact_first_name.value, contact_last_name.value,
+                contact_org.value, contact_job_title.value, phone,
+                contact_email.value, contact_website.value,
+                contact_street.value, contact_city.value,
+                contact_postal.value, contact_country.value,
+            )
             display_preview_qr(qr_content["content"], color_rgb_1, color_rgb_2, error_correction)
 
         elif qr_type_dropdown.value == "Event":
@@ -3745,6 +3944,7 @@ def main(page: ft.Page):
             ft.DropdownOption(text="Location", leading_icon=ft.Icons.PIN_DROP_ROUNDED),
             ft.DropdownOption(text="SMS", leading_icon=ft.Icons.MESSAGE_ROUNDED),
             ft.DropdownOption(text="Event", leading_icon=ft.Icons.STAR_BORDER_ROUNDED),
+            ft.DropdownOption(text="Contact", leading_icon=ft.Icons.CONTACT_PAGE_ROUNDED),
         ],
     )
 
@@ -3881,6 +4081,58 @@ def main(page: ft.Page):
         ft.Row(wrap=True, alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[date_picker_button, start_time_picker_button, end_time_picker_button]),
     ])
 
+    # Contact (vCard)
+    contact_first_name = ft.TextField(expand=True, border_width=0, hint_text="First name", on_change=lambda e: prop_changed())
+    contact_last_name = ft.TextField(expand=True, border_width=0, hint_text="Last name", on_change=lambda e: prop_changed())
+    contact_org = ft.TextField(expand=True, border_width=0, hint_text="Organization (optional)", on_change=lambda e: prop_changed())
+    contact_job_title = ft.TextField(expand=True, border_width=0, hint_text="Job title (optional)", on_change=lambda e: prop_changed())
+    contact_phone_prefix = ft.TextField(border_width=0, hint_text="123", width=80, max_length=4, counter=ft.Container(), keyboard_type=ft.KeyboardType.NUMBER, on_change=lambda e: prop_changed())
+    contact_phone_number = ft.TextField(expand=True, border_width=0, hint_text="Phone number (optional)", keyboard_type=ft.KeyboardType.NUMBER, on_change=lambda e: prop_changed())
+    contact_email = ft.TextField(expand=True, border_width=0, hint_text="Email address (optional)", keyboard_type=ft.KeyboardType.EMAIL, on_change=lambda e: prop_changed())
+    contact_website = ft.TextField(expand=True, border_width=0, hint_text="Website (optional)", keyboard_type=ft.KeyboardType.URL, on_change=lambda e: prop_changed())
+    contact_street = ft.TextField(expand=True, border_width=0, hint_text="Street (optional)", on_change=lambda e: prop_changed())
+    contact_city = ft.TextField(expand=True, border_width=0, hint_text="City (optional)", on_change=lambda e: prop_changed())
+    contact_postal = ft.TextField(expand=True, border_width=0, hint_text="Postal code (optional)", on_change=lambda e: prop_changed())
+    contact_country = ft.TextField(expand=True, border_width=0, hint_text="Country (optional)", on_change=lambda e: prop_changed())
+    contact_fields = [
+        contact_first_name, contact_last_name, contact_org, contact_job_title,
+        contact_phone_prefix, contact_phone_number, contact_email, contact_website,
+        contact_street, contact_city, contact_postal, contact_country,
+    ]
+    contact_general_content = ft.Column(visible=False, controls=[
+        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.PERSON_ROUNDED), ft.Text(value="Name", size=20)]),
+        ft.Container(
+            content=ft.Row(tight=True, margin=ft.Margin.only(right=7), controls=[
+                ft.Icon(icon=ft.Icons.INFO_OUTLINE_ROUNDED, color=ft.Colors.INVERSE_SURFACE),
+                ft.Container(expand=True, content=ft.Text(value="A first or last name is required. Every other field is optional.", size=16, color=ft.Colors.INVERSE_SURFACE)),
+            ]),
+            padding=15, bgcolor=ft.Colors.SECONDARY_CONTAINER, border_radius=30,
+            margin=ft.Margin.only(left=0, right=0, top=5, bottom=5),
+        ),
+        ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=contact_first_name),
+        ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=contact_last_name),
+        ft.Divider(thickness=0.2, color=ft.Colors.GREY_400),
+        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.BUSINESS_ROUNDED), ft.Text(value="Work", size=20)]),
+        ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=contact_org),
+        ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=contact_job_title),
+        ft.Divider(thickness=0.2, color=ft.Colors.GREY_400),
+        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.CALL_ROUNDED), ft.Text(value="Phone number", size=20)]),
+        ft.Row(controls=[
+            ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=ft.Row(tight=True, margin=ft.Margin(right=-15), controls=[ft.Text("+", margin=ft.Margin(left=15, right=-20), size=15), contact_phone_prefix])),
+            ft.Container(border_radius=10, expand=True, bgcolor=ft.Colors.SURFACE_CONTAINER, content=contact_phone_number),
+        ]),
+        ft.Divider(thickness=0.2, color=ft.Colors.GREY_400),
+        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.EMAIL_ROUNDED), ft.Text(value="Email and website", size=20)]),
+        ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=contact_email),
+        ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=contact_website),
+        ft.Divider(thickness=0.2, color=ft.Colors.GREY_400),
+        ft.Row(alignment=ft.MainAxisAlignment.START, controls=[ft.Icon(icon=ft.Icons.HOME_ROUNDED), ft.Text(value="Address", size=20)]),
+        ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=contact_street),
+        ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=contact_city),
+        ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=contact_postal),
+        ft.Container(border_radius=10, bgcolor=ft.Colors.SURFACE_CONTAINER, content=contact_country),
+    ])
+
     qr_url_input_field = ft.TextField(expand=True, border_width=0, hint_text="Enter URL or text", on_change=lambda e: prop_changed())
     error_correction_dropdown = ft.Dropdown(
         border_radius=50, fill_color=ft.Colors.SURFACE_CONTAINER_LOW, filled=True, value="M (15%)", border_width=0,
@@ -3958,6 +4210,7 @@ def main(page: ft.Page):
                     sms_general_content,
                     location_general_content,
                     event_general_content,
+                    contact_general_content,
                     ft.Container(height=0.2, bgcolor=ft.Colors.INVERSE_SURFACE, margin=ft.Margin.only(left=0, right=0, top=0, bottom=5)),
                     ft.Row(wrap=True, alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[
                         ft.Row(controls=[ft.Icon(icon=ft.Icons.CHECK_CIRCLE_OUTLINE_ROUNDED), ft.Text(value="Error correction level", size=20)]),
