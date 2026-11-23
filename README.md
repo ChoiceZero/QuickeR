@@ -66,6 +66,9 @@ QuickeR is a platform that lets you create QR codes but without accounts, limits
 
 Updates require every release to be signed with the same key (set by the `ANDROID_KEYSTORE_*` repository secrets).
 
+>[!NOTE]
+>Builds up to v1.1.2 were each signed with a different throwaway key, so Android refuses to update over them. If the install fails with a conflict, uninstall the old QuickeR once; every build after that is signed with the same key and updates in place.
+
 ## Translations
 
 All UI texts live in [`src/translations.json`](src/translations.json). The English text is the key, and each entry holds the translation for every other language (a missing translation falls back to English). In the code, texts are written as `tr("Save QR")`, and texts with variables as `tr("Saved to {path}", path=path)`.
