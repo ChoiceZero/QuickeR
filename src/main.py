@@ -17,6 +17,8 @@ import urllib.parse
 import datetime
 import numpy as np
 import zipfile
+import re
+import urllib.request
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ASSET_DIR = os.path.join(BASE_DIR, "assets")
@@ -57,12 +59,14 @@ if not os.path.exists(SETTINGS_PATH):
             "Theme_color": "#ff1e88e5",
             "Appearance": "System",
             "First_run": "True",
-            "GridMode": "True"
+            "GridMode": "True",
+            "Check_updates": True
         }
         
         f.write(json.dumps(DEFAULT_SETTINGS))
 
 APP_VERSION = "__VERSION__"
+RELEASES_API_URL = "https://api.github.com/repos/ChoiceZero/QuickeR/releases?per_page=20"
 
 ERROR_CORRECTION_MAP = {
     "L (7%)": qrcode.constants.ERROR_CORRECT_L,
@@ -81,6 +85,35 @@ def _same_day_as_last(controls, label_value):
         if isinstance(c, ft.Text):
             return c.value == label_value
     return False
+
+def parse_version(version_str):
+    """Turns 'v1.2.3' (or '1.2.3.4') into a tuple of ints. Returns None if it isn't a version."""
+    match = re.match(r"^v?(\d+(?:\.\d+)*)", str(version_str).strip())
+    if not match:
+        return None
+    return tuple(int(part) for part in match.group(1).split("."))
+
+def fetch_latest_stable_release():
+    """Returns {"name", "version", "url"} for the newest stable release (no drafts, pre-releases
+    or releases with "Beta" in the name), or None if it can't be determined."""
+    request = urllib.request.Request(
+        RELEASES_API_URL,
+        headers={"Accept": "application/vnd.github+json", "User-Agent": "QuickeR-update-check"},
+    )
+    with urllib.request.urlopen(request, timeout=10) as response:
+        releases = json.load(response)
+
+    best = None
+    for release in releases:
+        name = release.get("name") or release.get("tag_name") or ""
+        if release.get("draft") or release.get("prerelease") or "beta" in name.lower():
+            continue
+        version = parse_version(release.get("tag_name", ""))
+        if version is None:
+            continue
+        if best is None or version > best[0]:
+            best = (version, {"name": name, "version": release.get("tag_name", "").lstrip("v"), "url": release.get("html_url")})
+    return best[1] if best else None
 
 def hex_to_rgba(color_str):
     if color_str.startswith("#"):
@@ -3024,6 +3057,40 @@ def main(page: ft.Page):
     async def open_url(url_to_open, target: ft.UrlTarget):
         await ft.UrlLauncher().launch_url(ft.Url(url=url_to_open, target=target))
 
+    async def check_for_updates():
+        data = json_reader()
+        if data is None or data.get("Check_updates", True) in (False, "False", "false"):
+            return
+        current = parse_version(APP_VERSION)
+        if current is None:  # dev build (placeholder not replaced)
+            return
+        try:
+            latest = await asyncio.to_thread(fetch_latest_stable_release)
+        except Exception as ex:
+            print(f"Update check failed: {ex}")
+            return
+        if not latest or not latest["url"]:
+            return
+        latest_version = parse_version(latest["version"])
+        if latest_version is None or latest_version <= current:
+            return
+        page.show_dialog(ft.AlertDialog(
+            title=ft.Row(controls=[ft.Icon(icon=ft.Icons.SYSTEM_UPDATE_ROUNDED), ft.Text(value="Update available", size=20)]),
+            content=ft.Text(f"A new version of QuickeR is available: v{latest['version']} (you have v{APP_VERSION}). Do you want to download it?"),
+            actions=[
+                ft.TextButton("Later", on_click=lambda e: page.pop_dialog()),
+                ft.TextButton("Download", on_click=lambda e: (page.pop_dialog(), asyncio.ensure_future(open_url(latest["url"], "BLANK")))),
+            ],
+            actions_alignment="end",
+        ))
+
+    def update_check_changed(value):
+        data = json_reader()
+        if data is None:
+            return
+        data["Check_updates"] = value
+        json_writer(data)
+
     async def copy_text_to_clipboard(text):
         await ft.Clipboard().set(text)
         page.show_dialog(ft.AlertDialog(
@@ -4086,6 +4153,12 @@ def main(page: ft.Page):
     # Settings view
     # -------------------------------------------------------------
 
+    _initial_settings = json_reader() or {}
+    update_check_switch = ft.Switch(
+        value=_initial_settings.get("Check_updates", True) not in (False, "False", "false"),
+        on_change=lambda e: update_check_changed(e.control.value),
+    )
+
     settings_view = ft.Container(
         bgcolor=ft.Colors.SURFACE,
         offset=ft.Offset(1.1, 0),
@@ -4407,6 +4480,34 @@ def main(page: ft.Page):
                         ])],
                     ),
                     ft.Container(
+                        bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
+                        margin=ft.Margin.only(bottom=5,top=-12),
+                        width=600,
+                        align=ft.Alignment.CENTER,
+                        padding=20,
+                        border_radius=8,
+                        content=ft.Row(
+                            controls=[
+                                ft.IconButton(
+                                    disabled=True,
+                                    icon=ft.Icons.SYSTEM_UPDATE_ROUNDED,
+                                    style=ft.ButtonStyle(
+                                        shape=ft.CircleBorder(),
+                                        padding=10,
+                                        bgcolor=ft.Colors.SECONDARY_CONTAINER,
+                                        icon_color=ft.Colors.PRIMARY,
+                                        icon_size=20
+                                    )
+                                ),
+                                ft.Column(spacing=-3,expand=True,controls=[
+                                    ft.Text(value="Updates", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                    ft.Text(value="Check for new stable releases on startup", size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                                ]),
+                                update_check_switch,
+                            ]
+                        ),
+                    ),
+                    ft.Container(
                         bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
                         margin=ft.Margin.only(bottom=5,top=-12),
                         width=600,
@@ -4652,6 +4753,7 @@ def main(page: ft.Page):
     page.remove(loading_screen)
 
     render_tutorial()
+    asyncio.ensure_future(check_for_updates())
 
     load_qrs()
     theme_init_loader()
