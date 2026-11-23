@@ -31,18 +31,26 @@ def get_app_storage_dir() -> str:
     - macOS: ~/Library/Application Support/QuickeR. The app bundle dir
       (BASE_DIR) is read-only once the app is signed/notarized, and under
       App Sandbox it isn't writable at all, so we never write there.
-    - Android: BASE_DIR is already inside the app's private storage, so it's writable.
+    - Android: Flet's FLET_APP_STORAGE_DATA (<files>/data). BASE_DIR is writable
+      but lives in the unpacked app dir, which is deleted and re-extracted on
+      every app update, so anything stored there would be wiped.
     - Linux: ~/.local/share/QuickeR (or $XDG_DATA_HOME). AppImage, .deb and
       .rpm installs run from a read-only location (squashfs mount / /usr).
     - Windows: %LOCALAPPDATA%\\QuickeR. The installer puts the app in
       Program Files, which standard users can't write to.
     """
     system = platform.system()
+    if system == "Android" or os.environ.get("ANDROID_DATA"):
+        data_dir = os.environ.get("FLET_APP_STORAGE_DATA")
+        if data_dir:
+            os.makedirs(data_dir, exist_ok=True)
+            return data_dir
+        return BASE_DIR
     if system == "Darwin":
         path = Path.home() / "Library" / "Application Support" / "QuickeR"
         path.mkdir(parents=True, exist_ok=True)
         return str(path)
-    elif system == "Linux" and not os.environ.get("ANDROID_DATA"):
+    elif system == "Linux":
         base = os.environ.get("XDG_DATA_HOME") or str(Path.home() / ".local" / "share")
         path = Path(base) / "QuickeR"
         path.mkdir(parents=True, exist_ok=True)
