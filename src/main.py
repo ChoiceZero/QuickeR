@@ -3284,23 +3284,39 @@ def main(page: ft.Page, show_settings=False):
         json_writer(data)
         appearance_loader()
 
+    def style_appearance_buttons(selected_index):
+        last = len(appearance_setting.controls) - 1
+        for i, button in enumerate(appearance_setting.controls):
+            if i == selected_index:
+                button.bgcolor = ft.Colors.SECONDARY_CONTAINER
+                button.style = ft.ButtonStyle(shape=ft.StadiumBorder())
+                continue
+            button.bgcolor = ft.Colors.SURFACE_CONTAINER
+            if i == 0:
+                radius = ft.BorderRadius.only(top_left=50, top_right=25, bottom_left=50, bottom_right=25)
+            elif i == last:
+                radius = ft.BorderRadius.only(top_left=25, top_right=50, bottom_left=25, bottom_right=50)
+            else:
+                radius = 10
+            button.style = ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=radius))
+
     def appearance_loader():
         read_data = json_reader()
         if not read_data:
             return
         appearance = read_data["Appearance"]
         if appearance == "System":
-            appearance_setting.selected = ["1"]
+            style_appearance_buttons(0)
             brightness = page.platform_brightness
             if brightness == ft.Brightness.DARK:
                 page.theme_mode = ft.ThemeMode.DARK
             elif brightness == ft.Brightness.LIGHT:
                 page.theme_mode = ft.ThemeMode.LIGHT
         elif appearance == "Dark":
-            appearance_setting.selected = ["3"]
+            style_appearance_buttons(2)
             page.theme_mode = ft.ThemeMode.DARK
         elif appearance == "Light":
-            appearance_setting.selected = ["2"]
+            style_appearance_buttons(1)
             page.theme_mode = ft.ThemeMode.LIGHT
         page.update()
 
@@ -3819,10 +3835,8 @@ def main(page: ft.Page, show_settings=False):
                 item.value = ""
         page.update()
 
-    def on_mode_change(e):
-        segment_value = next(iter(e.control.selected)) if e.control.selected else None
-        if segment_value in ("1", "2", "3"):
-            appearance_changer(int(segment_value))
+    def on_mode_change(appearance_id):
+        appearance_changer(appearance_id)
 
     async def pick_logo():
         if logo_picker_ref["instance"] is None:
@@ -4001,14 +4015,11 @@ def main(page: ft.Page, show_settings=False):
         ]
     )
 
-    appearance_setting = ft.SegmentedButton(
-        selected=["1"], on_change=lambda e: on_mode_change(e), show_selected_icon=True,
-        segments=[
-            ft.Segment(value="1", label=ft.Text(tr("System")), icon=ft.Icon(ft.Icons.MONITOR)),
-            ft.Segment(value="2", label=ft.Text(tr("Light")), icon=ft.Icon(ft.Icons.WB_SUNNY_ROUNDED)),
-            ft.Segment(value="3", label=ft.Text(tr("Dark")), icon=ft.Icon(ft.Icons.DARK_MODE_ROUNDED)),
-        ],
-    )
+    appearance_setting = ft.Row(spacing=3, controls=[
+        ft.Button(elevation=0, icon=ft.Icons.MONITOR, content=ft.Text(tr("System"), font_family="MaterialRoundedLight", size=14), height=40, color=ft.Colors.INVERSE_SURFACE, bgcolor=ft.Colors.SECONDARY_CONTAINER, style=ft.ButtonStyle(shape=ft.StadiumBorder()), on_click=lambda e: on_mode_change(1)),
+        ft.Button(elevation=0, icon=ft.Icons.WB_SUNNY_ROUNDED, content=ft.Text(tr("Light"), font_family="MaterialRoundedLight", size=14), height=40, color=ft.Colors.INVERSE_SURFACE, bgcolor=ft.Colors.SURFACE_CONTAINER, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)), on_click=lambda e: on_mode_change(2)),
+        ft.Button(elevation=0, icon=ft.Icons.DARK_MODE_ROUNDED, content=ft.Text(tr("Dark"), font_family="MaterialRoundedLight", size=14), height=40, color=ft.Colors.INVERSE_SURFACE, bgcolor=ft.Colors.SURFACE_CONTAINER, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=ft.BorderRadius.only(top_left=25, top_right=50, bottom_left=25, bottom_right=50))), on_click=lambda e: on_mode_change(3)),
+    ])
 
     preview_qr_area = ft.Row(controls=[], alignment=ft.MainAxisAlignment.CENTER, expand=False, tight=True)
 
@@ -4671,7 +4682,7 @@ def main(page: ft.Page, show_settings=False):
                                     ft.Row(controls=[ft.Icon(icon=ft.Icons.CODE_ROUNDED, color=ft.Colors.INVERSE_SURFACE), ft.Text(value=tr("Contribute"), size=25, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD))]),
                                     ft.Text(value=tr("Contribute code or report bugs in order to improve the project as a community effort."), size=15, color=ft.Colors.INVERSE_SURFACE),
                                     ft.Row(wrap=True,alignment="center", controls=ft.Row(wrap=True,tight=True, controls=[
-                                        ft.Button(margin=ft.Margin.only(top=10), content=ft.Text(value="QuickeR-Web"), icon=ft.Image(os.path.join(ASSET_DIR, "github-white-icon.webp"), color=ft.Colors.SURFACE, width=20, height=20), on_click=lambda e: asyncio.ensure_future(open_url("https://github.com/ChoiceZero/QuickeR", "BLANK")), style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=10, bgcolor=ft.Colors.PRIMARY, color=ft.Colors.SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER)),
+                                        ft.Button(margin=ft.Margin.only(top=10), content=ft.Text(value="QuickeR repo"), icon=ft.Image(os.path.join(ASSET_DIR, "github-white-icon.webp"), color=ft.Colors.SURFACE, width=20, height=20), on_click=lambda e: asyncio.ensure_future(open_url("https://github.com/ChoiceZero/QuickeR", "BLANK")), style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=10, bgcolor=ft.Colors.PRIMARY, color=ft.Colors.SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER)),
                                         ft.Button(content=ft.Text(value=tr("Report a bug")), icon=ft.Icons.BUG_REPORT_ROUNDED, margin=ft.Margin.only(top=10), on_click=lambda e: asyncio.ensure_future(open_url("https://github.com/ChoiceZero/QuickeR/issues", "BLANK")), style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=10, bgcolor=ft.Colors.PRIMARY, color=ft.Colors.SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER)),
                                     ])),
                                 ]),
