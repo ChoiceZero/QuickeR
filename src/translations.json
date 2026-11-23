@@ -1,0 +1,2086 @@
+{
+  "_comment": "UI translations. Keys are the English texts used in main.py via tr(). English is the fallback when a language entry is missing. Placeholders like {name} must be kept.",
+  "languages": {
+    "en": "English",
+    "es": "Español",
+    "eu": "Euskara",
+    "fr": "Français",
+    "de": "Deutsch",
+    "pt": "Português",
+    "it": "Italiano"
+  },
+  "strings": {
+    "- Change error correction level           \nOn the 'Customization' section:\n- Add a custom logo\n- Change the QR's colors": {
+      "es": "- Cambia el nivel de corrección de errores\nEn la sección 'Personalización':\n- Añade un logo personalizado\n- Cambia los colores del QR",
+      "eu": "- Aldatu erroreen zuzenketa maila\n'Pertsonalizazioa' atalean:\n- Gehitu logo pertsonalizatu bat\n- Aldatu QRaren koloreak",
+      "fr": "- Modifiez le niveau de correction d'erreurs\nDans la section « Personnalisation » :\n- Ajoutez un logo personnalisé\n- Modifiez les couleurs du QR",
+      "de": "- Fehlerkorrekturstufe ändern\nIm Bereich „Anpassung“:\n- Eigenes Logo hinzufügen\n- Farben des QR-Codes ändern",
+      "pt": "- Altere o nível de correção de erros\nNa seção 'Personalização':\n- Adicione um logotipo personalizado\n- Altere as cores do QR",
+      "it": "- Cambia il livello di correzione degli errori\nNella sezione 'Personalizzazione':\n- Aggiungi un logo personalizzato\n- Cambia i colori del QR"
+    },
+    "- This tutorial": {
+      "es": "- Este tutorial",
+      "eu": "- Tutorial hau",
+      "fr": "- Ce tutoriel",
+      "de": "- Dieses Tutorial",
+      "pt": "- Este tutorial",
+      "it": "- Questo tutorial"
+    },
+    ".STL": {
+      "es": ".STL",
+      "eu": ".STL",
+      "fr": ".STL",
+      "de": ".STL",
+      "pt": ".STL",
+      "it": ".STL"
+    },
+    "1. Click on the '+' button.\n2. Expand the 'Main content' section.\n3. Select the QR code type you want to create.\n4. Enter the required data.": {
+      "es": "1. Pulsa el botón '+'.\n2. Despliega la sección 'Contenido principal'.\n3. Selecciona el tipo de código QR que quieres crear.\n4. Introduce los datos necesarios.",
+      "eu": "1. Sakatu '+' botoia.\n2. Zabaldu 'Eduki nagusia' atala.\n3. Hautatu sortu nahi duzun QR kode mota.\n4. Sartu beharrezko datuak.",
+      "fr": "1. Appuyez sur le bouton « + ».\n2. Développez la section « Contenu principal ».\n3. Sélectionnez le type de code QR à créer.\n4. Saisissez les données requises.",
+      "de": "1. Tippe auf die Schaltfläche „+“.\n2. Öffne den Bereich „Hauptinhalt“.\n3. Wähle den QR-Code-Typ, den du erstellen möchtest.\n4. Gib die erforderlichen Daten ein.",
+      "pt": "1. Toque no botão '+'.\n2. Expanda a seção 'Conteúdo principal'.\n3. Selecione o tipo de código QR que deseja criar.\n4. Digite os dados necessários.",
+      "it": "1. Tocca il pulsante '+'.\n2. Espandi la sezione 'Contenuto principale'.\n3. Seleziona il tipo di codice QR che vuoi creare.\n4. Inserisci i dati richiesti."
+    },
+    "5. Click on 'Save' button.": {
+      "es": "5. Pulsa el botón 'Guardar'.",
+      "eu": "5. Sakatu 'Gorde' botoia.",
+      "fr": "5. Appuyez sur le bouton « Enregistrer ».",
+      "de": "5. Tippe auf „Speichern“.",
+      "pt": "5. Toque no botão 'Salvar'.",
+      "it": "5. Tocca il pulsante 'Salva'."
+    },
+    "A QR with this tag name already exists": {
+      "es": "Ya existe un QR con este nombre de etiqueta",
+      "eu": "Etiketa-izen hau duen QR bat badago jada",
+      "fr": "Un QR avec ce nom d'étiquette existe déjà",
+      "de": "Ein QR-Code mit diesem Namen existiert bereits",
+      "pt": "Já existe um QR com este nome de etiqueta",
+      "it": "Esiste già un QR con questo nome di etichetta"
+    },
+    "A first or last name is required. Every other field is optional.": {
+      "es": "Se necesita un nombre o un apellido. El resto de campos son opcionales.",
+      "eu": "Izena edo abizena beharrezkoa da. Beste eremu guztiak aukerakoak dira.",
+      "fr": "Un prénom ou un nom est requis. Tous les autres champs sont facultatifs.",
+      "de": "Ein Vor- oder Nachname ist erforderlich. Alle anderen Felder sind optional.",
+      "pt": "É necessário um nome ou sobrenome. Todos os outros campos são opcionais.",
+      "it": "Serve un nome o un cognome. Tutti gli altri campi sono facoltativi."
+    },
+    "A new version of QuickeR is available: v{latest} (you have v{current}). Do you want to download it?": {
+      "es": "Hay una nueva versión de QuickeR disponible: v{latest} (tienes la v{current}). ¿Quieres descargarla?",
+      "eu": "QuickeR-en bertsio berri bat eskuragarri dago: v{latest} (zuk v{current} duzu). Deskargatu nahi duzu?",
+      "fr": "Une nouvelle version de QuickeR est disponible : v{latest} (vous avez la v{current}). Voulez-vous la télécharger ?",
+      "de": "Eine neue Version von QuickeR ist verfügbar: v{latest} (du hast v{current}). Möchtest du sie herunterladen?",
+      "pt": "Uma nova versão do QuickeR está disponível: v{latest} (você tem a v{current}). Deseja baixá-la?",
+      "it": "È disponibile una nuova versione di QuickeR: v{latest} (hai la v{current}). Vuoi scaricarla?"
+    },
+    "About": {
+      "es": "Acerca de",
+      "eu": "Honi buruz",
+      "fr": "À propos",
+      "de": "Über",
+      "pt": "Sobre",
+      "it": "Informazioni"
+    },
+    "Adding an external QR code": {
+      "es": "Añadir un código QR externo",
+      "eu": "Kanpoko QR kode bat gehitzea",
+      "fr": "Ajouter un code QR externe",
+      "de": "Externen QR-Code hinzufügen",
+      "pt": "Adicionar um código QR externo",
+      "it": "Aggiungere un codice QR esterno"
+    },
+    "Address": {
+      "es": "Dirección",
+      "eu": "Helbidea",
+      "fr": "Adresse",
+      "de": "Adresse",
+      "pt": "Endereço",
+      "it": "Indirizzo"
+    },
+    "Advanced options": {
+      "es": "Opciones avanzadas",
+      "eu": "Aukera aurreratuak",
+      "fr": "Options avancées",
+      "de": "Erweiterte Optionen",
+      "pt": "Opções avançadas",
+      "it": "Opzioni avanzate"
+    },
+    "All": {
+      "es": "Todos",
+      "eu": "Guztiak",
+      "fr": "Tous",
+      "de": "Alle",
+      "pt": "Todos",
+      "it": "Tutti"
+    },
+    "All data cleared successfully.": {
+      "es": "Todos los datos se han borrado correctamente.",
+      "eu": "Datu guztiak behar bezala ezabatu dira.",
+      "fr": "Toutes les données ont été effacées avec succès.",
+      "de": "Alle Daten wurden erfolgreich gelöscht.",
+      "pt": "Todos os dados foram apagados com sucesso.",
+      "it": "Tutti i dati sono stati cancellati con successo."
+    },
+    "Android will now ask you where to save the image.\nChoose the 'Pictures', 'DCIM' or 'Camera' folder so it shows up in your gallery app.": {
+      "es": "Android te pedirá ahora dónde guardar la imagen.\nElige la carpeta 'Imágenes', 'DCIM' o 'Cámara' para que aparezca en tu aplicación de galería.",
+      "eu": "Android-ek orain irudia non gorde galdetuko dizu.\nAukeratu 'Argazkiak', 'DCIM' edo 'Kamera' karpeta, zure galeria aplikazioan ager dadin.",
+      "fr": "Android va maintenant vous demander où enregistrer l'image.\nChoisissez le dossier « Images », « DCIM » ou « Appareil photo » pour qu'elle apparaisse dans votre application de galerie.",
+      "de": "Android fragt dich jetzt, wo das Bild gespeichert werden soll.\nWähle den Ordner „Bilder“, „DCIM“ oder „Kamera“, damit es in deiner Galerie-App erscheint.",
+      "pt": "O Android agora vai perguntar onde salvar a imagem.\nEscolha a pasta 'Imagens', 'DCIM' ou 'Câmera' para que ela apareça no seu aplicativo de galeria.",
+      "it": "Android ti chiederà ora dove salvare l'immagine.\nScegli la cartella 'Immagini', 'DCIM' o 'Fotocamera' perché compaia nella tua app Galleria."
+    },
+    "Appearance": {
+      "es": "Apariencia",
+      "eu": "Itxura",
+      "fr": "Apparence",
+      "de": "Erscheinungsbild",
+      "pt": "Aparência",
+      "it": "Aspetto"
+    },
+    "Are you sure you want to clear all data?": {
+      "es": "¿Seguro que quieres borrar todos los datos?",
+      "eu": "Ziur zaude datu guztiak ezabatu nahi dituzula?",
+      "fr": "Voulez-vous vraiment effacer toutes les données ?",
+      "de": "Möchtest du wirklich alle Daten löschen?",
+      "pt": "Tem certeza de que deseja apagar todos os dados?",
+      "it": "Sei sicuro di voler cancellare tutti i dati?"
+    },
+    "Are you sure you want to delete this QR code?": {
+      "es": "¿Seguro que quieres eliminar este código QR?",
+      "eu": "Ziur zaude QR kode hau ezabatu nahi duzula?",
+      "fr": "Voulez-vous vraiment supprimer ce code QR ?",
+      "de": "Möchtest du diesen QR-Code wirklich löschen?",
+      "pt": "Tem certeza de que deseja excluir este código QR?",
+      "it": "Sei sicuro di voler eliminare questo codice QR?"
+    },
+    "As logos take up a big chunk of the QR's area, scanability may be greatly reduced. Thus, error correction is overrided to level H, though no guarantees it will work.": {
+      "es": "Como los logos ocupan una gran parte del área del QR, la capacidad de escaneo puede reducirse mucho. Por ello, la corrección de errores se fuerza al nivel H, aunque no hay garantías de que funcione.",
+      "eu": "Logoek QRaren area handi bat hartzen dutenez, eskaneatzeko gaitasuna asko murriztu daiteke. Horregatik, erroreen zuzenketa H mailara behartzen da, nahiz eta ez dagoen funtzionatuko duenik bermatzen.",
+      "fr": "Les logos occupant une grande partie de la surface du QR, la lisibilité peut être fortement réduite. La correction d'erreurs est donc forcée au niveau H, sans garantie de bon fonctionnement.",
+      "de": "Da Logos einen großen Teil der QR-Fläche einnehmen, kann die Scanbarkeit stark sinken. Deshalb wird die Fehlerkorrektur auf Stufe H gesetzt, eine Garantie für die Funktion gibt es jedoch nicht.",
+      "pt": "Como os logotipos ocupam uma grande parte da área do QR, a capacidade de leitura pode ser bastante reduzida. Por isso, a correção de erros é forçada para o nível H, mas não há garantia de que funcione.",
+      "it": "Poiché i loghi occupano gran parte dell'area del QR, la leggibilità può ridursi molto. Per questo la correzione degli errori viene forzata al livello H, senza garanzia che funzioni."
+    },
+    "Back": {
+      "es": "Atrás",
+      "eu": "Atzera",
+      "fr": "Retour",
+      "de": "Zurück",
+      "pt": "Voltar",
+      "it": "Indietro"
+    },
+    "Background color:": {
+      "es": "Color de fondo:",
+      "eu": "Atzeko planoaren kolorea:",
+      "fr": "Couleur de fond :",
+      "de": "Hintergrundfarbe:",
+      "pt": "Cor de fundo:",
+      "it": "Colore di sfondo:"
+    },
+    "Background:": {
+      "es": "Fondo:",
+      "eu": "Atzeko planoa:",
+      "fr": "Fond :",
+      "de": "Hintergrund:",
+      "pt": "Fundo:",
+      "it": "Sfondo:"
+    },
+    "Body": {
+      "es": "Cuerpo",
+      "eu": "Gorputza",
+      "fr": "Corps du message",
+      "de": "Nachricht",
+      "pt": "Corpo",
+      "it": "Corpo"
+    },
+    "By default, the dark squares of the QR are raised, thus the dark area protrudes.\nInvert this so the light modules are raised and the dark areas are indented instead?": {
+      "es": "De forma predeterminada, los cuadrados oscuros del QR sobresalen, por lo que la zona oscura queda en relieve.\n¿Invertirlo para que sobresalgan los módulos claros y las zonas oscuras queden hundidas?",
+      "eu": "Berez, QRaren koadro ilunak nabarmentzen dira, beraz area iluna irtengo da.\nAlderantzikatu nahi duzu, modulu argiak irten daitezen eta area ilunak hondoratu daitezen?",
+      "fr": "Par défaut, les carrés sombres du QR sont en relief, donc la zone sombre dépasse.\nInverser pour que ce soient les modules clairs qui soient en relief et les zones sombres en creux ?",
+      "de": "Standardmäßig sind die dunklen Quadrate des QR-Codes erhaben, die dunkle Fläche steht also hervor.\nUmkehren, sodass die hellen Module erhaben und die dunklen Flächen vertieft sind?",
+      "pt": "Por padrão, os quadrados escuros do QR ficam em relevo, ou seja, a área escura se projeta.\nInverter para que os módulos claros fiquem em relevo e as áreas escuras fiquem rebaixadas?",
+      "it": "Per impostazione predefinita, i quadrati scuri del QR sono in rilievo, quindi l'area scura sporge.\nInvertire in modo che i moduli chiari siano in rilievo e le aree scure incassate?"
+    },
+    "Cancel": {
+      "es": "Cancelar",
+      "eu": "Utzi",
+      "fr": "Annuler",
+      "de": "Abbrechen",
+      "pt": "Cancelar",
+      "it": "Annulla"
+    },
+    "Check for new stable releases on startup": {
+      "es": "Buscar versiones estables nuevas al iniciar",
+      "eu": "Bilatu bertsio egonkor berriak abiaraztean",
+      "fr": "Rechercher les nouvelles versions stables au démarrage",
+      "de": "Beim Start nach neuen stabilen Versionen suchen",
+      "pt": "Procurar novas versões estáveis ao iniciar",
+      "it": "Cerca nuove versioni stabili all'avvio"
+    },
+    "Check out the web app!": {
+      "es": "¡Echa un vistazo a la aplicación web!",
+      "eu": "Begiratu web aplikazioari!",
+      "fr": "Découvrez l'application web !",
+      "de": "Sieh dir die Web-App an!",
+      "pt": "Confira o aplicativo web!",
+      "it": "Dai un'occhiata all'app web!"
+    },
+    "City (optional)": {
+      "es": "Ciudad (opcional)",
+      "eu": "Hiria (aukerakoa)",
+      "fr": "Ville (facultatif)",
+      "de": "Stadt (optional)",
+      "pt": "Cidade (opcional)",
+      "it": "Città (facoltativo)"
+    },
+    "Clear Data": {
+      "es": "Borrar datos",
+      "eu": "Ezabatu datuak",
+      "fr": "Effacer les données",
+      "de": "Daten löschen",
+      "pt": "Apagar dados",
+      "it": "Cancella dati"
+    },
+    "Clear data": {
+      "es": "Borrar datos",
+      "eu": "Ezabatu datuak",
+      "fr": "Effacer les données",
+      "de": "Daten löschen",
+      "pt": "Apagar dados",
+      "it": "Cancella dati"
+    },
+    "Clearing data...": {
+      "es": "Borrando datos...",
+      "eu": "Datuak ezabatzen...",
+      "fr": "Effacement des données...",
+      "de": "Daten werden gelöscht...",
+      "pt": "Apagando dados...",
+      "it": "Cancellazione dei dati..."
+    },
+    "Click on an item to view details!": {
+      "es": "¡Pulsa un elemento para ver los detalles!",
+      "eu": "Sakatu elementu bat xehetasunak ikusteko!",
+      "fr": "Cliquez sur un élément pour voir les détails !",
+      "de": "Tippe auf einen Eintrag, um Details zu sehen!",
+      "pt": "Toque em um item para ver os detalhes!",
+      "it": "Tocca un elemento per vedere i dettagli!"
+    },
+    "Close": {
+      "es": "Cerrar",
+      "eu": "Itxi",
+      "fr": "Fermer",
+      "de": "Schließen",
+      "pt": "Fechar",
+      "it": "Chiudi"
+    },
+    "Color scheme": {
+      "es": "Esquema de colores",
+      "eu": "Kolore-eskema",
+      "fr": "Palette de couleurs",
+      "de": "Farbschema",
+      "pt": "Esquema de cores",
+      "it": "Schema colori"
+    },
+    "Contact": {
+      "es": "Contacto",
+      "eu": "Kontaktua",
+      "fr": "Contact",
+      "de": "Kontakt",
+      "pt": "Contato",
+      "it": "Contatto"
+    },
+    "Content": {
+      "es": "Contenido",
+      "eu": "Edukia",
+      "fr": "Contenu",
+      "de": "Inhalt",
+      "pt": "Conteúdo",
+      "it": "Contenuto"
+    },
+    "Continue": {
+      "es": "Continuar",
+      "eu": "Jarraitu",
+      "fr": "Continuer",
+      "de": "Fortfahren",
+      "pt": "Continuar",
+      "it": "Continua"
+    },
+    "Contribute": {
+      "es": "Contribuir",
+      "eu": "Lagundu",
+      "fr": "Contribuer",
+      "de": "Mitwirken",
+      "pt": "Contribuir",
+      "it": "Contribuisci"
+    },
+    "Contribute code or report bugs in order to improve the project as a community effort.": {
+      "es": "Aporta código o informa de errores para mejorar el proyecto entre todos.",
+      "eu": "Eman kodea edo jakinarazi akatsak proiektua komunitatearen artean hobetzeko.",
+      "fr": "Contribuez au code ou signalez des bugs pour améliorer le projet ensemble.",
+      "de": "Trage Code bei oder melde Fehler, um das Projekt gemeinsam zu verbessern.",
+      "pt": "Contribua com código ou relate erros para melhorar o projeto em comunidade.",
+      "it": "Contribuisci con il codice o segnala bug per migliorare il progetto insieme."
+    },
+    "Coordinates": {
+      "es": "Coordenadas",
+      "eu": "Koordenatuak",
+      "fr": "Coordonnées",
+      "de": "Koordinaten",
+      "pt": "Coordenadas",
+      "it": "Coordinate"
+    },
+    "Copy link to clipboard": {
+      "es": "Copiar enlace al portapapeles",
+      "eu": "Kopiatu esteka arbelera",
+      "fr": "Copier le lien dans le presse-papiers",
+      "de": "Link in die Zwischenablage kopieren",
+      "pt": "Copiar link para a área de transferência",
+      "it": "Copia il link negli appunti"
+    },
+    "Country (optional)": {
+      "es": "País (opcional)",
+      "eu": "Herrialdea (aukerakoa)",
+      "fr": "Pays (facultatif)",
+      "de": "Land (optional)",
+      "pt": "País (opcional)",
+      "it": "Paese (facoltativo)"
+    },
+    "Creating a QR": {
+      "es": "Crear un QR",
+      "eu": "QR bat sortzea",
+      "fr": "Créer un QR",
+      "de": "Einen QR-Code erstellen",
+      "pt": "Criar um QR",
+      "it": "Creare un QR"
+    },
+    "Creation date": {
+      "es": "Fecha de creación",
+      "eu": "Sorrera-data",
+      "fr": "Date de création",
+      "de": "Erstellungsdatum",
+      "pt": "Data de criação",
+      "it": "Data di creazione"
+    },
+    "Cusmizations:\n- The app's theme mode -> Light/Dark/System (Default)\n- The app's theme color": {
+      "es": "Personalizaciones:\n- El modo de tema de la aplicación -> Claro/Oscuro/Sistema (predeterminado)\n- El color del tema de la aplicación",
+      "eu": "Pertsonalizazioak:\n- Aplikazioaren gai-modua -> Argia/Iluna/Sistema (lehenetsia)\n- Aplikazioaren gaiaren kolorea",
+      "fr": "Personnalisations :\n- Le mode de thème de l'application -> Clair/Sombre/Système (par défaut)\n- La couleur du thème de l'application",
+      "de": "Anpassungen:\n- Der Designmodus der App -> Hell/Dunkel/System (Standard)\n- Die Designfarbe der App",
+      "pt": "Personalizações:\n- O modo de tema do aplicativo -> Claro/Escuro/Sistema (padrão)\n- A cor do tema do aplicativo",
+      "it": "Personalizzazioni:\n- La modalità del tema dell'app -> Chiaro/Scuro/Sistema (predefinito)\n- Il colore del tema dell'app"
+    },
+    "Customization": {
+      "es": "Personalización",
+      "eu": "Pertsonalizazioa",
+      "fr": "Personnalisation",
+      "de": "Anpassung",
+      "pt": "Personalização",
+      "it": "Personalizzazione"
+    },
+    "Customizing": {
+      "es": "Personalizar",
+      "eu": "Pertsonalizatzea",
+      "fr": "Personnaliser",
+      "de": "Anpassen",
+      "pt": "Personalizar",
+      "it": "Personalizzare"
+    },
+    "Dark": {
+      "es": "Oscuro",
+      "eu": "Iluna",
+      "fr": "Sombre",
+      "de": "Dunkel",
+      "pt": "Escuro",
+      "it": "Scuro"
+    },
+    "Date and time": {
+      "es": "Fecha y hora",
+      "eu": "Data eta ordua",
+      "fr": "Date et heure",
+      "de": "Datum und Uhrzeit",
+      "pt": "Data e hora",
+      "it": "Data e ora"
+    },
+    "Date period": {
+      "es": "Periodo de fechas",
+      "eu": "Data-tartea",
+      "fr": "Période",
+      "de": "Zeitraum",
+      "pt": "Período de datas",
+      "it": "Periodo di date"
+    },
+    "Day: {date} Time: {time}": {
+      "es": "Día: {date} Hora: {time}",
+      "eu": "Eguna: {date} Ordua: {time}",
+      "fr": "Jour : {date} Heure : {time}",
+      "de": "Tag: {date} Uhrzeit: {time}",
+      "pt": "Dia: {date} Hora: {time}",
+      "it": "Giorno: {date} Ora: {time}"
+    },
+    "Delete": {
+      "es": "Eliminar",
+      "eu": "Ezabatu",
+      "fr": "Supprimer",
+      "de": "Löschen",
+      "pt": "Excluir",
+      "it": "Elimina"
+    },
+    "Delete all data": {
+      "es": "Eliminar todos los datos",
+      "eu": "Ezabatu datu guztiak",
+      "fr": "Supprimer toutes les données",
+      "de": "Alle Daten löschen",
+      "pt": "Excluir todos os dados",
+      "it": "Elimina tutti i dati"
+    },
+    "Developer (aka ChoiceZero)": {
+      "es": "Desarrollador (alias ChoiceZero)",
+      "eu": "Garatzailea (ChoiceZero izenez ere)",
+      "fr": "Développeur (alias ChoiceZero)",
+      "de": "Entwickler (alias ChoiceZero)",
+      "pt": "Desenvolvedor (também conhecido como ChoiceZero)",
+      "it": "Sviluppatore (alias ChoiceZero)"
+    },
+    "Download": {
+      "es": "Descargar",
+      "eu": "Deskargatu",
+      "fr": "Télécharger",
+      "de": "Herunterladen",
+      "pt": "Baixar",
+      "it": "Scarica"
+    },
+    "Edit tag name": {
+      "es": "Editar nombre de etiqueta",
+      "eu": "Editatu etiketaren izena",
+      "fr": "Modifier le nom de l'étiquette",
+      "de": "Namen bearbeiten",
+      "pt": "Editar nome da etiqueta",
+      "it": "Modifica nome dell'etichetta"
+    },
+    "Email": {
+      "es": "Correo electrónico",
+      "eu": "Posta elektronikoa",
+      "fr": "E-mail",
+      "de": "E-Mail",
+      "pt": "E-mail",
+      "it": "Email"
+    },
+    "Email address": {
+      "es": "Dirección de correo",
+      "eu": "Posta elektronikoaren helbidea",
+      "fr": "Adresse e-mail",
+      "de": "E-Mail-Adresse",
+      "pt": "Endereço de e-mail",
+      "it": "Indirizzo email"
+    },
+    "Email address (optional)": {
+      "es": "Dirección de correo (opcional)",
+      "eu": "Posta elektronikoaren helbidea (aukerakoa)",
+      "fr": "Adresse e-mail (facultatif)",
+      "de": "E-Mail-Adresse (optional)",
+      "pt": "Endereço de e-mail (opcional)",
+      "it": "Indirizzo email (facoltativo)"
+    },
+    "Email and website": {
+      "es": "Correo y sitio web",
+      "eu": "Posta eta webgunea",
+      "fr": "E-mail et site web",
+      "de": "E-Mail und Website",
+      "pt": "E-mail e site",
+      "it": "Email e sito web"
+    },
+    "End time": {
+      "es": "Hora de fin",
+      "eu": "Amaiera-ordua",
+      "fr": "Heure de fin",
+      "de": "Endzeit",
+      "pt": "Hora de término",
+      "it": "Ora di fine"
+    },
+    "Enter URL or text": {
+      "es": "Introduce una URL o texto",
+      "eu": "Sartu URL bat edo testua",
+      "fr": "Saisissez une URL ou un texte",
+      "de": "URL oder Text eingeben",
+      "pt": "Digite uma URL ou texto",
+      "it": "Inserisci un URL o un testo"
+    },
+    "Enter URL or text here": {
+      "es": "Introduce aquí una URL o texto",
+      "eu": "Sartu hemen URL bat edo testua",
+      "fr": "Saisissez ici une URL ou un texte",
+      "de": "Hier URL oder Text eingeben",
+      "pt": "Digite aqui uma URL ou texto",
+      "it": "Inserisci qui un URL o un testo"
+    },
+    "Enter address": {
+      "es": "Introduce la dirección",
+      "eu": "Sartu helbidea",
+      "fr": "Saisissez l'adresse",
+      "de": "Adresse eingeben",
+      "pt": "Digite o endereço",
+      "it": "Inserisci l'indirizzo"
+    },
+    "Enter body": {
+      "es": "Introduce el cuerpo",
+      "eu": "Sartu gorputza",
+      "fr": "Saisissez le message",
+      "de": "Nachricht eingeben",
+      "pt": "Digite o corpo",
+      "it": "Inserisci il corpo"
+    },
+    "Enter filename here": {
+      "es": "Introduce aquí el nombre del archivo",
+      "eu": "Sartu hemen fitxategiaren izena",
+      "fr": "Saisissez ici le nom du fichier",
+      "de": "Hier Dateinamen eingeben",
+      "pt": "Digite aqui o nome do arquivo",
+      "it": "Inserisci qui il nome del file"
+    },
+    "Enter message": {
+      "es": "Introduce el mensaje",
+      "eu": "Sartu mezua",
+      "fr": "Saisissez le message",
+      "de": "Nachricht eingeben",
+      "pt": "Digite a mensagem",
+      "it": "Inserisci il messaggio"
+    },
+    "Enter network name": {
+      "es": "Introduce el nombre de la red",
+      "eu": "Sartu sarearen izena",
+      "fr": "Saisissez le nom du réseau",
+      "de": "Netzwerknamen eingeben",
+      "pt": "Digite o nome da rede",
+      "it": "Inserisci il nome della rete"
+    },
+    "Enter network password": {
+      "es": "Introduce la contraseña de la red",
+      "eu": "Sartu sarearen pasahitza",
+      "fr": "Saisissez le mot de passe du réseau",
+      "de": "Netzwerkpasswort eingeben",
+      "pt": "Digite a senha da rede",
+      "it": "Inserisci la password della rete"
+    },
+    "Enter phone number": {
+      "es": "Introduce el número de teléfono",
+      "eu": "Sartu telefono-zenbakia",
+      "fr": "Saisissez le numéro de téléphone",
+      "de": "Telefonnummer eingeben",
+      "pt": "Digite o número de telefone",
+      "it": "Inserisci il numero di telefono"
+    },
+    "Enter subject": {
+      "es": "Introduce el asunto",
+      "eu": "Sartu gaia",
+      "fr": "Saisissez l'objet",
+      "de": "Betreff eingeben",
+      "pt": "Digite o assunto",
+      "it": "Inserisci l'oggetto"
+    },
+    "Error": {
+      "es": "Error",
+      "eu": "Errorea",
+      "fr": "Erreur",
+      "de": "Fehler",
+      "pt": "Erro",
+      "it": "Errore"
+    },
+    "Error correction level": {
+      "es": "Nivel de corrección de errores",
+      "eu": "Erroreen zuzenketa maila",
+      "fr": "Niveau de correction d'erreurs",
+      "de": "Fehlerkorrekturstufe",
+      "pt": "Nível de correção de erros",
+      "it": "Livello di correzione degli errori"
+    },
+    "Error: {exception}": {
+      "es": "Error: {exception}",
+      "eu": "Errorea: {exception}",
+      "fr": "Erreur : {exception}",
+      "de": "Fehler: {exception}",
+      "pt": "Erro: {exception}",
+      "it": "Errore: {exception}"
+    },
+    "Event": {
+      "es": "Evento",
+      "eu": "Ekitaldia",
+      "fr": "Événement",
+      "de": "Termin",
+      "pt": "Evento",
+      "it": "Evento"
+    },
+    "Event name": {
+      "es": "Nombre del evento",
+      "eu": "Ekitaldiaren izena",
+      "fr": "Nom de l'événement",
+      "de": "Name des Termins",
+      "pt": "Nome do evento",
+      "it": "Nome dell'evento"
+    },
+    "Event title": {
+      "es": "Título del evento",
+      "eu": "Ekitaldiaren izenburua",
+      "fr": "Titre de l'événement",
+      "de": "Titel des Termins",
+      "pt": "Título do evento",
+      "it": "Titolo dell'evento"
+    },
+    "Export": {
+      "es": "Exportar",
+      "eu": "Esportatu",
+      "fr": "Exporter",
+      "de": "Exportieren",
+      "pt": "Exportar",
+      "it": "Esporta"
+    },
+    "Export Complete!": {
+      "es": "¡Exportación completada!",
+      "eu": "Esportazioa amaituta!",
+      "fr": "Exportation terminée !",
+      "de": "Export abgeschlossen!",
+      "pt": "Exportação concluída!",
+      "it": "Esportazione completata!"
+    },
+    "Export Library": {
+      "es": "Exportar biblioteca",
+      "eu": "Esportatu liburutegia",
+      "fr": "Exporter la bibliothèque",
+      "de": "Bibliothek exportieren",
+      "pt": "Exportar biblioteca",
+      "it": "Esporta libreria"
+    },
+    "Export Options": {
+      "es": "Opciones de exportación",
+      "eu": "Esportazio aukerak",
+      "fr": "Options d'exportation",
+      "de": "Exportoptionen",
+      "pt": "Opções de exportação",
+      "it": "Opzioni di esportazione"
+    },
+    "Export options": {
+      "es": "Opciones de exportación",
+      "eu": "Esportazio aukerak",
+      "fr": "Options d'exportation",
+      "de": "Exportoptionen",
+      "pt": "Opções de exportação",
+      "it": "Opzioni di esportazione"
+    },
+    "Export your QR code library to a .ZIP file.": {
+      "es": "Exporta tu biblioteca de códigos QR a un archivo .ZIP.",
+      "eu": "Esportatu zure QR kodeen liburutegia .ZIP fitxategi batera.",
+      "fr": "Exportez votre bibliothèque de codes QR vers un fichier .ZIP.",
+      "de": "Exportiere deine QR-Code-Bibliothek in eine .ZIP-Datei.",
+      "pt": "Exporte sua biblioteca de códigos QR para um arquivo .ZIP.",
+      "it": "Esporta la tua libreria di codici QR in un file .ZIP."
+    },
+    "Exporting": {
+      "es": "Exportando",
+      "eu": "Esportatzen",
+      "fr": "Exportation",
+      "de": "Exportieren",
+      "pt": "Exportando",
+      "it": "Esportazione"
+    },
+    "Exporting QR...": {
+      "es": "Exportando QR...",
+      "eu": "QR esportatzen...",
+      "fr": "Exportation du QR...",
+      "de": "QR-Code wird exportiert...",
+      "pt": "Exportando QR...",
+      "it": "Esportazione del QR..."
+    },
+    "Exporting STL...": {
+      "es": "Exportando STL...",
+      "eu": "STL esportatzen...",
+      "fr": "Exportation du STL...",
+      "de": "STL wird exportiert...",
+      "pt": "Exportando STL...",
+      "it": "Esportazione dell'STL..."
+    },
+    "Exporting codes...": {
+      "es": "Exportando códigos...",
+      "eu": "Kodeak esportatzen...",
+      "fr": "Exportation des codes...",
+      "de": "Codes werden exportiert...",
+      "pt": "Exportando códigos...",
+      "it": "Esportazione dei codici..."
+    },
+    "External codes": {
+      "es": "Códigos externos",
+      "eu": "Kanpoko kodeak",
+      "fr": "Codes externes",
+      "de": "Externe Codes",
+      "pt": "Códigos externos",
+      "it": "Codici esterni"
+    },
+    "Failed to rename QR: {e}": {
+      "es": "No se pudo renombrar el QR: {e}",
+      "eu": "Ezin izan da QRa berrizendatu: {e}",
+      "fr": "Échec du renommage du QR : {e}",
+      "de": "QR-Code konnte nicht umbenannt werden: {e}",
+      "pt": "Falha ao renomear o QR: {e}",
+      "it": "Impossibile rinominare il QR: {e}"
+    },
+    "Failed to unpack, raw content shown": {
+      "es": "No se pudo interpretar, se muestra el contenido sin procesar",
+      "eu": "Ezin izan da deskodetu, eduki gordina erakusten da",
+      "fr": "Échec de l'analyse, contenu brut affiché",
+      "de": "Konnte nicht ausgewertet werden, Rohinhalt wird angezeigt",
+      "pt": "Falha ao interpretar, conteúdo bruto exibido",
+      "it": "Impossibile interpretare, mostrato il contenuto grezzo"
+    },
+    "Filename": {
+      "es": "Nombre de archivo",
+      "eu": "Fitxategi-izena",
+      "fr": "Nom du fichier",
+      "de": "Dateiname",
+      "pt": "Nome do arquivo",
+      "it": "Nome del file"
+    },
+    "Filename required": {
+      "es": "Nombre de archivo obligatorio",
+      "eu": "Fitxategi-izena beharrezkoa da",
+      "fr": "Nom de fichier requis",
+      "de": "Dateiname erforderlich",
+      "pt": "Nome do arquivo obrigatório",
+      "it": "Nome del file obbligatorio"
+    },
+    "Filtering and order": {
+      "es": "Filtros y orden",
+      "eu": "Iragazkiak eta ordena",
+      "fr": "Filtres et tri",
+      "de": "Filter und Reihenfolge",
+      "pt": "Filtros e ordem",
+      "it": "Filtri e ordine"
+    },
+    "Finish": {
+      "es": "Finalizar",
+      "eu": "Amaitu",
+      "fr": "Terminer",
+      "de": "Fertig",
+      "pt": "Concluir",
+      "it": "Fine"
+    },
+    "First name": {
+      "es": "Nombre",
+      "eu": "Izena",
+      "fr": "Prénom",
+      "de": "Vorname",
+      "pt": "Nome",
+      "it": "Nome"
+    },
+    "Folder": {
+      "es": "Carpeta",
+      "eu": "Karpeta",
+      "fr": "Dossier",
+      "de": "Ordner",
+      "pt": "Pasta",
+      "it": "Cartella"
+    },
+    "Full name": {
+      "es": "Nombre completo",
+      "eu": "Izen osoa",
+      "fr": "Nom complet",
+      "de": "Vollständiger Name",
+      "pt": "Nome completo",
+      "it": "Nome completo"
+    },
+    "Fully open source and auditable.": {
+      "es": "Totalmente de código abierto y auditable.",
+      "eu": "Guztiz kode irekikoa eta ikuskagarria.",
+      "fr": "Entièrement open source et auditable.",
+      "de": "Vollständig Open Source und überprüfbar.",
+      "pt": "Totalmente de código aberto e auditável.",
+      "it": "Completamente open source e verificabile."
+    },
+    "Gallery": {
+      "es": "Galería",
+      "eu": "Galeria",
+      "fr": "Galerie",
+      "de": "Galerie",
+      "pt": "Galeria",
+      "it": "Galleria"
+    },
+    "Get Started": {
+      "es": "Empezar",
+      "eu": "Hasi",
+      "fr": "Commencer",
+      "de": "Los geht's",
+      "pt": "Começar",
+      "it": "Inizia"
+    },
+    "Github repository": {
+      "es": "Repositorio de GitHub",
+      "eu": "GitHub biltegia",
+      "fr": "Dépôt GitHub",
+      "de": "GitHub-Repository",
+      "pt": "Repositório do GitHub",
+      "it": "Repository GitHub"
+    },
+    "Go through the setup process again": {
+      "es": "Repite el proceso de configuración",
+      "eu": "Egin berriro konfigurazio-prozesua",
+      "fr": "Refaire le processus de configuration",
+      "de": "Die Einrichtung erneut durchlaufen",
+      "pt": "Repita o processo de configuração",
+      "it": "Ripeti il processo di configurazione"
+    },
+    "Help spread the word about the app and recommend it to others. The more users, the more interest in the project!": {
+      "es": "Ayuda a difundir la aplicación y recomiéndala a otras personas. ¡Cuantos más usuarios, más interés en el proyecto!",
+      "eu": "Lagundu aplikazioa zabaltzen eta gomendatu beste batzuei. Zenbat eta erabiltzaile gehiago, orduan eta interes handiagoa proiektuarentzat!",
+      "fr": "Aidez à faire connaître l'application et recommandez-la autour de vous. Plus il y a d'utilisateurs, plus le projet suscite d'intérêt !",
+      "de": "Hilf mit, die App bekannt zu machen, und empfiehl sie weiter. Je mehr Nutzer, desto mehr Interesse am Projekt!",
+      "pt": "Ajude a divulgar o aplicativo e recomende-o a outras pessoas. Quanto mais usuários, mais interesse no projeto!",
+      "it": "Aiuta a far conoscere l'app e consigliala ad altri. Più utenti ci sono, più interesse c'è per il progetto!"
+    },
+    "Help the project": {
+      "es": "Ayuda al proyecto",
+      "eu": "Lagundu proiektuari",
+      "fr": "Aider le projet",
+      "de": "Das Projekt unterstützen",
+      "pt": "Ajude o projeto",
+      "it": "Aiuta il progetto"
+    },
+    "If the QR was imported from a different source, it may have a different structure and thus diplay an error or incorrect information. If that is not the case, open a bug report issue on the GitHub repository.": {
+      "es": "Si el QR se importó de otra fuente, puede tener una estructura distinta y mostrar un error o información incorrecta. Si no es el caso, abre una incidencia de error en el repositorio de GitHub.",
+      "eu": "QRa beste iturri batetik inportatu bada, egitura ezberdina izan dezake eta errore bat edo informazio okerra erakutsi. Hala ez bada, ireki akats-txosten bat GitHub biltegian.",
+      "fr": "Si le QR a été importé depuis une autre source, sa structure peut différer et afficher une erreur ou des informations incorrectes. Si ce n'est pas le cas, ouvrez un ticket de bug sur le dépôt GitHub.",
+      "de": "Wurde der QR-Code aus einer anderen Quelle importiert, kann er eine andere Struktur haben und einen Fehler oder falsche Informationen anzeigen. Falls das nicht der Fall ist, eröffne bitte ein Fehlerticket im GitHub-Repository.",
+      "pt": "Se o QR foi importado de outra fonte, ele pode ter uma estrutura diferente e exibir um erro ou informações incorretas. Se não for esse o caso, abra um relatório de erro no repositório do GitHub.",
+      "it": "Se il QR è stato importato da un'altra fonte, potrebbe avere una struttura diversa e mostrare un errore o informazioni errate. In caso contrario, apri una segnalazione di bug nel repository GitHub."
+    },
+    "If the QR was imported from a different source, it may have a different structure and thus diplay an error. If this is the case, you may ignore the error message. If not, please open a bug report issue on the GitHub repository.": {
+      "es": "Si el QR se importó de otra fuente, puede tener una estructura distinta y mostrar un error. En ese caso, puedes ignorar el mensaje de error. Si no, abre una incidencia de error en el repositorio de GitHub.",
+      "eu": "QRa beste iturri batetik inportatu bada, egitura ezberdina izan dezake eta errore bat erakutsi. Hala bada, errore-mezua ez ikusi egin dezakezu. Bestela, ireki akats-txosten bat GitHub biltegian.",
+      "fr": "Si le QR a été importé depuis une autre source, sa structure peut différer et afficher une erreur. Dans ce cas, vous pouvez ignorer le message d'erreur. Sinon, ouvrez un ticket de bug sur le dépôt GitHub.",
+      "de": "Wurde der QR-Code aus einer anderen Quelle importiert, kann er eine andere Struktur haben und einen Fehler anzeigen. In diesem Fall kannst du die Fehlermeldung ignorieren. Andernfalls eröffne bitte ein Fehlerticket im GitHub-Repository.",
+      "pt": "Se o QR foi importado de outra fonte, ele pode ter uma estrutura diferente e exibir um erro. Nesse caso, você pode ignorar a mensagem de erro. Se não, abra um relatório de erro no repositório do GitHub.",
+      "it": "Se il QR è stato importato da un'altra fonte, potrebbe avere una struttura diversa e mostrare un errore. In tal caso puoi ignorare il messaggio di errore. In caso contrario, apri una segnalazione di bug nel repository GitHub."
+    },
+    "If you want to support the project, you can do so by leaving a tip via Buy Me a Coffee or GitHub Sponsors.": {
+      "es": "Si quieres apoyar el proyecto, puedes dejar una propina a través de Buy Me a Coffee o GitHub Sponsors.",
+      "eu": "Proiektua babestu nahi baduzu, esku-diru bat utzi dezakezu Buy Me a Coffee edo GitHub Sponsors bidez.",
+      "fr": "Si vous souhaitez soutenir le projet, vous pouvez laisser un pourboire via Buy Me a Coffee ou GitHub Sponsors.",
+      "de": "Wenn du das Projekt unterstützen möchtest, kannst du über Buy Me a Coffee oder GitHub Sponsors ein Trinkgeld geben.",
+      "pt": "Se quiser apoiar o projeto, você pode deixar uma gorjeta pelo Buy Me a Coffee ou GitHub Sponsors.",
+      "it": "Se vuoi sostenere il progetto, puoi lasciare una mancia tramite Buy Me a Coffee o GitHub Sponsors."
+    },
+    "If your network has no password, select it here!": {
+      "es": "Si tu red no tiene contraseña, ¡selecciónalo aquí!",
+      "eu": "Zure sareak pasahitzik ez badu, hautatu hemen!",
+      "fr": "Si votre réseau n'a pas de mot de passe, sélectionnez-le ici !",
+      "de": "Wenn dein Netzwerk kein Passwort hat, wähle es hier aus!",
+      "pt": "Se a sua rede não tem senha, selecione aqui!",
+      "it": "Se la tua rete non ha password, selezionalo qui!"
+    },
+    "Import": {
+      "es": "Importar",
+      "eu": "Inportatu",
+      "fr": "Importer",
+      "de": "Importieren",
+      "pt": "Importar",
+      "it": "Importa"
+    },
+    "Import Complete (with skipped files)!": {
+      "es": "¡Importación completada (con archivos omitidos)!",
+      "eu": "Inportazioa amaituta (saltatutako fitxategiekin)!",
+      "fr": "Importation terminée (avec des fichiers ignorés) !",
+      "de": "Import abgeschlossen (mit übersprungenen Dateien)!",
+      "pt": "Importação concluída (com arquivos ignorados)!",
+      "it": "Importazione completata (con file saltati)!"
+    },
+    "Import Complete!": {
+      "es": "¡Importación completada!",
+      "eu": "Inportazioa amaituta!",
+      "fr": "Importation terminée !",
+      "de": "Import abgeschlossen!",
+      "pt": "Importação concluída!",
+      "it": "Importazione completata!"
+    },
+    "Import Library": {
+      "es": "Importar biblioteca",
+      "eu": "Inportatu liburutegia",
+      "fr": "Importer la bibliothèque",
+      "de": "Bibliothek importieren",
+      "pt": "Importar biblioteca",
+      "it": "Importa libreria"
+    },
+    "Import/Export": {
+      "es": "Importar/Exportar",
+      "eu": "Inportatu/Esportatu",
+      "fr": "Importer/Exporter",
+      "de": "Import/Export",
+      "pt": "Importar/Exportar",
+      "it": "Importa/Esporta"
+    },
+    "Importing codes...": {
+      "es": "Importando códigos...",
+      "eu": "Kodeak inportatzen...",
+      "fr": "Importation des codes...",
+      "de": "Codes werden importiert...",
+      "pt": "Importando códigos...",
+      "it": "Importazione dei codici..."
+    },
+    "Internal path": {
+      "es": "Ruta interna",
+      "eu": "Barne-bidea",
+      "fr": "Chemin interne",
+      "de": "Interner Pfad",
+      "pt": "Caminho interno",
+      "it": "Percorso interno"
+    },
+    "Invert 3D model?": {
+      "es": "¿Invertir el modelo 3D?",
+      "eu": "3D eredua alderantzikatu?",
+      "fr": "Inverser le modèle 3D ?",
+      "de": "3D-Modell invertieren?",
+      "pt": "Inverter o modelo 3D?",
+      "it": "Invertire il modello 3D?"
+    },
+    "Job title": {
+      "es": "Cargo",
+      "eu": "Lanpostua",
+      "fr": "Fonction",
+      "de": "Berufsbezeichnung",
+      "pt": "Cargo",
+      "it": "Posizione lavorativa"
+    },
+    "Job title (optional)": {
+      "es": "Cargo (opcional)",
+      "eu": "Lanpostua (aukerakoa)",
+      "fr": "Fonction (facultatif)",
+      "de": "Berufsbezeichnung (optional)",
+      "pt": "Cargo (opcional)",
+      "it": "Posizione lavorativa (facoltativo)"
+    },
+    "Language": {
+      "es": "Idioma",
+      "eu": "Hizkuntza",
+      "fr": "Langue",
+      "de": "Sprache",
+      "pt": "Idioma",
+      "it": "Lingua"
+    },
+    "Last name": {
+      "es": "Apellido",
+      "eu": "Abizena",
+      "fr": "Nom",
+      "de": "Nachname",
+      "pt": "Sobrenome",
+      "it": "Cognome"
+    },
+    "Later": {
+      "es": "Más tarde",
+      "eu": "Gero",
+      "fr": "Plus tard",
+      "de": "Später",
+      "pt": "Mais tarde",
+      "it": "Più tardi"
+    },
+    "Latitude": {
+      "es": "Latitud",
+      "eu": "Latitudea",
+      "fr": "Latitude",
+      "de": "Breitengrad",
+      "pt": "Latitude",
+      "it": "Latitudine"
+    },
+    "Library": {
+      "es": "Biblioteca",
+      "eu": "Liburutegia",
+      "fr": "Bibliothèque",
+      "de": "Bibliothek",
+      "pt": "Biblioteca",
+      "it": "Libreria"
+    },
+    "Library exported to {zip_path}": {
+      "es": "Biblioteca exportada a {zip_path}",
+      "eu": "Liburutegia hona esportatu da: {zip_path}",
+      "fr": "Bibliothèque exportée vers {zip_path}",
+      "de": "Bibliothek exportiert nach {zip_path}",
+      "pt": "Biblioteca exportada para {zip_path}",
+      "it": "Libreria esportata in {zip_path}"
+    },
+    "Light": {
+      "es": "Claro",
+      "eu": "Argia",
+      "fr": "Clair",
+      "de": "Hell",
+      "pt": "Claro",
+      "it": "Chiaro"
+    },
+    "Loading content...": {
+      "es": "Cargando contenido...",
+      "eu": "Edukia kargatzen...",
+      "fr": "Chargement du contenu...",
+      "de": "Inhalt wird geladen...",
+      "pt": "Carregando conteúdo...",
+      "it": "Caricamento dei contenuti..."
+    },
+    "Location": {
+      "es": "Ubicación",
+      "eu": "Kokalekua",
+      "fr": "Lieu",
+      "de": "Standort",
+      "pt": "Localização",
+      "it": "Posizione"
+    },
+    "Location name": {
+      "es": "Nombre del lugar",
+      "eu": "Lekuaren izena",
+      "fr": "Nom du lieu",
+      "de": "Name des Ortes",
+      "pt": "Nome do local",
+      "it": "Nome del luogo"
+    },
+    "Logo/Branding": {
+      "es": "Logo/Marca",
+      "eu": "Logoa/Marka",
+      "fr": "Logo/Image de marque",
+      "de": "Logo/Branding",
+      "pt": "Logotipo/Marca",
+      "it": "Logo/Brand"
+    },
+    "Longitude": {
+      "es": "Longitud",
+      "eu": "Longitudea",
+      "fr": "Longitude",
+      "de": "Längengrad",
+      "pt": "Longitude",
+      "it": "Longitudine"
+    },
+    "Low contrast": {
+      "es": "Contraste bajo",
+      "eu": "Kontraste baxua",
+      "fr": "Faible contraste",
+      "de": "Geringer Kontrast",
+      "pt": "Contraste baixo",
+      "it": "Contrasto basso"
+    },
+    "MIT License": {
+      "es": "Licencia MIT",
+      "eu": "MIT lizentzia",
+      "fr": "Licence MIT",
+      "de": "MIT-Lizenz",
+      "pt": "Licença MIT",
+      "it": "Licenza MIT"
+    },
+    "Made with ❤️ in the Basque Country, Spain.": {
+      "es": "Hecho con ❤️ en el País Vasco, España.",
+      "eu": "❤️-z eginda Euskal Herrian, Espainian.",
+      "fr": "Fait avec ❤️ au Pays basque, en Espagne.",
+      "de": "Mit ❤️ im Baskenland, Spanien, gemacht.",
+      "pt": "Feito com ❤️ no País Basco, Espanha.",
+      "it": "Fatto con ❤️ nei Paesi Baschi, Spagna."
+    },
+    "Main content": {
+      "es": "Contenido principal",
+      "eu": "Eduki nagusia",
+      "fr": "Contenu principal",
+      "de": "Hauptinhalt",
+      "pt": "Conteúdo principal",
+      "it": "Contenuto principale"
+    },
+    "Message": {
+      "es": "Mensaje",
+      "eu": "Mezua",
+      "fr": "Message",
+      "de": "Nachricht",
+      "pt": "Mensagem",
+      "it": "Messaggio"
+    },
+    "Missing required fields": {
+      "es": "Faltan campos obligatorios",
+      "eu": "Derrigorrezko eremuak falta dira",
+      "fr": "Champs obligatoires manquants",
+      "de": "Pflichtfelder fehlen",
+      "pt": "Campos obrigatórios ausentes",
+      "it": "Campi obbligatori mancanti"
+    },
+    "Moderate contrast": {
+      "es": "Contraste moderado",
+      "eu": "Kontraste ertaina",
+      "fr": "Contraste modéré",
+      "de": "Mittlerer Kontrast",
+      "pt": "Contraste moderado",
+      "it": "Contrasto moderato"
+    },
+    "Name": {
+      "es": "Nombre",
+      "eu": "Izena",
+      "fr": "Nom",
+      "de": "Name",
+      "pt": "Nome",
+      "it": "Nome"
+    },
+    "Name your QR code": {
+      "es": "Ponle nombre a tu código QR",
+      "eu": "Eman izena zure QR kodeari",
+      "fr": "Nommez votre code QR",
+      "de": "Gib deinem QR-Code einen Namen",
+      "pt": "Dê um nome ao seu código QR",
+      "it": "Dai un nome al tuo codice QR"
+    },
+    "Network name": {
+      "es": "Nombre de la red",
+      "eu": "Sarearen izena",
+      "fr": "Nom du réseau",
+      "de": "Netzwerkname",
+      "pt": "Nome da rede",
+      "it": "Nome della rete"
+    },
+    "New tag name": {
+      "es": "Nuevo nombre de etiqueta",
+      "eu": "Etiketa-izen berria",
+      "fr": "Nouveau nom d'étiquette",
+      "de": "Neuer Name",
+      "pt": "Novo nome da etiqueta",
+      "it": "Nuovo nome dell'etichetta"
+    },
+    "Next": {
+      "es": "Siguiente",
+      "eu": "Hurrengoa",
+      "fr": "Suivant",
+      "de": "Weiter",
+      "pt": "Próximo",
+      "it": "Avanti"
+    },
+    "No QR codes yet! Tap the '+' button to create your first one.": {
+      "es": "¡Aún no hay códigos QR! Pulsa el botón '+' para crear el primero.",
+      "eu": "Oraindik ez dago QR koderik! Sakatu '+' botoia lehenengoa sortzeko.",
+      "fr": "Aucun code QR pour l'instant ! Appuyez sur le bouton « + » pour créer le premier.",
+      "de": "Noch keine QR-Codes! Tippe auf „+“, um deinen ersten zu erstellen.",
+      "pt": "Ainda não há códigos QR! Toque no botão '+' para criar o primeiro.",
+      "it": "Ancora nessun codice QR! Tocca il pulsante '+' per creare il primo."
+    },
+    "No password": {
+      "es": "Sin contraseña",
+      "eu": "Pasahitzik gabe",
+      "fr": "Sans mot de passe",
+      "de": "Kein Passwort",
+      "pt": "Sem senha",
+      "it": "Nessuna password"
+    },
+    "No private data is collected or stored.": {
+      "es": "No se recopilan ni almacenan datos privados.",
+      "eu": "Ez da datu pribaturik biltzen edo gordetzen.",
+      "fr": "Aucune donnée privée n'est collectée ni stockée.",
+      "de": "Es werden keine privaten Daten erfasst oder gespeichert.",
+      "pt": "Nenhum dado privado é coletado ou armazenado.",
+      "it": "Non vengono raccolti né memorizzati dati privati."
+    },
+    "No telemetry or analytics are used.": {
+      "es": "No se usa telemetría ni analíticas.",
+      "eu": "Ez da telemetriarik edo analitikarik erabiltzen.",
+      "fr": "Aucune télémétrie ni analyse n'est utilisée.",
+      "de": "Es werden weder Telemetrie noch Analysen verwendet.",
+      "pt": "Nenhuma telemetria ou análise é usada.",
+      "it": "Non vengono usate telemetria né analisi."
+    },
+    "No, keep as is": {
+      "es": "No, dejar como está",
+      "eu": "Ez, utzi dagoen bezala",
+      "fr": "Non, laisser tel quel",
+      "de": "Nein, so lassen",
+      "pt": "Não, manter como está",
+      "it": "No, lascia così"
+    },
+    "Note": {
+      "es": "Nota",
+      "eu": "Oharra",
+      "fr": "Note",
+      "de": "Notiz",
+      "pt": "Nota",
+      "it": "Nota"
+    },
+    "OK": {
+      "es": "Aceptar",
+      "eu": "Ados",
+      "fr": "OK",
+      "de": "OK",
+      "pt": "OK",
+      "it": "OK"
+    },
+    "ONE TIME": {
+      "es": "ÚNICO",
+      "eu": "BEHIN BAKARRIK",
+      "fr": "UNIQUE",
+      "de": "EINMALIG",
+      "pt": "ÚNICO",
+      "it": "UNA TANTUM"
+    },
+    "Open source": {
+      "es": "Código abierto",
+      "eu": "Kode irekia",
+      "fr": "Open source",
+      "de": "Open Source",
+      "pt": "Código aberto",
+      "it": "Open source"
+    },
+    "Optional": {
+      "es": "Opcional",
+      "eu": "Aukerakoa",
+      "fr": "Facultatif",
+      "de": "Optional",
+      "pt": "Opcional",
+      "it": "Facoltativo"
+    },
+    "Order:\nBy default, QRs are ordered from newest to oldest. To toggle the order, click on the arrow button.\n\nFilter:\nTo filter by the pinned state, select the corresponding option.": {
+      "es": "Orden:\nDe forma predeterminada, los QR se ordenan del más nuevo al más antiguo. Para cambiar el orden, pulsa el botón de la flecha.\n\nFiltro:\nPara filtrar por estado de fijado, selecciona la opción correspondiente.",
+      "eu": "Ordena:\nBerez, QRak berrienetik zaharrenera ordenatzen dira. Ordena aldatzeko, sakatu geziaren botoia.\n\nIragazkia:\nFinkatuta egoeraren arabera iragazteko, hautatu dagokion aukera.",
+      "fr": "Tri :\nPar défaut, les QR sont triés du plus récent au plus ancien. Pour inverser l'ordre, appuyez sur le bouton fléché.\n\nFiltre :\nPour filtrer selon l'état épinglé, sélectionnez l'option correspondante.",
+      "de": "Reihenfolge:\nStandardmäßig sind QR-Codes vom neuesten zum ältesten sortiert. Zum Umschalten tippe auf die Pfeil-Schaltfläche.\n\nFilter:\nUm nach dem Angeheftet-Status zu filtern, wähle die entsprechende Option.",
+      "pt": "Ordem:\nPor padrão, os QRs são ordenados do mais novo para o mais antigo. Para alternar a ordem, toque no botão da seta.\n\nFiltro:\nPara filtrar pelo estado de fixação, selecione a opção correspondente.",
+      "it": "Ordine:\nPer impostazione predefinita, i QR sono ordinati dal più recente al più vecchio. Per cambiare l'ordine, tocca il pulsante con la freccia.\n\nFiltro:\nPer filtrare in base allo stato di fissaggio, seleziona l'opzione corrispondente."
+    },
+    "Organization": {
+      "es": "Organización",
+      "eu": "Erakundea",
+      "fr": "Organisation",
+      "de": "Organisation",
+      "pt": "Organização",
+      "it": "Organizzazione"
+    },
+    "Organization (optional)": {
+      "es": "Organización (opcional)",
+      "eu": "Erakundea (aukerakoa)",
+      "fr": "Organisation (facultatif)",
+      "de": "Organisation (optional)",
+      "pt": "Organização (opcional)",
+      "it": "Organizzazione (facoltativo)"
+    },
+    "Other": {
+      "es": "Otros",
+      "eu": "Besteak",
+      "fr": "Autres",
+      "de": "Sonstiges",
+      "pt": "Outros",
+      "it": "Altro"
+    },
+    "Password": {
+      "es": "Contraseña",
+      "eu": "Pasahitza",
+      "fr": "Mot de passe",
+      "de": "Passwort",
+      "pt": "Senha",
+      "it": "Password"
+    },
+    "Personal": {
+      "es": "Personal",
+      "eu": "Pertsonala",
+      "fr": "Personnel",
+      "de": "Persönlich",
+      "pt": "Pessoal",
+      "it": "Personale"
+    },
+    "Phone": {
+      "es": "Teléfono",
+      "eu": "Telefonoa",
+      "fr": "Téléphone",
+      "de": "Telefon",
+      "pt": "Telefone",
+      "it": "Telefono"
+    },
+    "Phone number": {
+      "es": "Número de teléfono",
+      "eu": "Telefono-zenbakia",
+      "fr": "Numéro de téléphone",
+      "de": "Telefonnummer",
+      "pt": "Número de telefone",
+      "it": "Numero di telefono"
+    },
+    "Phone number (optional)": {
+      "es": "Número de teléfono (opcional)",
+      "eu": "Telefono-zenbakia (aukerakoa)",
+      "fr": "Numéro de téléphone (facultatif)",
+      "de": "Telefonnummer (optional)",
+      "pt": "Número de telefone (opcional)",
+      "it": "Numero di telefono (facoltativo)"
+    },
+    "Pick Logo": {
+      "es": "Elegir logo",
+      "eu": "Aukeratu logoa",
+      "fr": "Choisir un logo",
+      "de": "Logo auswählen",
+      "pt": "Escolher logotipo",
+      "it": "Scegli logo"
+    },
+    "Pick date range": {
+      "es": "Elegir rango de fechas",
+      "eu": "Aukeratu data-tartea",
+      "fr": "Choisir une période",
+      "de": "Zeitraum auswählen",
+      "pt": "Escolher intervalo de datas",
+      "it": "Scegli l'intervallo di date"
+    },
+    "Pick end time": {
+      "es": "Elegir hora de fin",
+      "eu": "Aukeratu amaiera-ordua",
+      "fr": "Choisir l'heure de fin",
+      "de": "Endzeit auswählen",
+      "pt": "Escolher hora de término",
+      "it": "Scegli l'ora di fine"
+    },
+    "Pick start time": {
+      "es": "Elegir hora de inicio",
+      "eu": "Aukeratu hasiera-ordua",
+      "fr": "Choisir l'heure de début",
+      "de": "Startzeit auswählen",
+      "pt": "Escolher hora de início",
+      "it": "Scegli l'ora di inizio"
+    },
+    "Pinned": {
+      "es": "Fijados",
+      "eu": "Finkatuak",
+      "fr": "Épinglés",
+      "de": "Angeheftet",
+      "pt": "Fixados",
+      "it": "Fissati"
+    },
+    "Please enter a different tag name": {
+      "es": "Introduce un nombre de etiqueta distinto",
+      "eu": "Sartu etiketa-izen ezberdin bat",
+      "fr": "Veuillez saisir un autre nom d'étiquette",
+      "de": "Bitte gib einen anderen Namen ein",
+      "pt": "Digite um nome de etiqueta diferente",
+      "it": "Inserisci un nome di etichetta diverso"
+    },
+    "Please enter a filename first": {
+      "es": "Introduce primero un nombre de archivo",
+      "eu": "Sartu lehenik fitxategi-izen bat",
+      "fr": "Veuillez d'abord saisir un nom de fichier",
+      "de": "Bitte gib zuerst einen Dateinamen ein",
+      "pt": "Digite primeiro um nome de arquivo",
+      "it": "Inserisci prima un nome di file"
+    },
+    "Please enter the coordinates in decimal format (e.g., 43.03500, -2.77988).": {
+      "es": "Introduce las coordenadas en formato decimal (p. ej., 43.03500, -2.77988).",
+      "eu": "Sartu koordenatuak formatu hamartarrean (adib., 43.03500, -2.77988).",
+      "fr": "Saisissez les coordonnées au format décimal (p. ex. 43.03500, -2.77988).",
+      "de": "Gib die Koordinaten im Dezimalformat ein (z. B. 43.03500, -2.77988).",
+      "pt": "Digite as coordenadas em formato decimal (p. ex., 43.03500, -2.77988).",
+      "it": "Inserisci le coordinate in formato decimale (ad es. 43.03500, -2.77988)."
+    },
+    "Please fill in all required fields for the selected QR type.": {
+      "es": "Rellena todos los campos obligatorios del tipo de QR seleccionado.",
+      "eu": "Bete hautatutako QR motaren derrigorrezko eremu guztiak.",
+      "fr": "Veuillez remplir tous les champs obligatoires du type de QR sélectionné.",
+      "de": "Bitte fülle alle Pflichtfelder für den gewählten QR-Typ aus.",
+      "pt": "Preencha todos os campos obrigatórios do tipo de QR selecionado.",
+      "it": "Compila tutti i campi obbligatori per il tipo di QR selezionato."
+    },
+    "Please hang tight, it may take a few seconds.\nDon't close the app.": {
+      "es": "Un momento, puede tardar unos segundos.\nNo cierres la aplicación.",
+      "eu": "Itxaron une bat, segundo batzuk behar ditzake.\nEz itxi aplikazioa.",
+      "fr": "Veuillez patienter, cela peut prendre quelques secondes.\nNe fermez pas l'application.",
+      "de": "Bitte einen Moment Geduld, es kann ein paar Sekunden dauern.\nSchließe die App nicht.",
+      "pt": "Aguarde um momento, pode levar alguns segundos.\nNão feche o aplicativo.",
+      "it": "Attendi un momento, potrebbero volerci alcuni secondi.\nNon chiudere l'app."
+    },
+    "Please tap the buttons below and set the data!": {
+      "es": "¡Pulsa los botones de abajo y establece los datos!",
+      "eu": "Sakatu beheko botoiak eta ezarri datuak!",
+      "fr": "Appuyez sur les boutons ci-dessous pour définir les données !",
+      "de": "Tippe auf die Schaltflächen unten und lege die Daten fest!",
+      "pt": "Toque nos botões abaixo e defina os dados!",
+      "it": "Tocca i pulsanti qui sotto e imposta i dati!"
+    },
+    "Postal code (optional)": {
+      "es": "Código postal (opcional)",
+      "eu": "Posta-kodea (aukerakoa)",
+      "fr": "Code postal (facultatif)",
+      "de": "Postleitzahl (optional)",
+      "pt": "Código postal (opcional)",
+      "it": "CAP (facoltativo)"
+    },
+    "Preset message": {
+      "es": "Mensaje predefinido",
+      "eu": "Aurrez ezarritako mezua",
+      "fr": "Message prédéfini",
+      "de": "Vorgegebene Nachricht",
+      "pt": "Mensagem predefinida",
+      "it": "Messaggio predefinito"
+    },
+    "Primary color:": {
+      "es": "Color principal:",
+      "eu": "Kolore nagusia:",
+      "fr": "Couleur principale :",
+      "de": "Primärfarbe:",
+      "pt": "Cor primária:",
+      "it": "Colore primario:"
+    },
+    "Primary:": {
+      "es": "Principal:",
+      "eu": "Nagusia:",
+      "fr": "Principale :",
+      "de": "Primär:",
+      "pt": "Primária:",
+      "it": "Primario:"
+    },
+    "Privacy": {
+      "es": "Privacidad",
+      "eu": "Pribatutasuna",
+      "fr": "Confidentialité",
+      "de": "Datenschutz",
+      "pt": "Privacidade",
+      "it": "Privacy"
+    },
+    "Private": {
+      "es": "Privado",
+      "eu": "Pribatua",
+      "fr": "Privé",
+      "de": "Privat",
+      "pt": "Privado",
+      "it": "Privato"
+    },
+    "Proceed to app": {
+      "es": "Ir a la aplicación",
+      "eu": "Joan aplikaziora",
+      "fr": "Accéder à l'application",
+      "de": "Weiter zur App",
+      "pt": "Ir para o aplicativo",
+      "it": "Vai all'app"
+    },
+    "Protocol": {
+      "es": "Protocolo",
+      "eu": "Protokoloa",
+      "fr": "Protocole",
+      "de": "Protokoll",
+      "pt": "Protocolo",
+      "it": "Protocollo"
+    },
+    "QR Type": {
+      "es": "Tipo de QR",
+      "eu": "QR mota",
+      "fr": "Type de QR",
+      "de": "QR-Typ",
+      "pt": "Tipo de QR",
+      "it": "Tipo di QR"
+    },
+    "QR code imported successfully.": {
+      "es": "Código QR importado correctamente.",
+      "eu": "QR kodea behar bezala inportatu da.",
+      "fr": "Code QR importé avec succès.",
+      "de": "QR-Code erfolgreich importiert.",
+      "pt": "Código QR importado com sucesso.",
+      "it": "Codice QR importato con successo."
+    },
+    "QR exported to {folder_path}": {
+      "es": "QR exportado a {folder_path}",
+      "eu": "QRa hona esportatu da: {folder_path}",
+      "fr": "QR exporté vers {folder_path}",
+      "de": "QR-Code exportiert nach {folder_path}",
+      "pt": "QR exportado para {folder_path}",
+      "it": "QR esportato in {folder_path}"
+    },
+    "QR file not found": {
+      "es": "Archivo QR no encontrado",
+      "eu": "QR fitxategia ez da aurkitu",
+      "fr": "Fichier QR introuvable",
+      "de": "QR-Datei nicht gefunden",
+      "pt": "Arquivo QR não encontrado",
+      "it": "File QR non trovato"
+    },
+    "QR file not found in app data": {
+      "es": "Archivo QR no encontrado en los datos de la aplicación",
+      "eu": "QR fitxategia ez da aurkitu aplikazioaren datuetan",
+      "fr": "Fichier QR introuvable dans les données de l'application",
+      "de": "QR-Datei in den App-Daten nicht gefunden",
+      "pt": "Arquivo QR não encontrado nos dados do aplicativo",
+      "it": "File QR non trovato nei dati dell'app"
+    },
+    "QR file not found in internal folder": {
+      "es": "Archivo QR no encontrado en la carpeta interna",
+      "eu": "QR fitxategia ez da aurkitu barne-karpetan",
+      "fr": "Fichier QR introuvable dans le dossier interne",
+      "de": "QR-Datei im internen Ordner nicht gefunden",
+      "pt": "Arquivo QR não encontrado na pasta interna",
+      "it": "File QR non trovato nella cartella interna"
+    },
+    "QR technical details": {
+      "es": "Detalles técnicos del QR",
+      "eu": "QRaren xehetasun teknikoak",
+      "fr": "Détails techniques du QR",
+      "de": "Technische Details des QR-Codes",
+      "pt": "Detalhes técnicos do QR",
+      "it": "Dettagli tecnici del QR"
+    },
+    "QuickeR Web": {
+      "es": "QuickeR Web",
+      "eu": "QuickeR Web",
+      "fr": "QuickeR Web",
+      "de": "QuickeR Web",
+      "pt": "QuickeR Web",
+      "it": "QuickeR Web"
+    },
+    "Raw data": {
+      "es": "Datos sin procesar",
+      "eu": "Datu gordinak",
+      "fr": "Données brutes",
+      "de": "Rohdaten",
+      "pt": "Dados brutos",
+      "it": "Dati grezzi"
+    },
+    "Receiver's address": {
+      "es": "Dirección del destinatario",
+      "eu": "Hartzailearen helbidea",
+      "fr": "Adresse du destinataire",
+      "de": "Adresse des Empfängers",
+      "pt": "Endereço do destinatário",
+      "it": "Indirizzo del destinatario"
+    },
+    "Receiver's phone number": {
+      "es": "Teléfono del destinatario",
+      "eu": "Hartzailearen telefono-zenbakia",
+      "fr": "Numéro de téléphone du destinataire",
+      "de": "Telefonnummer des Empfängers",
+      "pt": "Telefone do destinatário",
+      "it": "Numero di telefono del destinatario"
+    },
+    "Report a bug": {
+      "es": "Informar de un error",
+      "eu": "Jakinarazi akats bat",
+      "fr": "Signaler un bug",
+      "de": "Fehler melden",
+      "pt": "Relatar um erro",
+      "it": "Segnala un bug"
+    },
+    "SMS": {
+      "es": "SMS",
+      "eu": "SMS",
+      "fr": "SMS",
+      "de": "SMS",
+      "pt": "SMS",
+      "it": "SMS"
+    },
+    "STL Complete!": {
+      "es": "¡STL completado!",
+      "eu": "STL amaituta!",
+      "fr": "STL terminé !",
+      "de": "STL abgeschlossen!",
+      "pt": "STL concluído!",
+      "it": "STL completato!"
+    },
+    "STL exported to {destination_path}": {
+      "es": "STL exportado a {destination_path}",
+      "eu": "STL hona esportatu da: {destination_path}",
+      "fr": "STL exporté vers {destination_path}",
+      "de": "STL exportiert nach {destination_path}",
+      "pt": "STL exportado para {destination_path}",
+      "it": "STL esportato in {destination_path}"
+    },
+    "Save": {
+      "es": "Guardar",
+      "eu": "Gorde",
+      "fr": "Enregistrer",
+      "de": "Speichern",
+      "pt": "Salvar",
+      "it": "Salva"
+    },
+    "Save QR": {
+      "es": "Guardar QR",
+      "eu": "Gorde QRa",
+      "fr": "Enregistrer le QR",
+      "de": "QR speichern",
+      "pt": "Salvar QR",
+      "it": "Salva QR"
+    },
+    "Save or upload data": {
+      "es": "Guardar o cargar datos",
+      "eu": "Gorde edo kargatu datuak",
+      "fr": "Enregistrer ou charger des données",
+      "de": "Daten speichern oder hochladen",
+      "pt": "Salvar ou carregar dados",
+      "it": "Salva o carica i dati"
+    },
+    "Save to gallery": {
+      "es": "Guardar en la galería",
+      "eu": "Gorde galerian",
+      "fr": "Enregistrer dans la galerie",
+      "de": "In der Galerie speichern",
+      "pt": "Salvar na galeria",
+      "it": "Salva nella galleria"
+    },
+    "See privacy details": {
+      "es": "Ver los detalles de privacidad",
+      "eu": "Ikusi pribatutasunaren xehetasunak",
+      "fr": "Voir les détails de confidentialité",
+      "de": "Datenschutzdetails ansehen",
+      "pt": "Ver detalhes de privacidade",
+      "it": "Vedi i dettagli sulla privacy"
+    },
+    "Select a .ZIP file to import. The containing QR codes will be added to your library, not replace the existing ones. If you want to add your own codes, they have to be image files (PNG, JPG, JPEG, WEBP or SVG).": {
+      "es": "Selecciona un archivo .ZIP para importar. Los códigos QR que contenga se añadirán a tu biblioteca sin reemplazar los existentes. Si quieres añadir tus propios códigos, deben ser archivos de imagen (PNG, JPG, JPEG, WEBP o SVG).",
+      "eu": "Hautatu inportatzeko .ZIP fitxategi bat. Barruko QR kodeak zure liburutegian gehituko dira, daudenak ordezkatu gabe. Zure kodeak gehitu nahi badituzu, irudi-fitxategiak izan behar dira (PNG, JPG, JPEG, WEBP edo SVG).",
+      "fr": "Sélectionnez un fichier .ZIP à importer. Les codes QR qu'il contient seront ajoutés à votre bibliothèque sans remplacer les existants. Pour ajouter vos propres codes, ce doivent être des fichiers image (PNG, JPG, JPEG, WEBP ou SVG).",
+      "de": "Wähle eine .ZIP-Datei zum Importieren. Die enthaltenen QR-Codes werden deiner Bibliothek hinzugefügt und ersetzen die vorhandenen nicht. Eigene Codes müssen Bilddateien sein (PNG, JPG, JPEG, WEBP oder SVG).",
+      "pt": "Selecione um arquivo .ZIP para importar. Os códigos QR contidos nele serão adicionados à sua biblioteca, sem substituir os existentes. Se quiser adicionar seus próprios códigos, eles devem ser arquivos de imagem (PNG, JPG, JPEG, WEBP ou SVG).",
+      "it": "Seleziona un file .ZIP da importare. I codici QR contenuti verranno aggiunti alla tua libreria senza sostituire quelli esistenti. Se vuoi aggiungere i tuoi codici, devono essere file immagine (PNG, JPG, JPEG, WEBP o SVG)."
+    },
+    "Select folder to export QR": {
+      "es": "Selecciona la carpeta donde exportar el QR",
+      "eu": "Hautatu QRa esportatzeko karpeta",
+      "fr": "Sélectionnez le dossier d'exportation du QR",
+      "de": "Ordner für den QR-Export auswählen",
+      "pt": "Selecione a pasta para exportar o QR",
+      "it": "Seleziona la cartella in cui esportare il QR"
+    },
+    "Select folder to export STL": {
+      "es": "Selecciona la carpeta donde exportar el STL",
+      "eu": "Hautatu STL esportatzeko karpeta",
+      "fr": "Sélectionnez le dossier d'exportation du STL",
+      "de": "Ordner für den STL-Export auswählen",
+      "pt": "Selecione a pasta para exportar o STL",
+      "it": "Seleziona la cartella in cui esportare l'STL"
+    },
+    "Select folder to export library": {
+      "es": "Selecciona la carpeta donde exportar la biblioteca",
+      "eu": "Hautatu liburutegia esportatzeko karpeta",
+      "fr": "Sélectionnez le dossier d'exportation de la bibliothèque",
+      "de": "Ordner für den Bibliotheksexport auswählen",
+      "pt": "Selecione a pasta para exportar a biblioteca",
+      "it": "Seleziona la cartella in cui esportare la libreria"
+    },
+    "Select the appearance mode of the app": {
+      "es": "Selecciona el modo de apariencia de la aplicación",
+      "eu": "Hautatu aplikazioaren itxura-modua",
+      "fr": "Sélectionnez le mode d'apparence de l'application",
+      "de": "Wähle das Erscheinungsbild der App",
+      "pt": "Selecione o modo de aparência do aplicativo",
+      "it": "Seleziona la modalità di aspetto dell'app"
+    },
+    "Select the colors of the app": {
+      "es": "Selecciona los colores de la aplicación",
+      "eu": "Hautatu aplikazioaren koloreak",
+      "fr": "Sélectionnez les couleurs de l'application",
+      "de": "Wähle die Farben der App",
+      "pt": "Selecione as cores do aplicativo",
+      "it": "Seleziona i colori dell'app"
+    },
+    "Select the language of the app": {
+      "es": "Selecciona el idioma de la aplicación",
+      "eu": "Hautatu aplikazioaren hizkuntza",
+      "fr": "Sélectionnez la langue de l'application",
+      "de": "Wähle die Sprache der App",
+      "pt": "Selecione o idioma do aplicativo",
+      "it": "Seleziona la lingua dell'app"
+    },
+    "Settings": {
+      "es": "Ajustes",
+      "eu": "Ezarpenak",
+      "fr": "Paramètres",
+      "de": "Einstellungen",
+      "pt": "Configurações",
+      "it": "Impostazioni"
+    },
+    "Share not supported on this platform: {ex}": {
+      "es": "Compartir no está disponible en esta plataforma: {ex}",
+      "eu": "Partekatzea ez da onartzen plataforma honetan: {ex}",
+      "fr": "Le partage n'est pas pris en charge sur cette plateforme : {ex}",
+      "de": "Teilen wird auf dieser Plattform nicht unterstützt: {ex}",
+      "pt": "Compartilhar não é compatível com esta plataforma: {ex}",
+      "it": "La condivisione non è supportata su questa piattaforma: {ex}"
+    },
+    "Share the app": {
+      "es": "Comparte la aplicación",
+      "eu": "Partekatu aplikazioa",
+      "fr": "Partager l'application",
+      "de": "App teilen",
+      "pt": "Compartilhe o aplicativo",
+      "it": "Condividi l'app"
+    },
+    "Shared via QuickeR: {name}": {
+      "es": "Compartido con QuickeR: {name}",
+      "eu": "QuickeR bidez partekatua: {name}",
+      "fr": "Partagé via QuickeR : {name}",
+      "de": "Geteilt über QuickeR: {name}",
+      "pt": "Compartilhado via QuickeR: {name}",
+      "it": "Condiviso tramite QuickeR: {name}"
+    },
+    "Source code, bugs and release notes": {
+      "es": "Código fuente, errores y notas de versión",
+      "eu": "Iturburu-kodea, akatsak eta bertsio-oharrak",
+      "fr": "Code source, bugs et notes de version",
+      "de": "Quellcode, Fehler und Versionshinweise",
+      "pt": "Código-fonte, erros e notas de versão",
+      "it": "Codice sorgente, bug e note di rilascio"
+    },
+    "Square images should be used. Else, the logo will be squished to fit. This may change in the future.": {
+      "es": "Se recomienda usar imágenes cuadradas. Si no, el logo se deformará para encajar. Esto podría cambiar en el futuro.",
+      "eu": "Irudi karratuak erabili behar dira. Bestela, logoa deformatu egingo da egokitzeko. Hau etorkizunean alda daiteke.",
+      "fr": "Il est conseillé d'utiliser des images carrées. Sinon, le logo sera déformé pour s'adapter. Cela pourrait changer à l'avenir.",
+      "de": "Es sollten quadratische Bilder verwendet werden. Andernfalls wird das Logo gestaucht. Das kann sich in Zukunft ändern.",
+      "pt": "Recomenda-se usar imagens quadradas. Caso contrário, o logotipo será distorcido para caber. Isso pode mudar no futuro.",
+      "it": "Si consigliano immagini quadrate. Altrimenti il logo verrà deformato per adattarsi. Questo potrebbe cambiare in futuro."
+    },
+    "Start time": {
+      "es": "Hora de inicio",
+      "eu": "Hasiera-ordua",
+      "fr": "Heure de début",
+      "de": "Startzeit",
+      "pt": "Hora de início",
+      "it": "Ora di inizio"
+    },
+    "Steps to create your first QR code": {
+      "es": "Pasos para crear tu primer código QR",
+      "eu": "Zure lehen QR kodea sortzeko urratsak",
+      "fr": "Étapes pour créer votre premier code QR",
+      "de": "Schritte zum Erstellen deines ersten QR-Codes",
+      "pt": "Passos para criar seu primeiro código QR",
+      "it": "Passaggi per creare il tuo primo codice QR"
+    },
+    "Steps:\n1. Click on the image icon above the '+'.\n2. Select an image from your device.\nDone! The QR code will be automatically added to the library.": {
+      "es": "Pasos:\n1. Pulsa el icono de imagen sobre el '+'.\n2. Selecciona una imagen de tu dispositivo.\n¡Listo! El código QR se añadirá automáticamente a la biblioteca.",
+      "eu": "Urratsak:\n1. Sakatu '+'-ren gaineko irudi-ikonoa.\n2. Hautatu irudi bat zure gailutik.\nEginda! QR kodea automatikoki gehituko da liburutegian.",
+      "fr": "Étapes :\n1. Appuyez sur l'icône d'image au-dessus du « + ».\n2. Sélectionnez une image sur votre appareil.\nC'est tout ! Le code QR sera ajouté automatiquement à la bibliothèque.",
+      "de": "Schritte:\n1. Tippe auf das Bild-Symbol über dem „+“.\n2. Wähle ein Bild von deinem Gerät.\nFertig! Der QR-Code wird automatisch zur Bibliothek hinzugefügt.",
+      "pt": "Passos:\n1. Toque no ícone de imagem acima do '+'.\n2. Selecione uma imagem do seu dispositivo.\nPronto! O código QR será adicionado automaticamente à biblioteca.",
+      "it": "Passaggi:\n1. Tocca l'icona dell'immagine sopra il '+'.\n2. Seleziona un'immagine dal tuo dispositivo.\nFatto! Il codice QR verrà aggiunto automaticamente alla libreria."
+    },
+    "Street (optional)": {
+      "es": "Calle (opcional)",
+      "eu": "Kalea (aukerakoa)",
+      "fr": "Rue (facultatif)",
+      "de": "Straße (optional)",
+      "pt": "Rua (opcional)",
+      "it": "Via (facoltativo)"
+    },
+    "Subject": {
+      "es": "Asunto",
+      "eu": "Gaia",
+      "fr": "Objet",
+      "de": "Betreff",
+      "pt": "Assunto",
+      "it": "Oggetto"
+    },
+    "Success!": {
+      "es": "¡Éxito!",
+      "eu": "Ongi!",
+      "fr": "Succès !",
+      "de": "Erfolg!",
+      "pt": "Sucesso!",
+      "it": "Successo!"
+    },
+    "Success! Some files were skipped:\n{files}": {
+      "es": "¡Éxito! Se omitieron algunos archivos:\n{files}",
+      "eu": "Ongi! Fitxategi batzuk saltatu dira:\n{files}",
+      "fr": "Succès ! Certains fichiers ont été ignorés :\n{files}",
+      "de": "Erfolg! Einige Dateien wurden übersprungen:\n{files}",
+      "pt": "Sucesso! Alguns arquivos foram ignorados:\n{files}",
+      "it": "Successo! Alcuni file sono stati saltati:\n{files}"
+    },
+    "Support QuickeR": {
+      "es": "Apoya QuickeR",
+      "eu": "Lagundu QuickeR-i",
+      "fr": "Soutenir QuickeR",
+      "de": "QuickeR unterstützen",
+      "pt": "Apoie o QuickeR",
+      "it": "Sostieni QuickeR"
+    },
+    "Support the project and help it grow!": {
+      "es": "¡Apoya el proyecto y ayúdalo a crecer!",
+      "eu": "Lagundu proiektuari hazten!",
+      "fr": "Soutenez le projet et aidez-le à grandir !",
+      "de": "Unterstütze das Projekt und hilf ihm zu wachsen!",
+      "pt": "Apoie o projeto e ajude-o a crescer!",
+      "it": "Sostieni il progetto e aiutalo a crescere!"
+    },
+    "System": {
+      "es": "Sistema",
+      "eu": "Sistema",
+      "fr": "Système",
+      "de": "System",
+      "pt": "Sistema",
+      "it": "Sistema"
+    },
+    "Tag name cannot be empty": {
+      "es": "El nombre de etiqueta no puede estar vacío",
+      "eu": "Etiketa-izena ezin da hutsik egon",
+      "fr": "Le nom d'étiquette ne peut pas être vide",
+      "de": "Der Name darf nicht leer sein",
+      "pt": "O nome da etiqueta não pode ficar vazio",
+      "it": "Il nome dell'etichetta non può essere vuoto"
+    },
+    "Technical": {
+      "es": "Técnico",
+      "eu": "Teknikoa",
+      "fr": "Technique",
+      "de": "Technisches",
+      "pt": "Técnico",
+      "it": "Tecnico"
+    },
+    "Text copied": {
+      "es": "Texto copiado",
+      "eu": "Testua kopiatuta",
+      "fr": "Texte copié",
+      "de": "Text kopiert",
+      "pt": "Texto copiado",
+      "it": "Testo copiato"
+    },
+    "Text/URL": {
+      "es": "Texto/URL",
+      "eu": "Testua/URLa",
+      "fr": "Texte/URL",
+      "de": "Text/URL",
+      "pt": "Texto/URL",
+      "it": "Testo/URL"
+    },
+    "That's it!": {
+      "es": "¡Eso es todo!",
+      "eu": "Hori da dena!",
+      "fr": "Et voilà !",
+      "de": "Das war's!",
+      "pt": "É isso!",
+      "it": "Fatto!"
+    },
+    "The app doesn't need permissions.": {
+      "es": "La aplicación no necesita permisos.",
+      "eu": "Aplikazioak ez du baimenik behar.",
+      "fr": "L'application n'a besoin d'aucune autorisation.",
+      "de": "Die App benötigt keine Berechtigungen.",
+      "pt": "O aplicativo não precisa de permissões.",
+      "it": "L'app non richiede permessi."
+    },
+    "The name contains invalid characters.": {
+      "es": "El nombre contiene caracteres no válidos.",
+      "eu": "Izenak baliogabeko karaktereak ditu.",
+      "fr": "Le nom contient des caractères non valides.",
+      "de": "Der Name enthält ungültige Zeichen.",
+      "pt": "O nome contém caracteres inválidos.",
+      "it": "Il nome contiene caratteri non validi."
+    },
+    "The selected colors have low contrast. This may result in a QR code that is difficult to scan. Do you want to continue?": {
+      "es": "Los colores seleccionados tienen poco contraste. Esto puede dificultar el escaneo del código QR. ¿Quieres continuar?",
+      "eu": "Hautatutako koloreek kontraste baxua dute. Horrek QR kodea eskaneatzea zailtzea eragin dezake. Jarraitu nahi duzu?",
+      "fr": "Les couleurs sélectionnées ont un faible contraste. Le code QR pourrait être difficile à scanner. Voulez-vous continuer ?",
+      "de": "Die gewählten Farben haben einen geringen Kontrast. Der QR-Code lässt sich dadurch möglicherweise schwer scannen. Möchtest du fortfahren?",
+      "pt": "As cores selecionadas têm pouco contraste. Isso pode dificultar a leitura do código QR. Deseja continuar?",
+      "it": "I colori selezionati hanno poco contrasto. Il codice QR potrebbe risultare difficile da scansionare. Vuoi continuare?"
+    },
+    "The selected colors have moderate contrast. This may result in a QR code that is difficult to scan. Do you want to continue?": {
+      "es": "Los colores seleccionados tienen un contraste moderado. Esto puede dificultar el escaneo del código QR. ¿Quieres continuar?",
+      "eu": "Hautatutako koloreek kontraste ertaina dute. Horrek QR kodea eskaneatzea zailtzea eragin dezake. Jarraitu nahi duzu?",
+      "fr": "Les couleurs sélectionnées ont un contraste modéré. Le code QR pourrait être difficile à scanner. Voulez-vous continuer ?",
+      "de": "Die gewählten Farben haben einen mittleren Kontrast. Der QR-Code lässt sich dadurch möglicherweise schwer scannen. Möchtest du fortfahren?",
+      "pt": "As cores selecionadas têm contraste moderado. Isso pode dificultar a leitura do código QR. Deseja continuar?",
+      "it": "I colori selezionati hanno un contrasto moderato. Il codice QR potrebbe risultare difficile da scansionare. Vuoi continuare?"
+    },
+    "The text has been copied to the clipboard.": {
+      "es": "El texto se ha copiado al portapapeles.",
+      "eu": "Testua arbelera kopiatu da.",
+      "fr": "Le texte a été copié dans le presse-papiers.",
+      "de": "Der Text wurde in die Zwischenablage kopiert.",
+      "pt": "O texto foi copiado para a área de transferência.",
+      "it": "Il testo è stato copiato negli appunti."
+    },
+    "There are three options to export a QR:\n- Export to gallery\n- Export to folder\n- Export to 3D model (.stl) -> protruding or insetting\n\nThe images are always exported in .png format.\nA filename is required.": {
+      "es": "Hay tres formas de exportar un QR:\n- Exportar a la galería\n- Exportar a una carpeta\n- Exportar a modelo 3D (.stl) -> en relieve o hundido\n\nLas imágenes siempre se exportan en formato .png.\nSe necesita un nombre de archivo.",
+      "eu": "QR bat esportatzeko hiru aukera daude:\n- Esportatu galeriara\n- Esportatu karpeta batera\n- Esportatu 3D eredura (.stl) -> irtena edo hondoratua\n\nIrudiak beti .png formatuan esportatzen dira.\nFitxategi-izena beharrezkoa da.",
+      "fr": "Il existe trois façons d'exporter un QR :\n- Exporter vers la galerie\n- Exporter vers un dossier\n- Exporter en modèle 3D (.stl) -> en relief ou en creux\n\nLes images sont toujours exportées au format .png.\nUn nom de fichier est requis.",
+      "de": "Es gibt drei Möglichkeiten, einen QR-Code zu exportieren:\n- In die Galerie exportieren\n- In einen Ordner exportieren\n- Als 3D-Modell (.stl) exportieren -> erhaben oder vertieft\n\nBilder werden immer im .png-Format exportiert.\nEin Dateiname ist erforderlich.",
+      "pt": "Há três formas de exportar um QR:\n- Exportar para a galeria\n- Exportar para uma pasta\n- Exportar para modelo 3D (.stl) -> em relevo ou rebaixado\n\nAs imagens são sempre exportadas no formato .png.\nUm nome de arquivo é obrigatório.",
+      "it": "Ci sono tre modi per esportare un QR:\n- Esporta nella galleria\n- Esporta in una cartella\n- Esporta come modello 3D (.stl) -> in rilievo o incassato\n\nLe immagini vengono sempre esportate in formato .png.\nÈ richiesto un nome di file."
+    },
+    "This action cannot be undone.\nHowever, you can always generate a new QR code with the same URL.": {
+      "es": "Esta acción no se puede deshacer.\nSin embargo, siempre puedes generar un nuevo código QR con la misma URL.",
+      "eu": "Ekintza hau ezin da desegin.\nHala ere, beti sor dezakezu URL bereko QR kode berri bat.",
+      "fr": "Cette action est irréversible.\nVous pouvez toutefois toujours générer un nouveau code QR avec la même URL.",
+      "de": "Diese Aktion kann nicht rückgängig gemacht werden.\nDu kannst aber jederzeit einen neuen QR-Code mit derselben URL erstellen.",
+      "pt": "Esta ação não pode ser desfeita.\nNo entanto, você sempre pode gerar um novo código QR com a mesma URL.",
+      "it": "Questa azione non può essere annullata.\nPuoi comunque sempre generare un nuovo codice QR con lo stesso URL."
+    },
+    "This will clear every QR code stored. This action is irreversible!": {
+      "es": "Esto borrará todos los códigos QR guardados. ¡Esta acción es irreversible!",
+      "eu": "Honek gordetako QR kode guztiak ezabatuko ditu. Ekintza hau ezin da desegin!",
+      "fr": "Cela effacera tous les codes QR enregistrés. Cette action est irréversible !",
+      "de": "Dadurch werden alle gespeicherten QR-Codes gelöscht. Diese Aktion ist unwiderruflich!",
+      "pt": "Isso apagará todos os códigos QR salvos. Esta ação é irreversível!",
+      "it": "Questo cancellerà tutti i codici QR salvati. Questa azione è irreversibile!"
+    },
+    "This will delete all QR codes and reset the app to its default state. This action cannot be undone.": {
+      "es": "Esto eliminará todos los códigos QR y restablecerá la aplicación a su estado inicial. Esta acción no se puede deshacer.",
+      "eu": "Honek QR kode guztiak ezabatuko ditu eta aplikazioa hasierako egoerara itzuliko du. Ekintza hau ezin da desegin.",
+      "fr": "Cela supprimera tous les codes QR et rétablira l'état par défaut de l'application. Cette action est irréversible.",
+      "de": "Dadurch werden alle QR-Codes gelöscht und die App wird auf den Standardzustand zurückgesetzt. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "pt": "Isso excluirá todos os códigos QR e restaurará o aplicativo ao estado padrão. Esta ação não pode ser desfeita.",
+      "it": "Questo eliminerà tutti i codici QR e ripristinerà l'app allo stato predefinito. Questa azione non può essere annullata."
+    },
+    "Tip": {
+      "es": "Propina",
+      "eu": "Esku-dirua",
+      "fr": "Pourboire",
+      "de": "Trinkgeld",
+      "pt": "Gorjeta",
+      "it": "Mancia"
+    },
+    "To view a QR, its actions and its details, click on its row/entry.\n\nActions:\n- Delete\n- Export\n- Share\n- Pin\n\nThe info is in their respective sections.": {
+      "es": "Para ver un QR, sus acciones y sus detalles, pulsa su fila o entrada.\n\nAcciones:\n- Eliminar\n- Exportar\n- Compartir\n- Fijar\n\nLa información está en sus secciones respectivas.",
+      "eu": "QR bat, bere ekintzak eta xehetasunak ikusteko, sakatu bere lerroan edo sarreran.\n\nEkintzak:\n- Ezabatu\n- Esportatu\n- Partekatu\n- Finkatu\n\nInformazioa dagozkien ataletan dago.",
+      "fr": "Pour voir un QR, ses actions et ses détails, appuyez sur sa ligne.\n\nActions :\n- Supprimer\n- Exporter\n- Partager\n- Épingler\n\nLes informations se trouvent dans leurs sections respectives.",
+      "de": "Um einen QR-Code, seine Aktionen und Details anzusehen, tippe auf seinen Eintrag.\n\nAktionen:\n- Löschen\n- Exportieren\n- Teilen\n- Anheften\n\nDie Infos stehen in den jeweiligen Abschnitten.",
+      "pt": "Para ver um QR, suas ações e seus detalhes, toque na linha ou entrada dele.\n\nAções:\n- Excluir\n- Exportar\n- Compartilhar\n- Fixar\n\nAs informações estão nas respectivas seções.",
+      "it": "Per vedere un QR, le sue azioni e i suoi dettagli, tocca la sua riga.\n\nAzioni:\n- Elimina\n- Esporta\n- Condividi\n- Fissa\n\nLe informazioni si trovano nelle rispettive sezioni."
+    },
+    "Tools": {
+      "es": "Herramientas",
+      "eu": "Tresnak",
+      "fr": "Outils",
+      "de": "Werkzeuge",
+      "pt": "Ferramentas",
+      "it": "Strumenti"
+    },
+    "Tools available:\n- Export library to zip\n- Import library from zip\n- Clear library": {
+      "es": "Herramientas disponibles:\n- Exportar la biblioteca a un zip\n- Importar la biblioteca desde un zip\n- Borrar la biblioteca",
+      "eu": "Eskuragarri dauden tresnak:\n- Esportatu liburutegia zip batera\n- Inportatu liburutegia zip batetik\n- Ezabatu liburutegia",
+      "fr": "Outils disponibles :\n- Exporter la bibliothèque en zip\n- Importer la bibliothèque depuis un zip\n- Effacer la bibliothèque",
+      "de": "Verfügbare Werkzeuge:\n- Bibliothek als ZIP exportieren\n- Bibliothek aus ZIP importieren\n- Bibliothek leeren",
+      "pt": "Ferramentas disponíveis:\n- Exportar biblioteca para zip\n- Importar biblioteca de um zip\n- Apagar biblioteca",
+      "it": "Strumenti disponibili:\n- Esporta la libreria in zip\n- Importa la libreria da uno zip\n- Svuota la libreria"
+    },
+    "Tutorial": {
+      "es": "Tutorial",
+      "eu": "Tutoriala",
+      "fr": "Tutoriel",
+      "de": "Tutorial",
+      "pt": "Tutorial",
+      "it": "Tutorial"
+    },
+    "Unknown": {
+      "es": "Desconocido",
+      "eu": "Ezezaguna",
+      "fr": "Inconnu",
+      "de": "Unbekannt",
+      "pt": "Desconhecido",
+      "it": "Sconosciuto"
+    },
+    "Unpinned": {
+      "es": "No fijados",
+      "eu": "Finkatu gabeak",
+      "fr": "Non épinglés",
+      "de": "Nicht angeheftet",
+      "pt": "Não fixados",
+      "it": "Non fissati"
+    },
+    "Unsupported file type.": {
+      "es": "Tipo de archivo no compatible.",
+      "eu": "Fitxategi mota ez da onartzen.",
+      "fr": "Type de fichier non pris en charge.",
+      "de": "Dateityp wird nicht unterstützt.",
+      "pt": "Tipo de arquivo não compatível.",
+      "it": "Tipo di file non supportato."
+    },
+    "Update available": {
+      "es": "Actualización disponible",
+      "eu": "Eguneraketa eskuragarri",
+      "fr": "Mise à jour disponible",
+      "de": "Update verfügbar",
+      "pt": "Atualização disponível",
+      "it": "Aggiornamento disponibile"
+    },
+    "Updates": {
+      "es": "Actualizaciones",
+      "eu": "Eguneraketak",
+      "fr": "Mises à jour",
+      "de": "Updates",
+      "pt": "Atualizações",
+      "it": "Aggiornamenti"
+    },
+    "View the license terms": {
+      "es": "Ver los términos de la licencia",
+      "eu": "Ikusi lizentziaren baldintzak",
+      "fr": "Voir les termes de la licence",
+      "de": "Lizenzbedingungen ansehen",
+      "pt": "Ver os termos da licença",
+      "it": "Vedi i termini della licenza"
+    },
+    "Viewing QRs, actions and details": {
+      "es": "Ver QR, acciones y detalles",
+      "eu": "QRak, ekintzak eta xehetasunak ikustea",
+      "fr": "Afficher les QR, les actions et les détails",
+      "de": "QR-Codes, Aktionen und Details ansehen",
+      "pt": "Ver QRs, ações e detalhes",
+      "it": "Vedere i QR, le azioni e i dettagli"
+    },
+    "WIFI": {
+      "es": "Wi-Fi",
+      "eu": "Wi-Fi",
+      "fr": "Wi-Fi",
+      "de": "Wi-Fi",
+      "pt": "Wi-Fi",
+      "it": "Wi-Fi"
+    },
+    "WIFI password": {
+      "es": "Contraseña del Wi-Fi",
+      "eu": "Wi-Fi pasahitza",
+      "fr": "Mot de passe Wi-Fi",
+      "de": "WLAN-Passwort",
+      "pt": "Senha do Wi-Fi",
+      "it": "Password Wi-Fi"
+    },
+    "WIFI security protocol": {
+      "es": "Protocolo de seguridad del Wi-Fi",
+      "eu": "Wi-Fi segurtasun-protokoloa",
+      "fr": "Protocole de sécurité Wi-Fi",
+      "de": "WLAN-Sicherheitsprotokoll",
+      "pt": "Protocolo de segurança do Wi-Fi",
+      "it": "Protocollo di sicurezza Wi-Fi"
+    },
+    "Want to learn how to use QuickeR?": {
+      "es": "¿Quieres aprender a usar QuickeR?",
+      "eu": "QuickeR nola erabili ikasi nahi duzu?",
+      "fr": "Envie d'apprendre à utiliser QuickeR ?",
+      "de": "Möchtest du lernen, wie man QuickeR benutzt?",
+      "pt": "Quer aprender a usar o QuickeR?",
+      "it": "Vuoi imparare a usare QuickeR?"
+    },
+    "Website": {
+      "es": "Sitio web",
+      "eu": "Webgunea",
+      "fr": "Site web",
+      "de": "Website",
+      "pt": "Site",
+      "it": "Sito web"
+    },
+    "Website (optional)": {
+      "es": "Sitio web (opcional)",
+      "eu": "Webgunea (aukerakoa)",
+      "fr": "Site web (facultatif)",
+      "de": "Website (optional)",
+      "pt": "Site (opcional)",
+      "it": "Sito web (facoltativo)"
+    },
+    "Work": {
+      "es": "Trabajo",
+      "eu": "Lana",
+      "fr": "Travail",
+      "de": "Arbeit",
+      "pt": "Trabalho",
+      "it": "Lavoro"
+    },
+    "Yes, invert": {
+      "es": "Sí, invertir",
+      "eu": "Bai, alderantzikatu",
+      "fr": "Oui, inverser",
+      "de": "Ja, invertieren",
+      "pt": "Sim, inverter",
+      "it": "Sì, inverti"
+    },
+    "Your QRs, made quicker.": {
+      "es": "Tus QR, más rápido.",
+      "eu": "Zure QRak, azkarrago.",
+      "fr": "Vos QR, en plus rapide.",
+      "de": "Deine QR-Codes, schneller gemacht.",
+      "pt": "Seus QRs, mais rápido.",
+      "it": "I tuoi QR, più veloci."
+    },
+    "¡QR code generated!": {
+      "es": "¡Código QR generado!",
+      "eu": "QR kodea sortuta!",
+      "fr": "Code QR généré !",
+      "de": "QR-Code erstellt!",
+      "pt": "Código QR gerado!",
+      "it": "Codice QR generato!"
+    }
+  }
+}

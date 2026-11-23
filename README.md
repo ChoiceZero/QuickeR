@@ -37,6 +37,7 @@ QuickeR is a platform that lets you create QR codes but without accounts, limits
 - Downloads the codes.
 - Has a summary view before downloading the QR code.
 - Uses a Material3-like user interface.
+- Available in English, Español, Euskara, Français, Deutsch, Português and Italiano. Change it in Settings → Customization → Language; the app updates instantly and remembers your choice.
 
 ## Supported devices and current release types
 
@@ -64,6 +65,20 @@ QuickeR is a platform that lets you create QR codes but without accounts, limits
 3. The Android app ID is `io.github.choicezero.quicker`.
 
 Updates require every release to be signed with the same key (set by the `ANDROID_KEYSTORE_*` repository secrets).
+
+## Translations
+
+All UI texts live in [`src/translations.json`](src/translations.json). The English text is the key, and each entry holds the translation for every other language (a missing translation falls back to English). In the code, texts are written as `tr("Save QR")`, and texts with variables as `tr("Saved to {path}", path=path)`.
+
+- **Fix a translation:** edit its entry in `src/translations.json`.
+- **Add a language:** add it to `languages` (code and native name) and add its translation to every entry in `strings`.
+- **Add or change a text in the code:** wrap it in `tr(...)` and add it to `src/translations.json`.
+
+Run this before opening a PR. It fails if a text is missing a language or a placeholder doesn't match:
+
+```bash
+python scripts/check_translations.py
+```
 
 ## Tech Stack
 
