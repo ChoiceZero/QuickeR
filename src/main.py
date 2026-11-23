@@ -1003,9 +1003,18 @@ class QRCodes:
         invert_dialog = ft.AlertDialog(
             title=ft.Text(tr("Invert 3D model?")),
             alignment=ft.Alignment.CENTER,
-            content=ft.Text(
-                tr("By default, the dark squares of the QR are raised, thus the dark area protrudes.\n"
-                "Invert this so the light modules are raised and the dark areas are indented instead?")
+            content=ft.Column(
+                tight=True,
+                scroll=ft.ScrollMode.AUTO,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                controls=[
+                    ft.Text(
+                        tr("By default, the dark squares of the QR are raised, thus the dark area protrudes.\n"
+                        "Invert this so the light modules are raised and the dark areas are indented instead?")
+                    ),
+                    ft.Image(src=os.path.join(ASSET_DIR, "qr-3d-protruding.svg"), height=190, fit=ft.BoxFit.CONTAIN),
+                    ft.Image(src=os.path.join(ASSET_DIR, "qr-3d-indented.svg"), height=190, fit=ft.BoxFit.CONTAIN),
+                ],
             ),
             actions=[
                 ft.TextButton(tr("No, keep as is"), on_click=lambda e: self._continue_stl_export(False)),
