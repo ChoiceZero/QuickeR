@@ -39,6 +39,36 @@ QuickeR is a platform that lets you create QR codes but without accounts, limits
 - Uses a Material3-like user interface.
 - Available in English, Español, Euskara, Français, Deutsch, Português and Italiano. Change it in Settings → Customization → Language; the app updates instantly and remembers your choice.
 
+## Screenshots
+
+QuickeR has distinct layouts for desktop and phone screens, with light and dark themes and several accent colors. Every capture below shows the same "QuickeR" text QR across the library, creator, details, settings, and export views. Click an image to open the full-size version.
+
+### Desktop window — 1920×1080, frameless
+
+| Library · green / light | QR details · green / light |
+| :---: | :---: |
+| <a href="docs/screenshots/desktop_library_green_light.png"><img src="docs/screenshots/desktop_library_green_light.png" alt="Desktop library, green light theme" width="420"></a> | <a href="docs/screenshots/desktop_details_green_light.png"><img src="docs/screenshots/desktop_details_green_light.png" alt="Desktop QR details, green light theme" width="420"></a> |
+| Creator · green / light | Creator · purple / dark |
+| <a href="docs/screenshots/desktop_create_green_light.png"><img src="docs/screenshots/desktop_create_green_light.png" alt="Desktop QR creator, green light theme" width="420"></a> | <a href="docs/screenshots/desktop_create_purple_dark.png"><img src="docs/screenshots/desktop_create_purple_dark.png" alt="Desktop QR creator, purple dark theme" width="420"></a> |
+| QR details · blue / dark | Settings · green / light |
+| <a href="docs/screenshots/desktop_details_blue_dark.png"><img src="docs/screenshots/desktop_details_blue_dark.png" alt="Desktop QR details, blue dark theme" width="420"></a> | <a href="docs/screenshots/desktop_settings_green_light.png"><img src="docs/screenshots/desktop_settings_green_light.png" alt="Desktop settings, green light theme" width="420"></a> |
+| Settings · orange / light | Export dialog · pink / dark |
+| <a href="docs/screenshots/desktop_settings_orange_light.png"><img src="docs/screenshots/desktop_settings_orange_light.png" alt="Desktop settings, orange light theme" width="420"></a> | <a href="docs/screenshots/desktop_export_pink_dark.png"><img src="docs/screenshots/desktop_export_pink_dark.png" alt="Desktop export dialog, pink dark theme" width="420"></a> |
+
+### Fullscreen — 2560×1440
+
+| QR details · green / light | Creator · blue / dark | Settings · orange / light |
+| :---: | :---: | :---: |
+| <a href="docs/screenshots/fullscreen_details_green_light.png"><img src="docs/screenshots/fullscreen_details_green_light.png" alt="Fullscreen QR details, green light theme" width="300"></a> | <a href="docs/screenshots/fullscreen_create_blue_dark.png"><img src="docs/screenshots/fullscreen_create_blue_dark.png" alt="Fullscreen QR creator, blue dark theme" width="300"></a> | <a href="docs/screenshots/fullscreen_settings_orange_light.png"><img src="docs/screenshots/fullscreen_settings_orange_light.png" alt="Fullscreen settings, orange light theme" width="300"></a> |
+
+### Mobile — 430×932
+
+| Library · green / light | Library · pink / dark | Creator · purple / light |
+| :---: | :---: | :---: |
+| <a href="docs/screenshots/mobile_library_green_light.png"><img src="docs/screenshots/mobile_library_green_light.png" alt="Mobile library, green light theme" width="160"></a> | <a href="docs/screenshots/mobile_library_pink_dark.png"><img src="docs/screenshots/mobile_library_pink_dark.png" alt="Mobile library, pink dark theme" width="160"></a> | <a href="docs/screenshots/mobile_create_purple_light.png"><img src="docs/screenshots/mobile_create_purple_light.png" alt="Mobile QR creator, purple light theme" width="160"></a> |
+| QR details · blue / dark | Settings · teal / dark | Settings · indigo / light |
+| <a href="docs/screenshots/mobile_details_blue_dark.png"><img src="docs/screenshots/mobile_details_blue_dark.png" alt="Mobile QR details, blue dark theme" width="160"></a> | <a href="docs/screenshots/mobile_settings_teal_dark.png"><img src="docs/screenshots/mobile_settings_teal_dark.png" alt="Mobile settings, teal dark theme" width="160"></a> | <a href="docs/screenshots/mobile_settings_indigo_light.png"><img src="docs/screenshots/mobile_settings_indigo_light.png" alt="Mobile settings, indigo light theme" width="160"></a> |
+
 ## Supported devices and current release types
 
 | Device                        | Support   | Installer/Packaged | Standalone |
