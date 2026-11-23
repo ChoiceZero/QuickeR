@@ -129,6 +129,8 @@ python scripts/check_translations.py
 >It is heavily recommended to use Python 3.12 or above to run the app.
 
 ### flet
+>[!WARNING]
+>No hot reload without uv.
 
 Run as a desktop app:
 
