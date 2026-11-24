@@ -19,6 +19,7 @@ import numpy as np
 import zipfile
 import re
 import urllib.request
+import crash_log
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ASSET_DIR = os.path.join(BASE_DIR, "assets")
@@ -154,6 +155,8 @@ def format_ics_datetime(value):
 
 
 APP_VERSION = "__VERSION__"
+LOG_DIR = os.path.join(APP_DATA_DIR, "logs")
+crash_log.install(LOG_DIR, APP_VERSION)
 RELEASES_API_URL = "https://api.github.com/repos/ChoiceZero/QuickeR/releases?per_page=20"
 
 ERROR_CORRECTION_MAP = {
@@ -3421,6 +3424,65 @@ def main(page: ft.Page, show_settings=False):
             actions_alignment="end",
         ))
 
+    def show_no_crash_log():
+        page.show_dialog(ft.AlertDialog(
+            title=ft.Text(tr("No crash logs")),
+            content=ft.Text(tr("QuickeR has not recorded any crash yet.")),
+            actions=[ft.TextButton(tr("OK"), on_click=lambda e: page.pop_dialog())],
+            actions_alignment="end",
+        ))
+
+    def read_latest_crash_log():
+        path = crash_log.latest_log(LOG_DIR)
+        if path is None:
+            show_no_crash_log()
+            return None, None
+        with open(path, encoding="utf-8", errors="replace") as f:
+            return path, f.read()
+
+    def view_latest_crash_log():
+        path, text = read_latest_crash_log()
+        if path is None:
+            return
+        page.show_dialog(ft.AlertDialog(
+            title=ft.Text(os.path.basename(path)),
+            content=ft.Container(
+                width=600, height=400,
+                content=ft.Column(scroll=ft.ScrollMode.AUTO, controls=[
+                    ft.Text(value=text, selectable=True, size=12, font_family="monospace"),
+                ]),
+            ),
+            actions=[
+                ft.TextButton(tr("Copy"), on_click=lambda e: (page.pop_dialog(), asyncio.ensure_future(copy_text_to_clipboard(text)))),
+                ft.TextButton(tr("Close"), on_click=lambda e: page.pop_dialog()),
+            ],
+            actions_alignment="end",
+        ))
+
+    async def copy_latest_crash_log():
+        path, text = read_latest_crash_log()
+        if path is not None:
+            await copy_text_to_clipboard(text)
+
+    async def open_latest_crash_log():
+        path = crash_log.latest_log(LOG_DIR)
+        if path is None:
+            show_no_crash_log()
+            return
+        try:
+            if platform.system() in ("Android", "iOS") or os.environ.get("ANDROID_DATA"):
+                # Mobile apps can't hand their private files to another app by path; the share sheet can.
+                await ft.Share().share_files([ft.ShareFile.from_path(path)])
+            else:
+                await ft.UrlLauncher().launch_url(Path(path).as_uri())
+        except Exception as ex:
+            page.show_dialog(ft.AlertDialog(
+                title=ft.Text(tr("Error")),
+                content=ft.Text(tr("Could not open the crash log: {ex}", ex=ex)),
+                actions=[ft.TextButton(tr("OK"), on_click=lambda e: page.pop_dialog())],
+                actions_alignment="end",
+            ))
+
     def clear_app_data():
         def clear_data_confirmed():
             page.pop_dialog()
@@ -4934,6 +4996,56 @@ def main(page: ft.Page, show_settings=False):
                                 update_check_switch,
                             ]
                         ),
+                    ),
+                    ft.ExpansionTile(
+                        bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, collapsed_bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
+                        margin=ft.Margin.only(bottom=5, top=-12),
+                        width=600,
+                        on_change=lambda e: autocollapse_expansion_tiles(e),
+                        align=ft.Alignment.CENTER,
+                        tile_padding=ft.Padding.only(left=20, right=20, top=10, bottom=10),
+                        shape=ft.RoundedRectangleBorder(side=ft.BorderSide(style=ft.BorderStyle.NONE), radius=8),
+                        collapsed_shape=ft.RoundedRectangleBorder(side=ft.BorderSide(style=ft.BorderStyle.NONE), radius=8),
+                        title=ft.Row(controls=[
+                            ft.IconButton(
+                                disabled=True,
+                                icon=ft.Icons.BUG_REPORT_ROUNDED,
+                                style=ft.ButtonStyle(
+                                    shape=ft.CircleBorder(),
+                                    padding=10,
+                                    bgcolor=ft.Colors.SECONDARY_CONTAINER,
+                                    icon_color=ft.Colors.PRIMARY,
+                                    icon_size=20
+                                )
+                            ),
+                            ft.Column(spacing=-3, expand=True, controls=[
+                                ft.Text(value=tr("Crash logs"), size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+                                ft.Text(value=tr("View, copy or open the latest crash log"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
+                            ]),
+                        ]),
+                        controls=[ft.Container(
+                            margin=ft.Margin.only(left=10, right=10, bottom=10), border_radius=20, bgcolor=ft.Colors.SURFACE_CONTAINER, padding=20,
+                            content=ft.Column(controls=[
+                                ft.Text(value=tr("When QuickeR hits an error, it saves the details to a log file on this device. Attach the latest log when you report a bug."), size=15, color=ft.Colors.INVERSE_SURFACE),
+                                ft.Row(wrap=True, controls=[
+                                    ft.Button(
+                                        content=ft.Text(value=tr("View"), color=ft.Colors.SURFACE, size=16), icon=ft.Icons.VISIBILITY_ROUNDED,
+                                        on_click=lambda e: view_latest_crash_log(),
+                                        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=15, icon_size=20, bgcolor=ft.Colors.PRIMARY, icon_color=ft.Colors.SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER),
+                                    ),
+                                    ft.Button(
+                                        content=ft.Text(value=tr("Copy"), color=ft.Colors.SURFACE, size=16), icon=ft.Icons.CONTENT_COPY_ROUNDED,
+                                        on_click=lambda e: asyncio.ensure_future(copy_latest_crash_log()),
+                                        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=15, icon_size=20, bgcolor=ft.Colors.SECONDARY, icon_color=ft.Colors.SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER),
+                                    ),
+                                    ft.Button(
+                                        content=ft.Text(value=tr("Open"), color=ft.Colors.SURFACE, size=16), icon=ft.Icons.OPEN_IN_NEW_ROUNDED,
+                                        on_click=lambda e: asyncio.ensure_future(open_latest_crash_log()),
+                                        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), padding=15, icon_size=20, bgcolor=ft.Colors.SECONDARY, icon_color=ft.Colors.SURFACE, overlay_color=ft.Colors.ON_PRIMARY_CONTAINER),
+                                    ),
+                                ]),
+                            ]),
+                        )],
                     ),
                     ft.Container(
                         bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 

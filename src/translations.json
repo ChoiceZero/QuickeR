@@ -330,6 +330,14 @@
       "pt": "Coordenadas",
       "it": "Coordinate"
     },
+    "Copy": {
+      "es": "Copiar",
+      "eu": "Kopiatu",
+      "fr": "Copier",
+      "de": "Kopieren",
+      "pt": "Copiar",
+      "it": "Copia"
+    },
     "Copy link to clipboard": {
       "es": "Copiar enlace al portapapeles",
       "eu": "Kopiatu esteka arbelera",
@@ -338,6 +346,14 @@
       "pt": "Copiar link para a área de transferência",
       "it": "Copia il link negli appunti"
     },
+    "Could not open the crash log: {ex}": {
+      "es": "No se pudo abrir el registro de errores: {ex}",
+      "eu": "Ezin izan da errore-erregistroa ireki: {ex}",
+      "fr": "Impossible d'ouvrir le journal de plantage : {ex}",
+      "de": "Das Absturzprotokoll konnte nicht geöffnet werden: {ex}",
+      "pt": "Não foi possível abrir o registro de falhas: {ex}",
+      "it": "Impossibile aprire il registro degli arresti anomali: {ex}"
+    },
     "Country (optional)": {
       "es": "País (opcional)",
       "eu": "Herrialdea (aukerakoa)",
@@ -345,6 +361,14 @@
       "de": "Land (optional)",
       "pt": "País (opcional)",
       "it": "Paese (facoltativo)"
+    },
+    "Crash logs": {
+      "es": "Registros de errores",
+      "eu": "Errore-erregistroak",
+      "fr": "Journaux de plantage",
+      "de": "Absturzprotokolle",
+      "pt": "Registros de falhas",
+      "it": "Registri degli arresti anomali"
     },
     "Creating a QR": {
       "es": "Crear un QR",
@@ -1154,6 +1178,14 @@
       "pt": "Ainda não há códigos QR! Toque no botão '+' para criar o primeiro.",
       "it": "Ancora nessun codice QR! Tocca il pulsante '+' per creare il primo."
     },
+    "No crash logs": {
+      "es": "No hay registros de errores",
+      "eu": "Ez dago errore-erregistrorik",
+      "fr": "Aucun journal de plantage",
+      "de": "Keine Absturzprotokolle",
+      "pt": "Nenhum registro de falhas",
+      "it": "Nessun registro degli arresti anomali"
+    },
     "No password": {
       "es": "Sin contraseña",
       "eu": "Pasahitzik gabe",
@@ -1209,6 +1241,14 @@
       "de": "EINMALIG",
       "pt": "ÚNICO",
       "it": "UNA TANTUM"
+    },
+    "Open": {
+      "es": "Abrir",
+      "eu": "Ireki",
+      "fr": "Ouvrir",
+      "de": "Öffnen",
+      "pt": "Abrir",
+      "it": "Apri"
     },
     "Open source": {
       "es": "Código abierto",
@@ -1513,6 +1553,14 @@
       "de": "QuickeR Web",
       "pt": "QuickeR Web",
       "it": "QuickeR Web"
+    },
+    "QuickeR has not recorded any crash yet.": {
+      "es": "QuickeR todavía no ha registrado ningún error.",
+      "eu": "QuickeR-ek ez du oraindik errorerik erregistratu.",
+      "fr": "QuickeR n'a encore enregistré aucun plantage.",
+      "de": "QuickeR hat noch keinen Absturz aufgezeichnet.",
+      "pt": "O QuickeR ainda não registrou nenhuma falha.",
+      "it": "QuickeR non ha ancora registrato alcun arresto anomalo."
     },
     "Raw data": {
       "es": "Datos sin procesar",
@@ -1986,6 +2034,14 @@
       "pt": "Atualizações",
       "it": "Aggiornamenti"
     },
+    "View": {
+      "es": "Ver",
+      "eu": "Ikusi",
+      "fr": "Afficher",
+      "de": "Anzeigen",
+      "pt": "Ver",
+      "it": "Visualizza"
+    },
     "View the license terms": {
       "es": "Ver los términos de la licencia",
       "eu": "Ikusi lizentziaren baldintzak",
@@ -1993,6 +2049,14 @@
       "de": "Lizenzbedingungen ansehen",
       "pt": "Ver os termos da licença",
       "it": "Vedi i termini della licenza"
+    },
+    "View, copy or open the latest crash log": {
+      "es": "Ver, copiar o abrir el último registro de errores",
+      "eu": "Ikusi, kopiatu edo ireki azken errore-erregistroa",
+      "fr": "Afficher, copier ou ouvrir le dernier journal de plantage",
+      "de": "Das neueste Absturzprotokoll anzeigen, kopieren oder öffnen",
+      "pt": "Ver, copiar ou abrir o registro de falhas mais recente",
+      "it": "Visualizza, copia o apri l'ultimo registro degli arresti anomali"
     },
     "Viewing QRs, actions and details": {
       "es": "Ver QR, acciones y detalles",
@@ -2049,6 +2113,14 @@
       "de": "Website (optional)",
       "pt": "Site (opcional)",
       "it": "Sito web (facoltativo)"
+    },
+    "When QuickeR hits an error, it saves the details to a log file on this device. Attach the latest log when you report a bug.": {
+      "es": "Cuando QuickeR sufre un error, guarda los detalles en un archivo de registro en este dispositivo. Adjunta el último registro cuando informes de un fallo.",
+      "eu": "QuickeR-ek errore bat duenean, xehetasunak gailu honetako erregistro-fitxategi batean gordetzen ditu. Erantsi azken erregistroa akats baten berri ematean.",
+      "fr": "Lorsque QuickeR rencontre une erreur, il enregistre les détails dans un fichier journal sur cet appareil. Joignez le dernier journal lorsque vous signalez un bug.",
+      "de": "Wenn in QuickeR ein Fehler auftritt, werden die Details in einer Protokolldatei auf diesem Gerät gespeichert. Hänge das neueste Protokoll an, wenn du einen Fehler meldest.",
+      "pt": "Quando o QuickeR encontra um erro, ele salva os detalhes em um arquivo de registro neste dispositivo. Anexe o registro mais recente ao relatar um bug.",
+      "it": "Quando QuickeR incontra un errore, ne salva i dettagli in un file di registro su questo dispositivo. Allega l'ultimo registro quando segnali un bug."
     },
     "Work": {
       "es": "Trabajo",
