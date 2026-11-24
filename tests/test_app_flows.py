@@ -184,6 +184,43 @@ async def test_pinning_a_qr_moves_it_to_pinned(start_app, data_dir):
     assert pin.icon == ft.Icons.PUSH_PIN_ROUNDED
 
 
+def library_entries(driver):
+    """Each library entry: its list row and its grid card."""
+    return {
+        c.controls[0].title.value: c
+        for c in driver.find_all(lambda c: isinstance(c, ft.Column) and isinstance(c.controls, list) and c.controls and isinstance(c.controls[0], ft.ListTile))
+    }
+
+
+def shown_as_grid(entry):
+    tile, divider, card = entry.controls
+    return card.visible and not tile.visible and not divider.visible and entry.col == app.GRID_COLUMNS
+
+
+async def test_grid_button_shows_the_library_as_cards(start_app, data_dir):
+    save_qr_png(data_dir / "qr_codes", "Shop", "https://example.com/shop")
+    save_qr_png(data_dir / "pinned_qr_codes", "Wifi at home", "WIFI:S:Home;T:WPA;P:secret;;")
+    driver = await start_app()
+    assert not any(shown_as_grid(e) for e in library_entries(driver).values())
+
+    await driver.click(driver.find(is_button("Grid")))
+    assert all(shown_as_grid(e) for e in library_entries(driver).values())
+
+    # A card opens the details like a row does; pinning re-adds the entry, still as a card.
+    shop_card = library_entries(driver)["Shop"].controls[2]
+    await driver.click(shop_card)
+    await driver.click(driver.find(lambda c: isinstance(c, ft.IconButton) and c.icon == ft.Icons.PUSH_PIN_OUTLINED))
+    assert (data_dir / "pinned_qr_codes" / "Shop.png").exists()
+    assert shown_as_grid(library_entries(driver)["Shop"])
+
+    pinned_filter = driver.find(is_button("Pinned"))
+    await driver.click(pinned_filter)
+    assert pinned_filter.bgcolor == ft.Colors.SECONDARY_CONTAINER
+
+    await driver.click(driver.find(is_button("List")))
+    assert not any(shown_as_grid(e) for e in library_entries(driver).values())
+
+
 async def test_the_ui_follows_the_saved_language(start_app, data_dir):
     settings = data_dir / "settings.json"
     settings.write_text(json.dumps({**json.loads(settings.read_text()), "Language": "es"}))
