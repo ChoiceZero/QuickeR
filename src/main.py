@@ -149,9 +149,15 @@ def tr(text, **values):
 
 
 def format_ics_datetime(value):
-    """Turns an iCalendar date-time (20260131T093000) into readable text."""
-    day, clock = value.split("T")[:2]
-    return tr("Day: {date} Time: {time}", date=f"{day[:4]}-{day[4:6]}-{day[6:8]}", time=f"{clock[:2]}:{clock[2:4]}")
+    """Turns an iCalendar date-time (20260131T093000, 20260131T093000Z) or
+    date (20260131) into readable text. Anything else is returned as is."""
+    match = re.match(r"^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2}))?", (value or "").strip())
+    if not match:
+        return value
+    year, month, day, hour, minute = match.groups()
+    if hour is None:
+        return f"{year}-{month}-{day}"
+    return tr("Day: {date} Time: {time}", date=f"{year}-{month}-{day}", time=f"{hour}:{minute}")
 
 
 APP_VERSION = "__VERSION__"
@@ -344,6 +350,337 @@ def parse_vcard(text):
     if not contact["name"]:
         contact["name"] = structured_name
     return contact
+
+
+# ---------------------------------------------------------------------------
+# QR content parsing
+# ---------------------------------------------------------------------------
+# QRs imported from other apps follow the same formats with different
+# spellings: any letter case for the prefix, fields in any order, escaped
+# separators. parse_qr_content reads all of them into one shape per kind.
+
+CRYPTO_SCHEMES = {
+    "bitcoin": "Bitcoin", "bitcoincash": "Bitcoin Cash", "litecoin": "Litecoin",
+    "ethereum": "Ethereum", "dogecoin": "Dogecoin", "dash": "Dash",
+    "monero": "Monero", "zcash": "Zcash", "solana": "Solana",
+}
+
+
+def _after_prefix(text, *prefixes):
+    """Returns `text` without the first matching prefix (any case), or None."""
+    for prefix in prefixes:
+        if text[:len(prefix)].upper() == prefix.upper():
+            return text[len(prefix):]
+    return None
+
+
+def _unescape(value):
+    return re.sub(r"\\(.)", r"\1", value or "", flags=re.DOTALL)
+
+
+def _key_values(body):
+    """Reads 'KEY:value;KEY:value;;' (WIFI, MECARD, MATMSG, BIZCARD) into
+    (KEY, value) pairs, honouring backslash-escaped separators."""
+    pairs = []
+    for part in vcard_split(body):
+        if ":" not in part:
+            continue
+        key, value = part.split(":", 1)
+        value = _unescape(value)
+        if len(value) >= 2 and value[0] == value[-1] == '"':
+            value = value[1:-1]
+        pairs.append((key.strip().upper(), value))
+    return pairs
+
+
+def _uri_query(query):
+    """Parses a URI query. Many generators form-encode it, so '+' reads as a space
+    (QuickeR's own codes percent-encode a literal '+')."""
+    params = {}
+    for part in query.split("&"):
+        key, _, value = part.partition("=")
+        if key and key.lower() not in params:
+            params[key.lower()] = urllib.parse.unquote_plus(value)
+    return params
+
+
+def _contact_from_pairs(pairs, names):
+    """Builds a parse_vcard-style dict from MECARD/BIZCARD pairs. `names`
+    maps each field of the format to a contact key."""
+    contact = {"name": "", "org": "", "title": "", "phones": [], "emails": [], "urls": [], "address": "", "note": ""}
+    first = last = ""
+    for key, value in pairs:
+        value = value.strip()
+        field = names.get(key)
+        if not value or not field:
+            continue
+        if field in ("phones", "emails", "urls"):
+            contact[field].append(value)
+        elif field == "first":
+            first = first or value
+        elif field == "last":
+            last = last or value
+        elif not contact[field]:
+            contact[field] = value
+    contact["name"] = " ".join(p for p in (first, last) if p)
+    return contact
+
+
+def _parse_mecard(body):
+    pairs = []
+    for key, value in _key_values(body):
+        if key == "N" and "," in value:  # MECARD names are "Last,First"
+            last, first = value.split(",", 1)
+            pairs += [("FIRST", first), ("N", last)]
+        else:
+            pairs.append((key, value))
+    return _contact_from_pairs(pairs, {
+        "FIRST": "first", "N": "last", "ORG": "org", "TEL": "phones", "EMAIL": "emails",
+        "URL": "urls", "ADR": "address", "NOTE": "note",
+    })
+
+
+def _parse_bizcard(body):
+    return _contact_from_pairs(_key_values(body), {
+        "N": "first", "X": "last", "T": "title", "C": "org", "B": "phones", "M": "phones",
+        "E": "emails", "A": "address",
+    })
+
+
+def _parse_event(text):
+    unfolded = re.sub(r"\r?\n[ \t]", "", text)
+    wanted = {"SUMMARY": "summary", "LOCATION": "location", "DTSTART": "start", "DTEND": "end", "DESCRIPTION": "description"}
+    event = dict.fromkeys(wanted.values(), "")
+    for line in re.split(r"\r\n|\n|\r", unfolded):
+        head, sep, value = line.partition(":")
+        name = head.split(";")[0].strip().upper()
+        if sep and name in wanted and not event[wanted[name]]:
+            event[wanted[name]] = vcard_unescape(value).strip()
+    return event
+
+
+def _parse_sms(rest, plus_prefix):
+    """SMSTO:number:message, or the URI form sms:number?body=message."""
+    if "?" in rest:
+        number, query = rest.split("?", 1)
+        message = _uri_query(query).get("body", "")
+    else:
+        number, _, message = rest.partition(":")
+    number = urllib.parse.unquote(number).strip().rstrip(";")
+    # QuickeR's own SMSTO codes store the country code without its "+".
+    if plus_prefix and number and number[0].isdigit():
+        number = f"+{number}"
+    return {"number": number, "message": message}
+
+
+def _parse_geo(rest):
+    coords, _, query = rest.partition("?")
+    lat, _, lng = coords.split(";")[0].partition(",")
+    place = _uri_query(query).get("q", "")
+    label = re.search(r"\((.*)\)\s*$", place)  # "q=lat,lng(Label)"
+    if label:
+        place = label.group(1)
+    return {"lat": lat.strip(), "lng": lng.split(",")[0].strip(), "place": place.strip()}
+
+
+def _parse_otpauth(text):
+    url = urllib.parse.urlsplit(text)
+    params = {k.lower(): v for k, v in urllib.parse.parse_qsl(url.query)}
+    label = urllib.parse.unquote(url.path.lstrip("/"))
+    issuer, _, account = label.rpartition(":")
+    return {
+        "type": url.netloc.upper(),
+        "issuer": params.get("issuer", "") or issuer.strip(),
+        "account": account.strip(),
+        "secret": params.get("secret", ""),
+    }
+
+
+def _parse_epc(lines):
+    """EPC / SEPA credit transfer ('BCD' payment QR used by European banks)."""
+    lines = [line.strip() for line in lines] + [""] * 12
+    amount = lines[7]
+    if amount[:3].isalpha():
+        amount = f"{amount[3:]} {amount[:3].upper()}"
+    return {
+        "name": lines[5], "iban": lines[6], "bic": lines[4],
+        "amount": amount.strip(), "reference": lines[9] or lines[10],
+    }
+
+
+def parse_qr_content(text):
+    """Works out what a QR holds. Returns (kind, fields):
+
+    contact  parse_vcard-style dict (vCard, MECARD, BIZCARD)
+    wifi     ssid, security, password, hidden
+    event    summary, location, start, end, description (raw iCalendar values)
+    email    to, subject, body (mailto:, MATMSG:, SMTP:)
+    sms      number, message (SMSTO:, SMS:, MMSTO:, sms:...?body=)
+    phone    number
+    geo      lat, lng, place
+    otp      type, issuer, account, secret (otpauth://)
+    crypto   currency, address, amount, label, message (bitcoin: and similar)
+    payment  name, iban, bic, amount, reference (EPC/SEPA "BCD")
+    link     url
+    text     text
+    """
+    raw = text or ""
+    stripped = raw.strip()
+    upper = stripped.upper()
+    lines = re.split(r"\r\n|\n|\r", stripped)
+
+    if is_vcard(stripped):
+        return "contact", parse_vcard(stripped)
+    if (rest := _after_prefix(stripped, "MECARD:")) is not None:
+        return "contact", _parse_mecard(rest)
+    if (rest := _after_prefix(stripped, "BIZCARD:")) is not None:
+        return "contact", _parse_bizcard(rest)
+    if (rest := _after_prefix(stripped, "WIFI:")) is not None:
+        fields = dict(reversed(_key_values(rest)))  # first value of each key wins
+        security = fields.get("T", "").strip()
+        open_network = security.upper() == "NOPASS"
+        return "wifi", {
+            "ssid": fields.get("S", ""),
+            "security": "" if open_network else security,
+            "password": "" if open_network else fields.get("P", ""),
+            "hidden": fields.get("H", "").strip().lower() == "true",
+        }
+    if upper.startswith(("BEGIN:VCALENDAR", "BEGIN:VEVENT")):
+        return "event", _parse_event(stripped)
+    if (rest := _after_prefix(stripped, "mailto:")) is not None:
+        to, _, query = rest.partition("?")
+        params = _uri_query(query)
+        return "email", {
+            "to": urllib.parse.unquote(to).strip() or params.get("to", ""),
+            "subject": params.get("subject", ""),
+            "body": params.get("body", ""),
+        }
+    if (rest := _after_prefix(stripped, "MATMSG:")) is not None:
+        fields = dict(reversed(_key_values(rest)))
+        return "email", {"to": fields.get("TO", ""), "subject": fields.get("SUB", ""), "body": fields.get("BODY", "")}
+    if (rest := _after_prefix(stripped, "SMTP:")) is not None:
+        to, _, rest = rest.partition(":")
+        subject, _, body = rest.partition(":")
+        return "email", {"to": to, "subject": subject, "body": body}
+    if (rest := _after_prefix(stripped, "SMSTO:", "MMSTO:")) is not None:
+        return "sms", _parse_sms(rest, plus_prefix=stripped[:5] == "SMSTO")
+    if (rest := _after_prefix(stripped, "SMS:", "MMS:")) is not None:
+        return "sms", _parse_sms(rest, plus_prefix=False)
+    if (rest := _after_prefix(stripped, "tel:")) is not None:
+        return "phone", {"number": urllib.parse.unquote(rest.lstrip("/")).strip()}
+    if (rest := _after_prefix(stripped, "geo:")) is not None:
+        return "geo", _parse_geo(rest)
+    if upper.startswith("OTPAUTH://"):
+        return "otp", _parse_otpauth(stripped)
+    scheme, sep, rest = stripped.partition(":")
+    if sep and scheme.lower() in CRYPTO_SCHEMES and not re.search(r"\s", stripped):
+        address, _, query = rest.lstrip("/").partition("?")
+        params = {k.lower(): v for k, v in urllib.parse.parse_qsl(query)}
+        return "crypto", {
+            "currency": CRYPTO_SCHEMES[scheme.lower()],
+            "address": address,
+            "amount": params.get("amount", ""),
+            "label": params.get("label", ""),
+            "message": params.get("message", ""),
+        }
+    if len(lines) >= 7 and lines[0].strip() == "BCD" and lines[3].strip().upper() in ("SCT", "INST"):
+        return "payment", _parse_epc(lines)
+    if re.match(r"^[a-z][a-z0-9+.\-]*://\S+$", stripped, re.IGNORECASE) or re.match(r"^www\.\S+$", stripped, re.IGNORECASE):
+        return "link", {"url": stripped}
+    return "text", {"text": raw}
+
+
+QR_KIND_ICONS = {
+    "contact": ft.Icons.CONTACT_PAGE_ROUNDED,
+    "wifi": ft.Icons.WIFI_ROUNDED,
+    "event": ft.Icons.CALENDAR_TODAY_ROUNDED,
+    "email": ft.Icons.EMAIL_ROUNDED,
+    "sms": ft.Icons.MESSAGE_ROUNDED,
+    "phone": ft.Icons.PHONE_ROUNDED,
+    "geo": ft.CupertinoIcons.COMPASS_FILL,
+    "otp": ft.Icons.KEY_ROUNDED,
+    "crypto": ft.Icons.CURRENCY_BITCOIN_ROUNDED,
+    "payment": ft.Icons.ACCOUNT_BALANCE_ROUNDED,
+    "link": ft.Icons.LINK_ROUNDED,
+    "text": ft.Icons.TEXT_FIELDS_ROUNDED,
+}
+
+
+def qr_detail_rows(kind, f):
+    """The (icon, value, label) rows the details view shows for a parsed QR.
+    Empty optional fields are left out."""
+    I = ft.Icons
+    if kind == "contact":
+        rows = [
+            (I.PERSON_ROUNDED, f["name"], tr("Full name")),
+            (I.BUSINESS_ROUNDED, f["org"], tr("Organization")),
+            (I.BADGE_ROUNDED, f["title"], tr("Job title")),
+            *[(I.CALL_ROUNDED, v, tr("Phone number")) for v in f["phones"]],
+            *[(I.EMAIL_ROUNDED, v, tr("Email address")) for v in f["emails"]],
+            *[(I.LANGUAGE_ROUNDED, v, tr("Website")) for v in f["urls"]],
+            (I.HOME_ROUNDED, f["address"], tr("Address")),
+            (I.SHORT_TEXT_ROUNDED, f["note"], tr("Note")),
+        ]
+    elif kind == "wifi":
+        rows = [
+            (I.WIFI_ROUNDED, f["ssid"], tr("Network name")),
+            (I.SHIELD_ROUNDED, f["security"], tr("Protocol")),
+            (I.LOCK_OUTLINE_ROUNDED, f["password"] or tr("No password"), tr("Password")),
+            (I.VISIBILITY_OFF_ROUNDED, tr("Yes") if f["hidden"] else "", tr("Hidden network")),
+        ]
+    elif kind == "event":
+        rows = [
+            (I.TEXT_FIELDS_ROUNDED, f["summary"], tr("Event name")),
+            (I.PIN_DROP_ROUNDED, f["location"], tr("Location name")),
+            (I.ACCESS_TIME_FILLED_ROUNDED, format_ics_datetime(f["start"]), tr("Start time")),
+            (I.ACCESS_TIME_FILLED_ROUNDED, format_ics_datetime(f["end"]), tr("End time")),
+            (I.SUBJECT_ROUNDED, f["description"], tr("Description")),
+        ]
+    elif kind == "email":
+        rows = [
+            (I.PERSON_2_ROUNDED, f["to"], tr("Receiver's address")),
+            (I.SHORT_TEXT_ROUNDED, f["subject"], tr("Subject")),
+            (I.SUBJECT_ROUNDED, f["body"], tr("Body")),
+        ]
+    elif kind == "sms":
+        rows = [
+            (I.CALL_ROUNDED, f["number"], tr("Receiver's phone number")),
+            (I.TEXT_FIELDS_ROUNDED, f["message"], tr("Preset message")),
+        ]
+    elif kind == "phone":
+        rows = [(I.CALL_ROUNDED, f["number"], tr("Phone number"))]
+    elif kind == "geo":
+        rows = [
+            (ft.CupertinoIcons.COMPASS_FILL, f["lat"], tr("Latitude")),
+            (ft.CupertinoIcons.COMPASS_FILL, f["lng"], tr("Longitude")),
+            (I.PIN_DROP_ROUNDED, f["place"], tr("Location name")),
+        ]
+    elif kind == "otp":
+        rows = [
+            (I.BUSINESS_ROUNDED, f["issuer"], tr("Issuer")),
+            (I.PERSON_ROUNDED, f["account"], tr("Account")),
+            (I.KEY_ROUNDED, f["secret"], tr("Secret key")),
+        ]
+    elif kind == "crypto":
+        rows = [
+            (I.ACCOUNT_BALANCE_WALLET_ROUNDED, f["address"], tr("{currency} address", currency=f["currency"])),
+            (I.PAYMENTS_ROUNDED, f["amount"], tr("Amount")),
+            (I.PERSON_ROUNDED, f["label"], tr("Recipient")),
+            (I.SHORT_TEXT_ROUNDED, f["message"], tr("Note")),
+        ]
+    elif kind == "payment":
+        rows = [
+            (I.PERSON_ROUNDED, f["name"], tr("Recipient")),
+            (I.ACCOUNT_BALANCE_ROUNDED, f["iban"], "IBAN"),
+            (I.ACCOUNT_BALANCE_ROUNDED, f["bic"], "BIC"),
+            (I.PAYMENTS_ROUNDED, f["amount"], tr("Amount")),
+            (I.SHORT_TEXT_ROUNDED, f["reference"], tr("Reference")),
+        ]
+    elif kind == "link":
+        rows = [(I.LINK_ROUNDED, f["url"], tr("Content"))]
+    else:
+        rows = [(I.TEXT_FIELDS_ROUNDED, f["text"], tr("Content"))]
+    return [(icon, value, label) for icon, value, label in rows if value]
 
 
 def try_decode_with_preprocessing(image):
@@ -670,37 +1007,23 @@ class QRCodes:
 
     def _leading_icon_and_name(self):
         url = self.url or ""
-        if is_vcard(url):
-            name = parse_vcard(url)["name"] or tr("Contact")
-            icon = ft.Icons.CONTACT_PAGE_ROUNDED
-        elif "WIFI:S:" in url:
-            name = url.split(":")[2].split(";")[0]
-            icon = ft.Icons.WIFI_ROUNDED
-        elif "BEGIN:VCALENDAR" in url:
-            try:
-                name = url.split("\n")[3].split(":")[1]
-            except IndexError:
-                name = tr("Event")
-            icon = ft.Icons.CALENDAR_TODAY_ROUNDED
-        elif "mailto:" in url:
-            name = url.split("?")[0].split(":")[1]
-            icon = ft.Icons.EMAIL_ROUNDED
-        elif "SMSTO:" in url:
-            name = url.split(":")[1]
-            icon = ft.Icons.MESSAGE_ROUNDED
-        elif "tel:" in url:
-            name = url.split(":")[1]
-            icon = ft.Icons.PHONE_ROUNDED
-        elif "geo:" in url:
-            name = url.split(":")[1]
-            icon = ft.CupertinoIcons.COMPASS_FILL
-        elif "http" in url:
-            name = url
-            icon = ft.Icons.LINK_ROUNDED
-        else:
-            name = url
-            icon = ft.Icons.TEXT_FIELDS_ROUNDED
-        return icon, name
+        try:
+            kind, fields = parse_qr_content(url)
+        except Exception:
+            kind, fields = "text", {}
+        name = {
+            "contact": lambda: fields["name"] or tr("Contact"),
+            "wifi": lambda: fields["ssid"],
+            "event": lambda: fields["summary"] or tr("Event"),
+            "email": lambda: fields["to"],
+            "sms": lambda: fields["number"],
+            "phone": lambda: fields["number"],
+            "geo": lambda: fields["place"] or ",".join(p for p in (fields["lat"], fields["lng"]) if p),
+            "otp": lambda: " · ".join(p for p in (fields["issuer"], fields["account"]) if p),
+            "crypto": lambda: fields["label"] or fields["address"],
+            "payment": lambda: fields["name"] or fields["iban"],
+        }.get(kind, lambda: "")() or url
+        return QR_KIND_ICONS.get(kind, ft.Icons.TEXT_FIELDS_ROUNDED), name
 
     def display_qr(self, pinned, prepend=True):
         self.qr_size = self.get_qr_size(self.qr_id)
@@ -1181,595 +1504,19 @@ class QRCodes:
     def data_unpacker(self):
         url = self.url or ""
         try:
-            if is_vcard(url):
-                contact = parse_vcard(url)
-                rows = []
-                if contact["name"]:
-                    rows.append((ft.Icons.PERSON_ROUNDED, contact["name"], tr("Full name")))
-                if contact["org"]:
-                    rows.append((ft.Icons.BUSINESS_ROUNDED, contact["org"], tr("Organization")))
-                if contact["title"]:
-                    rows.append((ft.Icons.BADGE_ROUNDED, contact["title"], tr("Job title")))
-                rows += [(ft.Icons.CALL_ROUNDED, v, tr("Phone number")) for v in contact["phones"]]
-                rows += [(ft.Icons.EMAIL_ROUNDED, v, tr("Email address")) for v in contact["emails"]]
-                rows += [(ft.Icons.LANGUAGE_ROUNDED, v, tr("Website")) for v in contact["urls"]]
-                if contact["address"]:
-                    rows.append((ft.Icons.HOME_ROUNDED, contact["address"], tr("Address")))
-                if contact["note"]:
-                    rows.append((ft.Icons.SHORT_TEXT_ROUNDED, contact["note"], tr("Note")))
-                if not rows:
-                    raise ValueError("No contact details found in the vCard")
-                layout = ft.Column(
-                    spacing=3,
-                    tight=True,
-                    controls=[
-                        self._detail_tile(
-                            icon, value, label,
-                            top=30 if i == 0 else 8,
-                            bottom=30 if i == len(rows) - 1 else 8,
-                        )
-                        for i, (icon, value, label) in enumerate(rows)
-                    ],
-                )
-            elif "WIFI:S:" in url:
-                if "T:nopass" in url:
-                    layout = ft.Column(
-                        spacing=3,
-                        tight=True,
-                        controls=[
-                            ft.Container(
-                                bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
-                                width=600,
-                                align=ft.Alignment.CENTER,
-                                padding=20,
-                                border_radius=ft.BorderRadius.only(top_left=30, top_right=30, bottom_left=8, bottom_right=8),
-                                content=ft.Row(
-                                    controls=[
-                                        ft.IconButton(
-                                            disabled=True,
-                                            icon=ft.Icons.WIFI_ROUNDED,
-                                            style=ft.ButtonStyle(
-                                                shape=ft.CircleBorder(), 
-                                                padding=10, 
-                                                bgcolor=ft.Colors.SECONDARY_CONTAINER, 
-                                                icon_color=ft.Colors.PRIMARY, 
-                                                icon_size=20
-                                            )
-                                        ),
-                                        ft.Column(spacing=-3,expand=True,controls=[
-                                            ft.Text(value=url.split(";")[0].split(":")[2], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                            ft.Text(value=tr("Network name"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
-                                        ]),
-                                        self.copy_content_btn(url.split(";")[0].split(":")[2])
-                                    ]
-                                ),
-                            ),
-                            ft.Container(
-                                bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
-                                width=600,
-                                align=ft.Alignment.CENTER,
-                                padding=20,
-                                border_radius=ft.BorderRadius.only(top_left=8, top_right=8, bottom_left=30, bottom_right=30),
-                                content=ft.Row(
-                                    controls=[
-                                        ft.IconButton(
-                                            disabled=True,
-                                            icon=ft.Icons.LOCK_OUTLINE_ROUNDED,
-                                            style=ft.ButtonStyle(
-                                                shape=ft.CircleBorder(), 
-                                                padding=10, 
-                                                bgcolor=ft.Colors.SECONDARY_CONTAINER, 
-                                                icon_color=ft.Colors.PRIMARY, 
-                                                icon_size=20
-                                            )
-                                        ),
-                                        ft.Column(spacing=-3,expand=True,controls=[
-                                            ft.Text(value=tr("No password"), size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                            ft.Text(value=tr("Password"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
-                                        ]),
-                                    ]
-                                ),
-                            ),
-                        ]
+            rows = qr_detail_rows(*parse_qr_content(url)) or [(ft.Icons.TEXT_FIELDS_ROUNDED, url, tr("Content"))]
+            layout = ft.Column(
+                spacing=3,
+                tight=True,
+                controls=[
+                    self._detail_tile(
+                        icon, value, label,
+                        top=30 if i == 0 else 8,
+                        bottom=30 if i == len(rows) - 1 else 8,
                     )
-                else:
-                    layout = ft.Column(
-                        spacing=3,
-                        tight=True,
-                        controls=[
-                            ft.Container(
-                                bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
-                                width=600,
-                                align=ft.Alignment.CENTER,
-                                padding=20,
-                                border_radius=ft.BorderRadius.only(top_left=30, top_right=30, bottom_left=8, bottom_right=8),
-                                content=ft.Row(
-                                    controls=[
-                                        ft.IconButton(
-                                            disabled=True,
-                                            icon=ft.Icons.WIFI_ROUNDED,
-                                            style=ft.ButtonStyle(
-                                                shape=ft.CircleBorder(), 
-                                                padding=10, 
-                                                bgcolor=ft.Colors.SECONDARY_CONTAINER, 
-                                                icon_color=ft.Colors.PRIMARY, 
-                                                icon_size=20
-                                            )
-                                        ),
-                                        ft.Column(spacing=-3,expand=True,controls=[
-                                            ft.Text(value=url.split(";")[0].split(":")[2], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                            ft.Text(value=tr("Network name"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
-                                        ]),
-                                        self.copy_content_btn(url.split(";")[0].split(":")[2])
-                                    ]
-                                ),
-                            ),
-                            ft.Container(
-                                bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
-                                width=600,
-                                align=ft.Alignment.CENTER,
-                                padding=20,
-                                border_radius=ft.BorderRadius.only(top_left=8, top_right=8, bottom_left=8, bottom_right=8),
-                                content=ft.Row(
-                                    controls=[
-                                        ft.IconButton(
-                                            disabled=True,
-                                            icon=ft.Icons.SHIELD_ROUNDED,
-                                            style=ft.ButtonStyle(
-                                                shape=ft.CircleBorder(), 
-                                                padding=10, 
-                                                bgcolor=ft.Colors.SECONDARY_CONTAINER, 
-                                                icon_color=ft.Colors.PRIMARY, 
-                                                icon_size=20
-                                            )
-                                        ),
-                                        ft.Column(spacing=-3,expand=True,controls=[
-                                            ft.Text(value=url.split(";")[1].split(":")[1], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                            ft.Text(value=tr("Protocol"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
-                                        ]),
-                                        self.copy_content_btn(url.split(";")[1].split(":")[1])
-                                    ]
-                                ),
-                            ),
-                            ft.Container(
-                                bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
-                                width=600,
-                                align=ft.Alignment.CENTER,
-                                padding=20,
-                                border_radius=ft.BorderRadius.only(top_left=8, top_right=8, bottom_left=30, bottom_right=30),
-                                content=ft.Row(
-                                    controls=[
-                                        ft.IconButton(
-                                            disabled=True,
-                                            icon=ft.Icons.LOCK_OUTLINE_ROUNDED,
-                                            style=ft.ButtonStyle(
-                                                shape=ft.CircleBorder(), 
-                                                padding=10, 
-                                                bgcolor=ft.Colors.SECONDARY_CONTAINER, 
-                                                icon_color=ft.Colors.PRIMARY, 
-                                                icon_size=20
-                                            )
-                                        ),
-                                        ft.Column(spacing=-3,expand=True,controls=[
-                                            ft.Text(value=url.split(";")[2].split(":")[1], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                            ft.Text(value=tr("Password"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
-                                        ]),
-                                        self.copy_content_btn(url.split(";")[2].split(":")[1])
-                                    ]
-                                ),
-                            ),
-                        ]
-                    )
-            elif "BEGIN:VCALENDAR" in url:
-                layout = ft.Column(
-                    spacing=3,
-                    tight=True,
-                    controls=[
-                        ft.Container(
-                            bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
-                            width=600,
-                            align=ft.Alignment.CENTER,
-                            padding=20,
-                            border_radius=ft.BorderRadius.only(top_left=30, top_right=30, bottom_left=8, bottom_right=8),
-                            content=ft.Row(
-                                controls=[
-                                    ft.IconButton(
-                                        disabled=True,
-                                        icon=ft.Icons.TEXT_FIELDS_ROUNDED,
-                                        style=ft.ButtonStyle(
-                                            shape=ft.CircleBorder(), 
-                                            padding=10, 
-                                            bgcolor=ft.Colors.SECONDARY_CONTAINER, 
-                                            icon_color=ft.Colors.PRIMARY, 
-                                            icon_size=20
-                                        )
-                                    ),
-                                    ft.Column(spacing=-3,expand=True,controls=[
-                                        ft.Text(value=url.split("\n")[3].split(":")[1], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                        ft.Text(value=tr("Event name"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
-                                    ]),
-                                    self.copy_content_btn(url.split("\n")[3].split(":")[1])
-                                ]
-                            ),
-                        ),
-                        ft.Container(
-                            bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
-                            width=600,
-                            align=ft.Alignment.CENTER,
-                            padding=20,
-                            border_radius=ft.BorderRadius.only(top_left=8, top_right=8, bottom_left=8, bottom_right=8),
-                            content=ft.Row(
-                                controls=[
-                                    ft.IconButton(
-                                        disabled=True,
-                                        icon=ft.Icons.PIN_DROP_ROUNDED,
-                                        style=ft.ButtonStyle(
-                                            shape=ft.CircleBorder(), 
-                                            padding=10, 
-                                            bgcolor=ft.Colors.SECONDARY_CONTAINER, 
-                                            icon_color=ft.Colors.PRIMARY, 
-                                            icon_size=20
-                                        )
-                                    ),
-                                    ft.Column(spacing=-3,expand=True,controls=[
-                                        ft.Text(value=url.split("\n")[4].split(":")[1], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                        ft.Text(value=tr("Location name"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
-                                    ]),
-                                    self.copy_content_btn(url.split("\n")[4].split(":")[1])
-                                ]
-                            ),
-                        ),
-                        ft.Container(
-                            bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
-                            width=600,
-                            align=ft.Alignment.CENTER,
-                            padding=20,
-                            border_radius=ft.BorderRadius.only(top_left=8, top_right=8, bottom_left=8, bottom_right=8),
-                            content=ft.Row(
-                                controls=[
-                                    ft.IconButton(
-                                        disabled=True,
-                                        icon=ft.Icons.ACCESS_TIME_FILLED_ROUNDED,
-                                        style=ft.ButtonStyle(
-                                            shape=ft.CircleBorder(), 
-                                            padding=10, 
-                                            bgcolor=ft.Colors.SECONDARY_CONTAINER, 
-                                            icon_color=ft.Colors.PRIMARY, 
-                                            icon_size=20
-                                        )
-                                    ),
-                                    ft.Column(spacing=-3,expand=True,controls=[
-                                        ft.Text(value=format_ics_datetime(url.split("\n")[5].split(":")[1]), size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                        ft.Text(value=tr("Start time"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
-                                    ]),
-                                    self.copy_content_btn(format_ics_datetime(url.split("\n")[5].split(":")[1]))
-                                ]
-                            ),
-                        ),
-                        ft.Container(
-                            bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
-                            width=600,
-                            align=ft.Alignment.CENTER,
-                            padding=20,
-                            border_radius=ft.BorderRadius.only(top_left=8, top_right=8, bottom_left=30, bottom_right=30),
-                            content=ft.Row(
-                                controls=[
-                                    ft.IconButton(
-                                        disabled=True,
-                                        icon=ft.Icons.ACCESS_TIME_FILLED_ROUNDED,
-                                        style=ft.ButtonStyle(
-                                            shape=ft.CircleBorder(), 
-                                            padding=10, 
-                                            bgcolor=ft.Colors.SECONDARY_CONTAINER, 
-                                            icon_color=ft.Colors.PRIMARY, 
-                                            icon_size=20
-                                        )
-                                    ),
-                                    ft.Column(spacing=-3,expand=True,controls=[
-                                        ft.Text(value=format_ics_datetime(url.split("\n")[6].split(":")[1]), size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                        ft.Text(value=tr("End time"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
-                                    ]),
-                                    self.copy_content_btn(format_ics_datetime(url.split("\n")[6].split(":")[1])),
-                                ]
-                            ),
-                        )
-                    ]
-                )
-            elif "mailto:" in url:
-                if "?subject=" in url:
-                    layout = ft.Column(
-                        spacing=3,
-                        tight=True,
-                        controls=[
-                            ft.Container(
-                                bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
-                                width=600,
-                                align=ft.Alignment.CENTER,
-                                padding=20,
-                                border_radius=ft.BorderRadius.only(top_left=30, top_right=30, bottom_left=8, bottom_right=8),
-                                content=ft.Row(
-                                    controls=[
-                                        ft.IconButton(
-                                            disabled=True,
-                                            icon=ft.Icons.PERSON_2_ROUNDED,
-                                            style=ft.ButtonStyle(
-                                                shape=ft.CircleBorder(), 
-                                                padding=10, 
-                                                bgcolor=ft.Colors.SECONDARY_CONTAINER, 
-                                                icon_color=ft.Colors.PRIMARY, 
-                                                icon_size=20
-                                            )
-                                        ),
-                                        ft.Column(spacing=-3,expand=True,controls=[
-                                            ft.Text(value=url.split("?")[0].split(":")[1], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                            ft.Text(value=tr("Receiver's address"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
-                                        ]),
-                                        self.copy_content_btn(url.split("?")[0].split(":")[1])
-                                    ]
-                                ),
-                            ),
-                            ft.Container(
-                                bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
-                                width=600,
-                                align=ft.Alignment.CENTER,
-                                padding=20,
-                                border_radius=ft.BorderRadius.only(top_left=8, top_right=8, bottom_left=8, bottom_right=8),
-                                content=ft.Row(
-                                    controls=[
-                                        ft.IconButton(
-                                            disabled=True,
-                                            icon=ft.Icons.SHORT_TEXT_ROUNDED,
-                                            style=ft.ButtonStyle(
-                                                shape=ft.CircleBorder(), 
-                                                padding=10, 
-                                                bgcolor=ft.Colors.SECONDARY_CONTAINER, 
-                                                icon_color=ft.Colors.PRIMARY, 
-                                                icon_size=20
-                                            )
-                                        ),
-                                        ft.Column(spacing=-3,expand=True,controls=[
-                                            ft.Text(value=urllib.parse.unquote(url.split("?")[0].split(":")[1]), size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                            ft.Text(value=tr("Subject"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
-                                        ]),
-                                        self.copy_content_btn(urllib.parse.unquote(url.split("?")[0].split(":")[1])),
-                                    ]
-                                ),
-                            ),
-                            ft.Container(
-                                bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
-                                width=600,
-                                align=ft.Alignment.CENTER,
-                                padding=20,
-                                border_radius=ft.BorderRadius.only(top_left=8, top_right=8, bottom_left=30, bottom_right=30),
-                                content=ft.Row(
-                                    controls=[
-                                        ft.IconButton(
-                                            disabled=True,
-                                            icon=ft.Icons.SUBJECT_ROUNDED,
-                                            style=ft.ButtonStyle(
-                                                shape=ft.CircleBorder(), 
-                                                padding=10, 
-                                                bgcolor=ft.Colors.SECONDARY_CONTAINER, 
-                                                icon_color=ft.Colors.PRIMARY, 
-                                                icon_size=20
-                                            )
-                                        ),
-                                        ft.Column(spacing=-3,expand=True,controls=[
-                                            ft.Text(value=urllib.parse.unquote(url.split("=")[1].split("&")[0]), size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                            ft.Text(value=tr("Body"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
-                                        ]),
-                                        self.copy_content_btn(urllib.parse.unquote(url.split("=")[1].split("&")[0])),
-                                    ]
-                                ),
-                            )
-                        ]
-                    )
-                else:
-                    layout = ft.Container(
-                        bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
-                        width=600,
-                        align=ft.Alignment.CENTER,
-                        padding=20,
-                        border_radius=ft.BorderRadius.only(top_left=30, top_right=30, bottom_left=30, bottom_right=30),
-                        content=ft.Row(
-                            controls=[
-                                ft.IconButton(
-                                    disabled=True,
-                                    icon=ft.Icons.PERSON_2_ROUNDED,
-                                    style=ft.ButtonStyle(
-                                        shape=ft.CircleBorder(), 
-                                        padding=10, 
-                                        bgcolor=ft.Colors.SECONDARY_CONTAINER, 
-                                        icon_color=ft.Colors.PRIMARY, 
-                                        icon_size=20
-                                    )
-                                ),
-                                ft.Column(spacing=-3,expand=True,controls=[
-                                    ft.Text(value=url.split(":")[1], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                    ft.Text(value=tr("Receiver's address"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
-                                ]),
-                                self.copy_content_btn(url.split(":")[1])
-                            ]
-                        ),
-                    )
-            elif "SMSTO:" in url:
-                layout = ft.Column(
-                    spacing=3,
-                    tight=True,
-                    controls=[
-                        ft.Container(
-                            bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
-                            width=600,
-                            align=ft.Alignment.CENTER,
-                            padding=20,
-                            border_radius=ft.BorderRadius.only(top_left=30, top_right=30, bottom_left=8, bottom_right=8),
-                            content=ft.Row(
-                                controls=[
-                                    ft.IconButton(
-                                        disabled=True,
-                                        icon=ft.Icons.CALL_ROUNDED,
-                                        style=ft.ButtonStyle(
-                                            shape=ft.CircleBorder(), 
-                                            padding=10, 
-                                            bgcolor=ft.Colors.SECONDARY_CONTAINER, 
-                                            icon_color=ft.Colors.PRIMARY, 
-                                            icon_size=20
-                                        )
-                                    ),
-                                    ft.Column(spacing=-3,expand=True,controls=[
-                                        ft.Text(value=f"+{url.split(":")[1]}", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                        ft.Text(value=tr("Receiver's phone number"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
-                                    ]),
-                                    self.copy_content_btn(f"+{url.split(':')[1]}")
-                                ]
-                            ),
-                        ),
-                        ft.Container(
-                            bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
-                            width=600,
-                            align=ft.Alignment.CENTER,
-                            padding=20,
-                            border_radius=ft.BorderRadius.only(top_left=8, top_right=8, bottom_left=30, bottom_right=30),
-                            content=ft.Row(
-                                controls=[
-                                    ft.IconButton(
-                                        disabled=True,
-                                        icon=ft.Icons.TEXT_FIELDS_ROUNDED,
-                                        style=ft.ButtonStyle(
-                                            shape=ft.CircleBorder(), 
-                                            padding=10, 
-                                            bgcolor=ft.Colors.SECONDARY_CONTAINER, 
-                                            icon_color=ft.Colors.PRIMARY, 
-                                            icon_size=20
-                                        )
-                                    ),
-                                    ft.Column(spacing=-3,expand=True,controls=[
-                                        ft.Text(value=url.split(":", 2)[2], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                        ft.Text(value=tr("Preset message"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
-                                    ]),
-                                    self.copy_content_btn(url.split(":", 2)[2]),
-                                ]
-                            ),
-                        )
-                    ]
-                )
-            elif "tel:" in url:
-                layout = ft.Container(
-                    bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
-                    width=600,
-                    align=ft.Alignment.CENTER,
-                    padding=20,
-                    border_radius=ft.BorderRadius.only(top_left=30, top_right=30, bottom_left=30, bottom_right=30),
-                    content=ft.Row(
-                        controls=[
-                            ft.IconButton(
-                                disabled=True,
-                                icon=ft.Icons.CALL_ROUNDED,
-                                style=ft.ButtonStyle(
-                                    shape=ft.CircleBorder(), 
-                                    padding=10, 
-                                    bgcolor=ft.Colors.SECONDARY_CONTAINER, 
-                                    icon_color=ft.Colors.PRIMARY, 
-                                    icon_size=20
-                                )
-                            ),
-                            ft.Column(spacing=-3,expand=True,controls=[
-                                ft.Text(value=url.split(":")[1], size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                ft.Text(value=tr("Phone number"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
-                            ]),
-                            self.copy_content_btn(url.split(":")[1])
-                        ]
-                    ),
-                )
-            elif "geo:" in url:
-                layout = ft.Column(
-                    spacing=3,
-                    tight=True,
-                    controls=[
-                        ft.Container(
-                            bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
-                            width=600,
-                            align=ft.Alignment.CENTER,
-                            padding=20,
-                            border_radius=ft.BorderRadius.only(top_left=30, top_right=30, bottom_left=8, bottom_right=8),
-                            content=ft.Row(
-                                controls=[
-                                    ft.IconButton(
-                                        disabled=True,
-                                        icon=ft.CupertinoIcons.COMPASS_FILL,
-                                        style=ft.ButtonStyle(
-                                            shape=ft.CircleBorder(), 
-                                            padding=10, 
-                                            bgcolor=ft.Colors.SECONDARY_CONTAINER, 
-                                            icon_color=ft.Colors.PRIMARY, 
-                                            icon_size=20
-                                        )
-                                    ),
-                                    ft.Column(spacing=-3,expand=True,controls=[
-                                        ft.Text(value=f"{url.split(":")[1].split(',')[0]}", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                        ft.Text(value=tr("Latitude"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
-                                    ]),
-                                    self.copy_content_btn(f"{url.split(":")[1].split(',')[0]}")
-                                ]
-                            ),
-                        ),
-                        ft.Container(
-                            bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
-                            width=600,
-                            align=ft.Alignment.CENTER,
-                            padding=20,
-                            border_radius=ft.BorderRadius.only(top_left=8, top_right=8, bottom_left=30, bottom_right=30),
-                            content=ft.Row(
-                                controls=[
-                                    ft.IconButton(
-                                        disabled=True,
-                                        icon=ft.CupertinoIcons.COMPASS_FILL,
-                                        style=ft.ButtonStyle(
-                                            shape=ft.CircleBorder(), 
-                                            padding=10, 
-                                            bgcolor=ft.Colors.SECONDARY_CONTAINER, 
-                                            icon_color=ft.Colors.PRIMARY, 
-                                            icon_size=20
-                                        )
-                                    ),
-                                    ft.Column(spacing=-3,expand=True,controls=[
-                                        ft.Text(value=f"{url.split(":")[1].split(',')[1]}", size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                        ft.Text(value=tr("Longitude"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
-                                    ]),
-                                    self.copy_content_btn(f"{url.split(":")[1].split(',')[1]}"),
-                                ]
-                            ),
-                        )
-                    ]
-                )
-            else:
-                layout = ft.Container(
-                    bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, 
-                    width=600,
-                    align=ft.Alignment.CENTER,
-                    padding=20,
-                    border_radius=ft.BorderRadius.only(top_left=30, top_right=30, bottom_left=30, bottom_right=30),
-                    content=ft.Row(
-                        controls=[
-                            ft.IconButton(
-                                disabled=True,
-                                icon=ft.Icons.TEXT_FIELDS_ROUNDED,
-                                style=ft.ButtonStyle(
-                                    shape=ft.CircleBorder(), 
-                                    padding=10, 
-                                    bgcolor=ft.Colors.SECONDARY_CONTAINER, 
-                                    icon_color=ft.Colors.PRIMARY, 
-                                    icon_size=20
-                                )
-                            ),
-                            ft.Column(spacing=-3,expand=True,controls=[
-                                ft.Text(value=url, size=20, color=ft.Colors.INVERSE_SURFACE, style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
-                                ft.Text(value=tr("Content"), size=15, color=ft.Colors.GREY_500, style=ft.TextStyle(weight=ft.FontWeight.W_200)),
-                            ]),
-                            self.copy_content_btn(url),
-                        ]
-                    ),
-                )
+                    for i, (icon, value, label) in enumerate(rows)
+                ],
+            )
 
             final_layout = ft.Column(
                 tight=True,
