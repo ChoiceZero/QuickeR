@@ -1,6 +1,6 @@
 name: Build App (reusable)
 
-# Shared build jobs for build-publish.yml and build-publish-preview.yml.
+# Shared build jobs for build-publish.yml, build-publish-preview.yml and pr.yml.
 # Artifacts are uploaded into the calling run and consumed by its release job.
 
 on:
@@ -10,6 +10,11 @@ on:
         description: Commit to build
         required: true
         type: string
+      release:
+        description: Release build. Android then refuses to build without the stable signing key.
+        required: false
+        default: true
+        type: boolean
     secrets:
       ANDROID_KEYSTORE_BASE64:
         required: false
@@ -162,10 +167,16 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          RELEASE: ${{ inputs.release }}
         run: |
           # Without a stable key every build gets a random debug key, and Android
           # refuses to update an installed APK signed with a different one.
           if [ -z "$ANDROID_KEYSTORE_BASE64" ] || [ -z "$ANDROID_KEYSTORE_PASSWORD" ] || [ -z "$ANDROID_KEY_ALIAS" ] || [ -z "$ANDROID_KEY_PASSWORD" ]; then
+            if [ "$RELEASE" != "true" ]; then
+              # PR builds from forks get no secrets; a debug-signed APK still proves it builds.
+              echo "::warning::Android signing secrets are not available, building a debug-signed APK."
+              exit 0
+            fi
             echo "::error::ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD / ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD secrets must be set so every APK is signed with the same key."
             exit 1
           fi
