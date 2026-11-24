@@ -713,7 +713,8 @@ class QRCodes:
                     margin=ft.Margin.only(left=10, right=10, top=-10, bottom=-10),
                 ),
                 ft.Divider(height=1, color=ft.Colors.SURFACE_CONTAINER),
-            ]
+            ],
+            data=self,  # lets the library search find the QR behind each row
         )
 
         self.main_container.controls[0].leading = ft.Container(
@@ -3709,6 +3710,83 @@ def main(page: ft.Page, show_settings=False):
         page.update()
 
     # -------------------------------------------------------------
+    # Library search
+    # -------------------------------------------------------------
+
+    def search_result_tile(qr):
+        icon, name = qr._leading_icon_and_name()
+        pinned = qr.main_container in pinned_view.controls
+        return ft.ListTile(
+            leading=ft.Container(
+                bgcolor=ft.Colors.SECONDARY_CONTAINER, padding=5, border_radius=10,
+                content=ft.Icon(icon=icon, color=ft.Colors.PRIMARY, size=30),
+            ),
+            title=ft.Text(value=str(qr.tag_name), size=18, font_family="MaterialRounded", overflow="ELLIPSIS"),
+            subtitle=ft.Text(italic=True, color=ft.Colors.GREY_400, value=name, overflow="ELLIPSIS"),
+            trailing=ft.Icon(icon=ft.Icons.PUSH_PIN_ROUNDED) if pinned else None,
+            on_click=lambda e, q=qr: open_search_result(q),
+            content_padding=2,
+        )
+
+    def update_search_results():
+        query = (search_field.value or "").strip().casefold()
+        search_results.controls.clear()
+        if not query:
+            search_status.value = tr("Type to search your library by name or content.")
+        else:
+            matches = [
+                c.data for c in all_view.controls
+                if isinstance(c.data, QRCodes)
+                and any(query in str(text).casefold() for text in (c.data.tag_name, c.data.display_name, c.data.url))
+            ]
+            search_results.controls.extend(search_result_tile(qr) for qr in matches)
+            search_status.value = tr("Results: {count}", count=len(matches)) if matches else tr("No QR codes match your search.")
+        page.update()
+
+    def search_open():
+        async def _open():
+            if search_layout not in page.overlay:
+                page.overlay.append(search_layout)
+            update_search_results()
+            search_layout.open = True
+            page.update()
+            await asyncio.sleep(0.3)
+            await search_field.focus()
+        page.run_task(_open)
+
+    def open_search_result(qr):
+        async def _open():
+            search_layout.open = False
+            page.update()
+            # Let the search sheet finish closing before the details sheet opens.
+            await asyncio.sleep(0.3)
+            qr.display_details_bottomsheet()
+        page.run_task(_open)
+
+    search_field = ft.TextField(
+        hint_text=tr("Search QR codes"), prefix_icon=ft.Icons.SEARCH_ROUNDED, expand=True,
+        border_radius=25, filled=True, border_color=ft.Colors.TRANSPARENT,
+        on_change=lambda e: update_search_results(),
+    )
+    search_status = ft.Text(size=14, color=ft.Colors.GREY_500)
+    search_results = ft.ListView(expand=True, spacing=10, controls=[])
+
+    search_layout = ft.BottomSheet(
+        draggable=True, show_drag_handle=True, use_safe_area=True, scrollable=False, fullscreen=True, open=False,
+        content=ft.Column(expand=True, margin=ft.Margin.only(left=20, right=20, top=10), controls=[
+            ft.Row(controls=[
+                search_field,
+                ft.IconButton(
+                    icon=ft.Icons.CLOSE_ROUNDED, on_click=lambda e: (setattr(search_layout, "open", False), page.update()),
+                    style=ft.ButtonStyle(shape=ft.CircleBorder(), padding=10, bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST, icon_color=ft.Colors.INVERSE_SURFACE, icon_size=20),
+                ),
+            ]),
+            search_status,
+            search_results,
+        ]),
+    )
+
+    # -------------------------------------------------------------
     # QR creation: preview + per-type forms
     # -------------------------------------------------------------
 
@@ -5144,15 +5222,16 @@ def main(page: ft.Page, show_settings=False):
 
     create_button = ft.FloatingActionButton(icon=ft.Icons.ADD_ROUNDED, on_click=lambda e: qr_creator_open(),width=70, height=70)
     add_external_qr_button = ft.FloatingActionButton(icon=ft.Icon(icon=ft.Icons.ADD_PHOTO_ALTERNATE_ROUNDED, color=ft.Colors.TERTIARY), on_click=lambda e: asyncio.ensure_future(import_external_qr_image()), bgcolor=ft.Colors.TERTIARY_CONTAINER)
+    search_button = ft.FloatingActionButton(icon=ft.Icon(icon=ft.Icons.SEARCH_ROUNDED, color=ft.Colors.TERTIARY), on_click=lambda e: search_open(), bgcolor=ft.Colors.TERTIARY_CONTAINER)
 
     floating_actions = ft.Container(
         expand=False,
         width=70,
-        height=136,
+        height=202,
         align=ft.Alignment.BOTTOM_RIGHT,
         alignment=ft.Alignment.BOTTOM_RIGHT,
         content=ft.Column(
-            controls=[add_external_qr_button, create_button],
+            controls=[search_button, add_external_qr_button, create_button],
             spacing=10,
             horizontal_alignment=ft.CrossAxisAlignment.END,
             alignment=ft.MainAxisAlignment.END,

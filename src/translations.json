@@ -2081,6 +2081,38 @@
       "de": "QR-Code erstellt!",
       "pt": "Código QR gerado!",
       "it": "Codice QR generato!"
+    },
+    "Search QR codes": {
+      "es": "Buscar códigos QR",
+      "eu": "Bilatu QR kodeak",
+      "fr": "Rechercher des codes QR",
+      "de": "QR-Codes suchen",
+      "pt": "Pesquisar códigos QR",
+      "it": "Cerca codici QR"
+    },
+    "Type to search your library by name or content.": {
+      "es": "Escribe para buscar en tu biblioteca por nombre o contenido.",
+      "eu": "Idatzi zure liburutegian izenaren edo edukiaren arabera bilatzeko.",
+      "fr": "Saisissez du texte pour rechercher dans votre bibliothèque par nom ou contenu.",
+      "de": "Tippe, um deine Bibliothek nach Name oder Inhalt zu durchsuchen.",
+      "pt": "Digite para pesquisar na sua biblioteca por nome ou conteúdo.",
+      "it": "Digita per cercare nella tua libreria per nome o contenuto."
+    },
+    "Results: {count}": {
+      "es": "Resultados: {count}",
+      "eu": "Emaitzak: {count}",
+      "fr": "Résultats : {count}",
+      "de": "Ergebnisse: {count}",
+      "pt": "Resultados: {count}",
+      "it": "Risultati: {count}"
+    },
+    "No QR codes match your search.": {
+      "es": "Ningún código QR coincide con tu búsqueda.",
+      "eu": "Ez dago zure bilaketarekin bat datorren QR koderik.",
+      "fr": "Aucun code QR ne correspond à votre recherche.",
+      "de": "Keine QR-Codes entsprechen deiner Suche.",
+      "pt": "Nenhum código QR corresponde à sua pesquisa.",
+      "it": "Nessun codice QR corrisponde alla tua ricerca."
     }
   }
 }
