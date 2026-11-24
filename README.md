@@ -213,6 +213,14 @@ uv run flet run --android
 
 For more details on running the app, refer to the [Getting Started Guide](https://flet.dev/docs/).
 
+## Run the tests
+
+```bash
+uv run pytest
+```
+
+The integration tests in `tests/` start the real app in-process against a fake Flet client and drive it through UI events: creating, saving, opening and pinning QR codes, plus image, contact and STL export checks. Every pull request also runs them on Linux, Windows and macOS, builds every platform, and launches the packaged Linux app with `scripts/smoke-test-linux.sh` (see `.github/workflows/pr.yml`).
+
 ## Build the app
 >[!WARNING]
 >It is heavily recommended to use Python 3.12 or above to compile the app.

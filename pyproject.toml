@@ -23,6 +23,8 @@ dev = [
     "flet-desktop>=0.85.2",
     "flet-web>=0.85.2",
     #"watchdog>=4.0.0"
+    "pytest>=9.2.0",
+    "pytest-asyncio>=1.5.0",
 ]
 
 [tool.flet.boot_screen]
@@ -58,3 +60,8 @@ exclude = [
     "src/pinned_qr_codes",  
     "src/qr_codes"           
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"

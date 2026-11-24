@@ -1,0 +1,80 @@
+name: PR
+
+# Runs on every pull request: fast checks and integration tests, a build of
+# every platform (the same jobs the release workflows use) and a launch of the
+# packaged Linux app.
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  UV_PYTHON: 3.12
+  PYTHONUTF8: 1
+  PYTHONIOENCODING: utf-8
+
+jobs:
+  checks:
+    name: Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Translations cover every UI string
+        run: uv run --no-project python scripts/check_translations.py
+      - name: Sources compile
+        run: uv run --no-project python -m compileall -q src scripts tests
+
+  integration-tests:
+    name: Integration tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Run tests
+        run: uv run pytest -v
+
+  build:
+    name: Build
+    uses: ./.github/workflows/build.yml
+    with:
+      sha: ${{ github.sha }}
+      release: false
+    secrets: inherit
+
+  smoke-test-linux:
+    name: Launch packaged Linux app
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download Linux build
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-build
+          path: dl
+      - name: Unpack build
+        run: |
+          mkdir -p build/linux
+          unzip -q dl/QuickeR-linux.zip -d build/linux
+      - name: Install runtime deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb libgtk-3-0t64
+      - name: Launch the app and check it starts cleanly
+        run: xvfb-run -a scripts/smoke-test-linux.sh build/linux
