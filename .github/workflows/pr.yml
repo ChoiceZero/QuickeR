@@ -75,6 +75,7 @@ jobs:
       - name: Install runtime deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb libgtk-3-0t64
+          # Flutter needs EGL/GLES; Mesa renders them in software under Xvfb.
+          sudo apt-get install -y xvfb libgtk-3-0t64 libegl1 libgles2 libgl1-mesa-dri
       - name: Launch the app and check it starts cleanly
         run: xvfb-run -a scripts/smoke-test-linux.sh build/linux
