@@ -271,6 +271,8 @@ jobs:
           cat > "$APPDIR/AppRun" <<EOF
           #!/bin/sh
           HERE="\$(dirname "\$(readlink -f "\$0")")"
+          # Put the app on PATH so the desktop entry's bare Exec= resolves.
+          export PATH="\$HERE/usr/bin:\$PATH"
           exec "\$HERE/usr/bin/$BIN_NAME" "\$@"
           EOF
           chmod +x "$APPDIR/AppRun"
