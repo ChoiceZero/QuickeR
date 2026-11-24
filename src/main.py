@@ -471,6 +471,10 @@ def get_qr_colors(image_path):
         return "#000000", "#ffffff"
 
 
+# Set by the details view so the page resize handler can resize its QR box.
+DETAILS_RESIZE_HOOK = {"fn": None}
+
+
 def get_qr_image_path(qr_id):
     """Returns the image path of a QR (pinned or normal) for any accepted
     filetype, or None if it doesn't exist."""
@@ -1933,16 +1937,12 @@ class QRCodes:
                 )
 
         def get_image_container_size():
-            if self.page.width < 290:
-                return self.page.width - 40
-            else:
-                return 290
+            # 20px page margin on each side; never larger than 290.
+            return max(0, min(290, self.page.width - 40))
 
         def get_image_size():
-            if self.page.width < 290:
-                return self.page.width - 80
-            else:
-                return 250
+            # container size minus its 20px padding on each side.
+            return max(0, get_image_container_size() - 40)
 
         self.pin_button = ft.IconButton(
             icon=ft.Icons.PUSH_PIN_OUTLINED,
@@ -1960,6 +1960,18 @@ class QRCodes:
             return
 
         qr = ft.Image(src=self.qrpath, border_radius=10, width=get_image_size(), height=get_image_size())
+        qr_container = ft.Container(
+            bgcolor=ft.Colors.INVERSE_PRIMARY, border_radius=30, content=qr, padding=20,
+            margin=ft.Margin.only(left=20, right=20, bottom=5),
+            width=get_image_container_size(), height=get_image_container_size(),
+        )
+
+        def resize_qr():
+            qr.width = qr.height = get_image_size()
+            qr_container.width = qr_container.height = get_image_container_size()
+            qr_container.update()
+
+        DETAILS_RESIZE_HOOK["fn"] = resize_qr
         if os.path.dirname(self.qrpath) == PINNED_DIR:
             self.pin_button.icon = ft.Icons.PUSH_PIN_ROUNDED
 
@@ -1987,11 +1999,7 @@ class QRCodes:
                         ),
                     ]
                 ),
-                ft.Container(
-                    bgcolor=ft.Colors.INVERSE_PRIMARY, border_radius=30, content=qr, padding=20,
-                    margin=ft.Margin.only(left=20, right=20, bottom=5),
-                    height=get_image_container_size()
-                ),
+                qr_container,
                 get_actions(),
                 ft.Container(bgcolor=ft.Colors.INVERSE_SURFACE, height=0.2, width=600, margin=ft.Margin.only(top=20, bottom=20, left=20, right=20)),
                 ft.Row(
@@ -3245,6 +3253,12 @@ def main(page: ft.Page, show_settings=False):
         page.update()
 
     def on_resize():
+        hook = DETAILS_RESIZE_HOOK["fn"]
+        if hook:
+            try:
+                hook()
+            except Exception:
+                DETAILS_RESIZE_HOOK["fn"] = None
         if page.width > 1050:
             details_main_page_view.expand = 3
             overview.controls[-1].controls[0].expand = 2
