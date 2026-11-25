@@ -2185,6 +2185,86 @@
       "de": "Keine QR-Codes entsprechen deiner Suche.",
       "pt": "Nenhum código QR corresponde à sua pesquisa.",
       "it": "Nessun codice QR corrisponde alla tua ricerca."
+    },
+    "Hidden network": {
+      "es": "Red oculta",
+      "eu": "Sare ezkutua",
+      "fr": "Réseau masqué",
+      "de": "Verstecktes Netzwerk",
+      "pt": "Rede oculta",
+      "it": "Rete nascosta"
+    },
+    "Yes": {
+      "es": "Sí",
+      "eu": "Bai",
+      "fr": "Oui",
+      "de": "Ja",
+      "pt": "Sim",
+      "it": "Sì"
+    },
+    "Description": {
+      "es": "Descripción",
+      "eu": "Deskribapena",
+      "fr": "Description",
+      "de": "Beschreibung",
+      "pt": "Descrição",
+      "it": "Descrizione"
+    },
+    "Issuer": {
+      "es": "Emisor",
+      "eu": "Igorlea",
+      "fr": "Émetteur",
+      "de": "Aussteller",
+      "pt": "Emissor",
+      "it": "Emittente"
+    },
+    "Account": {
+      "es": "Cuenta",
+      "eu": "Kontua",
+      "fr": "Compte",
+      "de": "Konto",
+      "pt": "Conta",
+      "it": "Account"
+    },
+    "Secret key": {
+      "es": "Clave secreta",
+      "eu": "Gako sekretua",
+      "fr": "Clé secrète",
+      "de": "Geheimer Schlüssel",
+      "pt": "Chave secreta",
+      "it": "Chiave segreta"
+    },
+    "{currency} address": {
+      "es": "Dirección de {currency}",
+      "eu": "{currency} helbidea",
+      "fr": "Adresse {currency}",
+      "de": "{currency}-Adresse",
+      "pt": "Endereço {currency}",
+      "it": "Indirizzo {currency}"
+    },
+    "Amount": {
+      "es": "Importe",
+      "eu": "Zenbatekoa",
+      "fr": "Montant",
+      "de": "Betrag",
+      "pt": "Valor",
+      "it": "Importo"
+    },
+    "Recipient": {
+      "es": "Destinatario",
+      "eu": "Hartzailea",
+      "fr": "Bénéficiaire",
+      "de": "Empfänger",
+      "pt": "Destinatário",
+      "it": "Beneficiario"
+    },
+    "Reference": {
+      "es": "Concepto",
+      "eu": "Kontzeptua",
+      "fr": "Référence",
+      "de": "Verwendungszweck",
+      "pt": "Referência",
+      "it": "Causale"
     }
   }
 }
