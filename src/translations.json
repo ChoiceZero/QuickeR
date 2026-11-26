@@ -850,6 +850,14 @@
       "pt": "Repita o processo de configuração",
       "it": "Ripeti il processo di configurazione"
     },
+    "Grid": {
+      "es": "Cuadrícula",
+      "eu": "Sareta",
+      "fr": "Grille",
+      "de": "Raster",
+      "pt": "Grade",
+      "it": "Griglia"
+    },
     "Help spread the word about the app and recommend it to others. The more users, the more interest in the project!": {
       "es": "Ayuda a difundir la aplicación y recomiéndala a otras personas. ¡Cuantos más usuarios, más interés en el proyecto!",
       "eu": "Lagundu aplikazioa zabaltzen eta gomendatu beste batzuei. Zenbat eta erabiltzaile gehiago, orduan eta interes handiagoa proiektuarentzat!",
@@ -1033,6 +1041,14 @@
       "de": "Hell",
       "pt": "Claro",
       "it": "Chiaro"
+    },
+    "List": {
+      "es": "Lista",
+      "eu": "Zerrenda",
+      "fr": "Liste",
+      "de": "Liste",
+      "pt": "Lista",
+      "it": "Elenco"
     },
     "Loading content...": {
       "es": "Cargando contenido...",

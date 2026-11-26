@@ -174,6 +174,7 @@ def data_dir(tmp_path, monkeypatch):
     # No network in tests: skip the GitHub release check.
     monkeypatch.setitem(app.STARTUP, "update_checked", True)
     monkeypatch.setitem(app.SORT_STATE, "newest_first", True)
+    monkeypatch.setitem(app.LAYOUT_STATE, "grid", False)
     monkeypatch.setitem(app.DETAILS_RESIZE_HOOK, "fn", None)
     return tmp_path
 

@@ -25,6 +25,22 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ASSET_DIR = os.path.join(BASE_DIR, "assets")
 
 SORT_STATE = {"newest_first": True}
+LAYOUT_STATE = {"grid": False}
+# Columns (out of 12) a QR card spans in grid mode. ResponsiveRow breakpoints follow
+# the window width, while the library takes the full width up to 1050 px and 2/5 of
+# it beyond, so this keeps cards around 150-250 px wide.
+GRID_COLUMNS = {"xs": 6, "sm": 4, "md": 3, "lg": 4, "xxl": 3}
+
+def apply_library_layout(item):
+    """Shows a new library entry as a list row or as a grid card, per LAYOUT_STATE.
+
+    ResponsiveRow only reads `col` when it lays out its children, so changing the
+    layout reloads the library instead of updating mounted entries."""
+    grid = LAYOUT_STATE["grid"]
+    tile, divider, card = item.controls
+    tile.visible = divider.visible = not grid
+    card.visible = grid
+    item.col = GRID_COLUMNS if grid else 12
 
 def get_app_storage_dir() -> str:
     """Returns a writable, persistent directory for app data across platforms.
@@ -1025,6 +1041,23 @@ class QRCodes:
         }.get(kind, lambda: "")() or url
         return QR_KIND_ICONS.get(kind, ft.Icons.TEXT_FIELDS_ROUNDED), name
 
+    def _grid_card(self, icon, pinned):
+        self.grid_image = ft.Image(src=get_qr_image_path(self.qr_id), cache_width=300, border_radius=10, fit=ft.BoxFit.CONTAIN)
+        self.grid_title = ft.Text(value=str(self.tag_name), size=16, font_family="MaterialRounded", overflow="ELLIPSIS", max_lines=1, expand=True)
+        return ft.Container(
+            bgcolor=ft.Colors.SURFACE_CONTAINER, border_radius=20, padding=10, ink=True,
+            on_click=lambda e: self.display_details_bottomsheet(),
+            content=ft.Column(spacing=6, horizontal_alignment=ft.CrossAxisAlignment.STRETCH, controls=[
+                self.grid_image,
+                ft.Row(spacing=5, controls=[
+                    ft.Icon(icon=icon, color=ft.Colors.PRIMARY, size=18),
+                    self.grid_title,
+                    ft.Icon(icon=ft.Icons.PUSH_PIN_ROUNDED, size=16, visible=pinned),
+                ]),
+                ft.Text(italic=True, color=ft.Colors.GREY_400, value=self.display_name, size=12, overflow="ELLIPSIS", max_lines=1),
+            ]),
+        )
+
     def display_qr(self, pinned, prepend=True):
         self.qr_size = self.get_qr_size(self.qr_id)
         self.qr_date = self.get_qr_date(self.qr_id)
@@ -1039,9 +1072,11 @@ class QRCodes:
                     margin=ft.Margin.only(left=10, right=10, top=-10, bottom=-10),
                 ),
                 ft.Divider(height=1, color=ft.Colors.SURFACE_CONTAINER),
+                self._grid_card(icon, pinned),
             ],
             data=self,  # lets the library search find the QR behind each row
         )
+        apply_library_layout(self.main_container)
 
         self.main_container.controls[0].leading = ft.Container(
             bgcolor=ft.Colors.SECONDARY_CONTAINER, padding=5, border_radius=10,
@@ -1938,6 +1973,8 @@ class QRCodes:
             self.qrpath = new_path
 
             self.main_container.controls[0].title.value = new_tag_name
+            self.grid_title.value = new_tag_name
+            self.grid_image.src = new_path
 
             self.page.pop_dialog()
             self.page.run_task(self._reopen)
@@ -3437,22 +3474,30 @@ def main(page: ft.Page, show_settings=False):
                         overview.controls[-1].controls.remove(v)
                 if regular_view not in overview.controls[-1].controls:
                     overview.controls[-1].controls.insert(0, regular_view)
+            on_resize()  # size the view now shown, not only the one shown at the last resize
             page.update()
 
         perform_action()
+        select_group_button(e.control)
 
-        for button in e.control.parent.controls:
+    def on_layout_change(e: ft.ControlEvent):
+        LAYOUT_STATE["grid"] = e.control == layout_buttongroup.controls[1]
+        load_qrs()
+        select_group_button(e.control)
+
+    def select_group_button(selected):
+        for button in selected.parent.controls:
             if button.bgcolor != ft.Colors.SURFACE_CONTAINER:
-                if e.control.parent.controls[-1] == button:
+                if selected.parent.controls[-1] == button:
                     button.style = ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=ft.BorderRadius.only(top_left=25, top_right=50, bottom_left=25, bottom_right=50)))
-                elif e.control.parent.controls[0] == button:
+                elif selected.parent.controls[0] == button:
                     button.style = ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=ft.BorderRadius.only(top_left=50, top_right=25, bottom_left=50, bottom_right=25)))
                 else:
                     button.style = ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10))
                 button.bgcolor = ft.Colors.SURFACE_CONTAINER
 
-        e.control.bgcolor = ft.Colors.SECONDARY_CONTAINER
-        e.control.style = ft.ButtonStyle(shape=ft.StadiumBorder())
+        selected.bgcolor = ft.Colors.SECONDARY_CONTAINER
+        selected.style = ft.ButtonStyle(shape=ft.StadiumBorder())
         page.update()
 
     def swap_views():
@@ -4348,14 +4393,20 @@ def main(page: ft.Page, show_settings=False):
         )
     )
 
-    all_view = ft.ListView(expand=True, spacing=10, controls=[])
-    regular_view = ft.ListView(expand=True, spacing=10, controls=[])
-    pinned_view = ft.ListView(expand=True, spacing=10, controls=[])
+    # ResponsiveRows so the same entries can sit one per row (list) or wrap into a grid.
+    all_view = ft.ResponsiveRow(expand=True, scroll=ft.ScrollMode.AUTO, spacing=10, run_spacing=10, controls=[])
+    regular_view = ft.ResponsiveRow(expand=True, scroll=ft.ScrollMode.AUTO, spacing=10, run_spacing=10, controls=[])
+    pinned_view = ft.ResponsiveRow(expand=True, scroll=ft.ScrollMode.AUTO, spacing=10, run_spacing=10, controls=[])
 
     pin_filter_buttongroup = ft.Row(spacing=3, controls=[
         ft.Button(elevation=0, icon=ft.Icons.CLEAR_ALL_ROUNDED, content=ft.Text(tr("All"), font_family="MaterialRoundedLight", size=14), height=40, color=ft.Colors.INVERSE_SURFACE, bgcolor=ft.Colors.SECONDARY_CONTAINER, style=ft.ButtonStyle(shape=ft.StadiumBorder()), on_click=lambda e: on_buttongroup_change(e)),
         ft.Button(elevation=0, icon=ft.Icons.PUSH_PIN_ROUNDED, content=ft.Text(tr("Pinned"), font_family="MaterialRoundedLight", size=14), height=40, color=ft.Colors.INVERSE_SURFACE, bgcolor=ft.Colors.SURFACE_CONTAINER, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)), on_click=lambda e: on_buttongroup_change(e)),
         ft.Button(elevation=0, icon=ft.Icons.PUSH_PIN_OUTLINED, content=ft.Text(tr("Unpinned"), font_family="MaterialRoundedLight", size=14), height=40, bgcolor=ft.Colors.SURFACE_CONTAINER, color=ft.Colors.INVERSE_SURFACE, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=ft.BorderRadius.only(top_left=25, top_right=50, bottom_left=25, bottom_right=50))), on_click=lambda e: on_buttongroup_change(e)),
+    ])
+
+    layout_buttongroup = ft.Row(spacing=3, controls=[
+        ft.Button(elevation=0, icon=ft.Icons.VIEW_LIST_ROUNDED, content=ft.Text(tr("List"), font_family="MaterialRoundedLight", size=14), height=40, color=ft.Colors.INVERSE_SURFACE, bgcolor=ft.Colors.SECONDARY_CONTAINER, style=ft.ButtonStyle(shape=ft.StadiumBorder()), on_click=lambda e: on_layout_change(e)),
+        ft.Button(elevation=0, icon=ft.Icons.GRID_VIEW_ROUNDED, content=ft.Text(tr("Grid"), font_family="MaterialRoundedLight", size=14), height=40, bgcolor=ft.Colors.SURFACE_CONTAINER, color=ft.Colors.INVERSE_SURFACE, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=ft.BorderRadius.only(top_left=25, top_right=50, bottom_left=25, bottom_right=50))), on_click=lambda e: on_layout_change(e)),
     ])
 
     order_toggle_button = ft.IconButton(
@@ -4420,6 +4471,8 @@ def main(page: ft.Page, show_settings=False):
             order_toggle_button,
             ft.Container(height=30, width=2, bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST),
             pin_filter_buttongroup,
+            ft.Container(height=30, width=2, bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST),
+            layout_buttongroup,
         ]),
         ft.Divider(height=0.1,thickness=0.1, color=ft.Colors.GREY_400),
         tip_text,
