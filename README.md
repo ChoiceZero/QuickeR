@@ -1,107 +1,96 @@
-<img width="1345" height="247" alt="Diseño sin título" src="https://github.com/user-attachments/assets/f661f708-ef80-4ae7-8e3b-78a397f6af3c" />
+<div align="center">
 
-![GitHub last commit](https://img.shields.io/github/last-commit/ChoiceZero/QuickeR?style=for-the-badge&labelColor=101418&color=9ccbfb)
-![GitHub Repo stars](https://img.shields.io/github/stars/ChoiceZero/QuickeR?style=for-the-badge&labelColor=101418&color=b9c8da)
-![GitHub repo size](https://img.shields.io/github/repo-size/ChoiceZero/QuickeR?style=for-the-badge&labelColor=101418&color=d3bfe6)
+<img width="1345" height="247" alt="QuickeR" src="https://github.com/user-attachments/assets/f661f708-ef80-4ae7-8e3b-78a397f6af3c" />
 
-# QuickeR - Create QRs quicker!
+### Create QRs quicker, without accounts, limits, ads, purchases or tracking.
 
-QuickeR is a platform that lets you create QR codes but without accounts, limits, ads or purchases. It also doesn't collect any personal data, analytics, telemetry or other kind of info. It was primarily created out of pure spite, as most other websites have shitty practices to get the most revenue out of users. Besides, the core code has mostly been written by hand.
+[![Latest release](https://img.shields.io/github/v/release/ChoiceZero/QuickeR?style=for-the-badge&labelColor=101418&color=a6d1a0&label=release)](https://github.com/ChoiceZero/QuickeR/releases/latest)
+[![GitHub last commit](https://img.shields.io/github/last-commit/ChoiceZero/QuickeR?style=for-the-badge&labelColor=101418&color=9ccbfb)](https://github.com/ChoiceZero/QuickeR/commits)
+[![GitHub Repo stars](https://img.shields.io/github/stars/ChoiceZero/QuickeR?style=for-the-badge&labelColor=101418&color=b9c8da)](https://github.com/ChoiceZero/QuickeR/stargazers)
+[![License](https://img.shields.io/github/license/ChoiceZero/QuickeR?style=for-the-badge&labelColor=101418&color=d3bfe6)](LICENSE)
 
-<a href="https://buymeacoffee.com/choicezero">
-  <img src="bmac.png" alt="Descriptive text" width="200">
-</a>
+**[Download](#download)** · **[Web version](https://choicezero.github.io/QuickeR-Web/)** · **[Website](https://choicezero.github.io/QuickeR-Site/)** · **[How to use](#how-to-use)** · **[Development](#development)**
+
+<a href="docs/screenshots/desktop_create_green_light.png"><img src="docs/screenshots/desktop_create_green_light.png" alt="QuickeR creating a QR code on desktop" width="640"></a>
+<a href="docs/screenshots/mobile_library_pink_dark.png"><img src="docs/screenshots/mobile_library_pink_dark.png" alt="QuickeR library on a phone, dark theme" width="166"></a>
+
+</div>
+
+## Why QuickeR?
+
+Most QR websites lock your codes behind an account, expire them after a trial, cover the page in ads or sell your scans as analytics. QuickeR was built out of pure spite towards those practices: it is a free, open-source app that makes QR codes on your own device and never phones home. No personal data, analytics or telemetry is collected. The core code has mostly been written by hand.
+
+<a href="https://buymeacoffee.com/choicezero"><img src="bmac.png" alt="Buy me a coffee" width="180"></a>
 
 ## Features
 
-- Cross platform.
-- Creates QRs from these types:
+**Create**
+- Text and links, Wi-Fi, email, SMS, phone numbers, locations, calendar events and contacts (vCard).
+- Live preview that updates on every change.
+- Choose the error correction level.
+- Custom colors and a logo in the center of the code.
 
-| Type                          | Support   |
-| ----------------------------- | --------- |
-| Plain text                    | ✅        |
-| URL/Link                      | ✅        |
-| Social Media & Messenger      | ❌        |
-| Wifi                          | ✅        |
-| Email                         | ✅        |
-| SMS                           | ✅        |
-| Phone number                  | ✅        |
-| Email                         | ✅        |
-| Location                      | ✅        |
-| Event                         | ✅        |
-| Contact (vCard)               | ✅        |
+**Organise**
+- Every code is saved to a local library, newest first.
+- Pin the ones you use most, filter by pinned state and reverse the order.
+- Search the library by name or content.
+- Import and export the whole library as a `.zip`. QR images made by other apps (PNG, JPG, JPEG, WEBP or SVG) are recognised and added too.
 
-- Allows to place logos in the center of the QR.
-- Allows to change the colors of the QRs.
-- Has a preview that updates on every change.
-- Downloads the codes.
-- Has a summary view before downloading the QR code.
-- Uses a Material3-like user interface.
-- Available in English, Español, Euskara, Français, Deutsch, Português and Italiano. Change it in Settings → Customization → Language; the app updates instantly and remembers your choice.
+**Export**
+- Save as `.png` to your gallery or any folder, or share it straight from the app.
+- Export a 3D model (`.stl`) for printing, with the dark modules raised or inset.
 
-## Screenshots
+**Make it yours**
+- Material 3 interface with light and dark themes and several accent colors.
+- Separate layouts for desktop and phone screens.
+- Available in English, Español, Euskara, Français, Deutsch, Português and Italiano. Switch in **Settings → Customization → Language**; it applies instantly.
 
-QuickeR has distinct layouts for desktop and phone screens, with light and dark themes and several accent colors. Every capture below shows the same "QuickeR" text QR across the library, creator, details, settings, and export views. Click an image to open the full-size version.
+<details>
+<summary><b>Supported QR types</b></summary>
 
-### Desktop window — 1920×1080, frameless
+| Type                     | Supported |
+| ------------------------ | :-------: |
+| Plain text               | ✅ |
+| URL / link               | ✅ |
+| Wi-Fi                    | ✅ |
+| Email                    | ✅ |
+| SMS                      | ✅ |
+| Phone number             | ✅ |
+| Location                 | ✅ |
+| Event                    | ✅ |
+| Contact (vCard)          | ✅ |
+| Social media & messenger | ❌ |
 
-| Library · green / light | QR details · green / light |
-| :---: | :---: |
-| <a href="docs/screenshots/desktop_library_green_light.png"><img src="docs/screenshots/desktop_library_green_light.png" alt="Desktop library, green light theme" width="420"></a> | <a href="docs/screenshots/desktop_details_green_light.png"><img src="docs/screenshots/desktop_details_green_light.png" alt="Desktop QR details, green light theme" width="420"></a> |
-| Creator · green / light | Creator · purple / dark |
-| <a href="docs/screenshots/desktop_create_green_light.png"><img src="docs/screenshots/desktop_create_green_light.png" alt="Desktop QR creator, green light theme" width="420"></a> | <a href="docs/screenshots/desktop_create_purple_dark.png"><img src="docs/screenshots/desktop_create_purple_dark.png" alt="Desktop QR creator, purple dark theme" width="420"></a> |
-| QR details · blue / dark | Settings · green / light |
-| <a href="docs/screenshots/desktop_details_blue_dark.png"><img src="docs/screenshots/desktop_details_blue_dark.png" alt="Desktop QR details, blue dark theme" width="420"></a> | <a href="docs/screenshots/desktop_settings_green_light.png"><img src="docs/screenshots/desktop_settings_green_light.png" alt="Desktop settings, green light theme" width="420"></a> |
-| Settings · orange / light | Export dialog · pink / dark |
-| <a href="docs/screenshots/desktop_settings_orange_light.png"><img src="docs/screenshots/desktop_settings_orange_light.png" alt="Desktop settings, orange light theme" width="420"></a> | <a href="docs/screenshots/desktop_export_pink_dark.png"><img src="docs/screenshots/desktop_export_pink_dark.png" alt="Desktop export dialog, pink dark theme" width="420"></a> |
+</details>
 
-### Fullscreen — 2560×1440
+## Download
 
-| QR details · green / light | Creator · blue / dark | Settings · orange / light |
-| :---: | :---: | :---: |
-| <a href="docs/screenshots/fullscreen_details_green_light.png"><img src="docs/screenshots/fullscreen_details_green_light.png" alt="Fullscreen QR details, green light theme" width="300"></a> | <a href="docs/screenshots/fullscreen_create_blue_dark.png"><img src="docs/screenshots/fullscreen_create_blue_dark.png" alt="Fullscreen QR creator, blue dark theme" width="300"></a> | <a href="docs/screenshots/fullscreen_settings_orange_light.png"><img src="docs/screenshots/fullscreen_settings_orange_light.png" alt="Fullscreen settings, orange light theme" width="300"></a> |
+Grab the latest build from the **[Releases page](https://github.com/ChoiceZero/QuickeR/releases/latest)**, or use the **[web version](https://choicezero.github.io/QuickeR-Web/)** with nothing to install.
 
-### Mobile — 430×932
+| Platform | Status | Downloads |
+| -------- | :----: | --------- |
+| Android  | ✅ | `QuickeR.apk` (or install with [Obtainium](#android-with-obtainium)) |
+| Windows  | ✅ | `QuickeR-windows-setup.exe` installer · portable `.zip` |
+| Linux    | ✅ | `.AppImage` · `.deb` · `.rpm` · portable `.zip` |
+| macOS    | ⚠️ | `.dmg` · portable `.zip` (untested) |
+| iOS      | ❌ | Use the [web version](https://choicezero.github.io/QuickeR-Web/) |
 
-| Library · green / light | Library · pink / dark | Creator · purple / light |
-| :---: | :---: | :---: |
-| <a href="docs/screenshots/mobile_library_green_light.png"><img src="docs/screenshots/mobile_library_green_light.png" alt="Mobile library, green light theme" width="160"></a> | <a href="docs/screenshots/mobile_library_pink_dark.png"><img src="docs/screenshots/mobile_library_pink_dark.png" alt="Mobile library, pink dark theme" width="160"></a> | <a href="docs/screenshots/mobile_create_purple_light.png"><img src="docs/screenshots/mobile_create_purple_light.png" alt="Mobile QR creator, purple light theme" width="160"></a> |
-| QR details · blue / dark | Settings · teal / dark | Settings · indigo / light |
-| <a href="docs/screenshots/mobile_details_blue_dark.png"><img src="docs/screenshots/mobile_details_blue_dark.png" alt="Mobile QR details, blue dark theme" width="160"></a> | <a href="docs/screenshots/mobile_settings_teal_dark.png"><img src="docs/screenshots/mobile_settings_teal_dark.png" alt="Mobile settings, teal dark theme" width="160"></a> | <a href="docs/screenshots/mobile_settings_indigo_light.png"><img src="docs/screenshots/mobile_settings_indigo_light.png" alt="Mobile settings, indigo light theme" width="160"></a> |
+> [!WARNING]
+> I don't own a Mac, so I can't reliably test the macOS build. It may contain errors.
 
-## Supported devices and current release types
+> [!CAUTION]
+> iOS support is dropped for now: Flet's tooling and the platform's restrictions make it too unreliable. The [web version](https://choicezero.github.io/QuickeR-Web/) works perfectly on iPhone and iPad.
 
-| Device                        | Support   | Installer/Packaged | Standalone |
-| ----------------------------- | --------- | ------------------ | ---------  |
-| Linux                         | ✅        | ✅                 | ✅         |
-| Android                       | ✅        | ✅                 | *          |
-| Windows                       | ✅        | ✅                 | ✅         |
-| IOs                           | ❌        | ❌                 | ❌         |
-| MacOs                         | ~         | ✅                 | ✅         |
+### Android with Obtainium
 
->[!CAUTION]
->Due to IOs working unreliably with Flet's tools and limitations at operating system level, support has to be dropped for the time being. However, the web version (QuickeR-Web) can be used perfectly.
+1. In [Obtainium](https://github.com/ImranR98/Obtainium), tap **Add App** and enter `https://github.com/ChoiceZero/QuickeR`.
+2. Keep GitHub as the source. Obtainium picks the `.apk` from the latest release (choose your CPU architecture if asked).
+3. The app ID is `io.github.choicezero.quicker`.
 
->[!WARNING]
->I cannot reliably test the MacOs build, as I don't own a Mac. Build may contain errors.
+> [!NOTE]
+> Builds up to v1.1.2 were each signed with a different throwaway key, so Android refuses to update over them. If installing fails with a conflict, uninstall the old QuickeR once. Every later build is signed with the same key and updates in place.
 
->[!TIP]
->*There is no Android standalone because android works with just .APK.
-
-## Installing on Android with Obtainium
-
-1. In [Obtainium](https://github.com/ImranR98/Obtainium), choose **Add App** and enter `https://github.com/ChoiceZero/QuickeR`.
-2. Source: GitHub. Obtainium picks the `.apk` from the latest release (choose your CPU architecture if asked).
-3. The Android app ID is `io.github.choicezero.quicker`.
-
-Updates require every release to be signed with the same key (set by the `ANDROID_KEYSTORE_*` repository secrets).
-
->[!NOTE]
->Builds up to v1.1.2 were each signed with a different throwaway key, so Android refuses to update over them. If the install fails with a conflict, uninstall the old QuickeR once; every build after that is signed with the same key and updates in place.
-
-## Installing on Linux (.deb / .rpm)
-
-Each release ships `quicker_<version>_amd64.deb` and `quicker-<version>-1.x86_64.rpm`, next to the AppImage and the zip.
+### Linux packages
 
 ```bash
 # Debian / Ubuntu
@@ -111,11 +100,12 @@ sudo apt install ./quicker_*_amd64.deb
 sudo dnf install ./quicker-*.x86_64.rpm
 ```
 
-The app is installed in `/opt/quicker`, with a `quicker` command and a menu entry.
+The app is installed to `/opt/quicker`, with a `quicker` command and a menu entry.
 
-### Verifying the signature
+<details>
+<summary><b>Verifying the package signature</b></summary>
 
-When the release was built with a signing key, the packages are signed and the public key is attached as `QuickeR-signing-key.asc`.
+When a release was built with a signing key, the packages are signed and the public key is attached as `QuickeR-signing-key.asc`.
 
 ```bash
 # .rpm
@@ -127,9 +117,109 @@ gpg --import QuickeR-signing-key.asc
 dpkg-sig --verify quicker_*_amd64.deb
 ```
 
-Maintainers: to enable signing, set the `LINUX_PACKAGE_GPG_PRIVATE_KEY` repository secret to the output of `gpg --armor --export-secret-keys <KEYID>` and `LINUX_PACKAGE_GPG_PASSPHRASE` to its passphrase. Without them the packages are still built, unsigned. The packages are built by [`scripts/build-linux-packages.sh`](scripts/build-linux-packages.sh) with [nfpm](https://nfpm.goreleaser.com).
+**Maintainers:** to enable signing, set the `LINUX_PACKAGE_GPG_PRIVATE_KEY` repository secret to the output of `gpg --armor --export-secret-keys <KEYID>` and `LINUX_PACKAGE_GPG_PASSPHRASE` to its passphrase. Without them the packages are still built, unsigned. They are built by [`scripts/build-linux-packages.sh`](scripts/build-linux-packages.sh) with [nfpm](https://nfpm.goreleaser.com). Android updates likewise need every release signed with the same key, set by the `ANDROID_KEYSTORE_*` secrets.
 
-## Translations
+</details>
+
+## How to use
+
+<details>
+<summary><b>Step-by-step walkthrough</b> (click to expand)</summary>
+
+#### Create a QR
+
+| 1. Tap **+** in the library | 2. Open **Main content** |
+| :---: | :---: |
+| <img src="docs/screenshots/steps_01_library_plus.png" alt="Library with the + button" width="420"> | <img src="docs/screenshots/steps_02_main_content.png" alt="Main content section" width="420"> |
+| **3. Pick the QR type** | **4. Fill in the content** |
+| <img src="docs/screenshots/steps_03_qr_type.png" alt="QR type dropdown" width="420"> | <img src="docs/screenshots/steps_04_content.png" alt="Content field" width="420"> |
+| **5. Customise colors and logo** | **6. Save it to your library** |
+| <img src="docs/screenshots/steps_05_customization.png" alt="Customization section" width="420"> | <img src="docs/screenshots/steps_06_saved_qr.png" alt="Saved QR in the library" width="420"> |
+
+#### Manage and export
+
+| 7. Order and filter the library | 8. Open a QR to see its details |
+| :---: | :---: |
+| <img src="docs/screenshots/steps_07_order_filter.png" alt="Order and filter controls" width="420"> | <img src="docs/screenshots/steps_08_qr_details.png" alt="QR details" width="420"> |
+| **9. Export to gallery, folder or STL** | **10. Choose raised or inset for the 3D model** |
+| <img src="docs/screenshots/steps_09_export_options.png" alt="Export options" width="420"> | <img src="docs/screenshots/steps_10_stl_options.png" alt="STL options" width="420"> |
+| **11. Import codes from other apps** | |
+| <img src="docs/screenshots/steps_11_external_import.png" alt="Importing external QR codes" width="420"> | |
+
+#### Settings
+
+| 12. Language and customisation | 13. Light or dark theme |
+| :---: | :---: |
+| <img src="docs/screenshots/steps_12_settings_customization.png" alt="Customization settings" width="420"> | <img src="docs/screenshots/steps_13_settings_appearance.png" alt="Appearance settings" width="420"> |
+| **14. Accent color** | **15. Library tools: export, import, clear** |
+| <img src="docs/screenshots/steps_14_settings_color.png" alt="Color settings" width="420"> | <img src="docs/screenshots/steps_15_settings_tools.png" alt="Library tools" width="420"> |
+
+</details>
+
+<details>
+<summary><b>More screenshots</b>: desktop, fullscreen and mobile in every theme</summary>
+
+#### Desktop (1920×1080)
+
+| Library · green / light | QR details · green / light |
+| :---: | :---: |
+| <a href="docs/screenshots/desktop_library_green_light.png"><img src="docs/screenshots/desktop_library_green_light.png" alt="Desktop library, green light theme" width="420"></a> | <a href="docs/screenshots/desktop_details_green_light.png"><img src="docs/screenshots/desktop_details_green_light.png" alt="Desktop QR details, green light theme" width="420"></a> |
+| **Creator · purple / dark** | **QR details · blue / dark** |
+| <a href="docs/screenshots/desktop_create_purple_dark.png"><img src="docs/screenshots/desktop_create_purple_dark.png" alt="Desktop QR creator, purple dark theme" width="420"></a> | <a href="docs/screenshots/desktop_details_blue_dark.png"><img src="docs/screenshots/desktop_details_blue_dark.png" alt="Desktop QR details, blue dark theme" width="420"></a> |
+| **Settings · orange / light** | **Export dialog · pink / dark** |
+| <a href="docs/screenshots/desktop_settings_orange_light.png"><img src="docs/screenshots/desktop_settings_orange_light.png" alt="Desktop settings, orange light theme" width="420"></a> | <a href="docs/screenshots/desktop_export_pink_dark.png"><img src="docs/screenshots/desktop_export_pink_dark.png" alt="Desktop export dialog, pink dark theme" width="420"></a> |
+
+#### Fullscreen (2560×1440)
+
+| QR details · green / light | Creator · blue / dark | Settings · orange / light |
+| :---: | :---: | :---: |
+| <a href="docs/screenshots/fullscreen_details_green_light.png"><img src="docs/screenshots/fullscreen_details_green_light.png" alt="Fullscreen QR details, green light theme" width="280"></a> | <a href="docs/screenshots/fullscreen_create_blue_dark.png"><img src="docs/screenshots/fullscreen_create_blue_dark.png" alt="Fullscreen QR creator, blue dark theme" width="280"></a> | <a href="docs/screenshots/fullscreen_settings_orange_light.png"><img src="docs/screenshots/fullscreen_settings_orange_light.png" alt="Fullscreen settings, orange light theme" width="280"></a> |
+
+#### Mobile (430×932)
+
+| Library · green / light | Creator · purple / light | QR details · blue / dark | Settings · teal / dark | Settings · indigo / light |
+| :---: | :---: | :---: | :---: | :---: |
+| <a href="docs/screenshots/mobile_library_green_light.png"><img src="docs/screenshots/mobile_library_green_light.png" alt="Mobile library, green light theme" width="150"></a> | <a href="docs/screenshots/mobile_create_purple_light.png"><img src="docs/screenshots/mobile_create_purple_light.png" alt="Mobile QR creator, purple light theme" width="150"></a> | <a href="docs/screenshots/mobile_details_blue_dark.png"><img src="docs/screenshots/mobile_details_blue_dark.png" alt="Mobile QR details, blue dark theme" width="150"></a> | <a href="docs/screenshots/mobile_settings_teal_dark.png"><img src="docs/screenshots/mobile_settings_teal_dark.png" alt="Mobile settings, teal dark theme" width="150"></a> | <a href="docs/screenshots/mobile_settings_indigo_light.png"><img src="docs/screenshots/mobile_settings_indigo_light.png" alt="Mobile settings, indigo light theme" width="150"></a> |
+
+</details>
+
+## Development
+
+QuickeR is written in Python with [Flet](https://flet.dev) (Flutter under the hood), [qrcode](https://github.com/lincolnloop/python-qrcode), Pillow, OpenCV and NumPy. Python 3.12 or newer is strongly recommended.
+
+### Run
+
+With [uv](https://docs.astral.sh/uv/) (recommended, gives hot reload):
+
+```bash
+uv run flet run              # desktop app
+uv run flet run --recursive  # desktop app, reload on changes in subfolders
+uv run flet run --web        # web app
+uv run flet run --android    # on an Android device
+```
+
+Without uv, install the dependencies from `pyproject.toml` and drop the `uv run` prefix (no hot reload). See the [Flet getting started guide](https://flet.dev/docs/) for more.
+
+### Test
+
+```bash
+uv run pytest
+```
+
+The integration tests in [`tests/`](tests) start the real app in-process against a fake Flet client and drive it through UI events: creating, saving, opening and pinning QR codes, plus image, contact and STL export checks. Every pull request also runs them on Linux, Windows and macOS, builds every platform and launches the packaged Linux app with [`scripts/smoke-test-linux.sh`](scripts/smoke-test-linux.sh) (see [`.github/workflows/pr.yml`](.github/workflows/pr.yml)).
+
+### Build
+
+| Target  | Command                   | Guide |
+| ------- | ------------------------- | ----- |
+| Android | `flet build apk -v`       | [Android packaging](https://flet.dev/docs/publish/android/) |
+| Windows | `flet build windows -v`   | [Windows packaging](https://flet.dev/docs/publish/windows/) |
+| Linux   | `flet build linux -v`     | [Linux packaging](https://flet.dev/docs/publish/linux/) |
+| macOS   | `flet build macos -v`     | [macOS packaging](https://flet.dev/docs/publish/macos/) |
+| iOS     | `flet build ipa -v`       | [iOS packaging](https://flet.dev/docs/publish/ios/) |
+| Web     | `flet build web -v`       | [Web packaging](https://flet.dev/docs/publish/web/) |
+
+### Translations
 
 All UI texts live in [`src/translations.json`](src/translations.json). The English text is the key, and each entry holds the translation for every other language (a missing translation falls back to English). In the code, texts are written as `tr("Save QR")`, and texts with variables as `tr("Saved to {path}", path=path)`.
 
@@ -143,145 +233,11 @@ Run this before opening a PR. It fails if a text is missing a language or a plac
 python scripts/check_translations.py
 ```
 
-## Tech Stack
+## Related
 
-**Python moules:** Flet, Qrcode, Pillow and other libraries that base Python includes.
-
-**Actually running the code:** Flutter, Dart.
-
+- [QuickeR-Web](https://github.com/ChoiceZero/QuickeR-Web): the same app in the browser, no install needed ([open it](https://choicezero.github.io/QuickeR-Web/)).
+- [QuickeR-Site](https://github.com/ChoiceZero/QuickeR-Site): the project's website ([visit](https://choicezero.github.io/QuickeR-Site/)).
 
 ## License
 
-[MIT](https://choosealicense.com/licenses/mit/)
-
-## Run the app
->[!WARNING]
->It is heavily recommended to use Python 3.12 or above to run the app.
-
-### flet
->[!WARNING]
->No hot reload without uv.
-
-Run as a desktop app:
-
-```bash
-flet run
-```
-
-Run recursively as a desktop app:
-
-```bash
-flet run --recursive
-```
-
-Run as a web app:
-
-```bash
-flet run --web
-```
-
-Run as an android app:
-
-```bash
-flet run --android
-```
-
-### uv
-
-Run as a desktop app:
-
-```bash
-uv run flet run
-```
-
-Run recursively as a desktop app:
-```bash
-uv run flet run --recursive
-```
-
-Run as a web app:
-
-```bash
-uv run flet run --web
-```
-
-Run as an android app:
-
-```bash
-uv run flet run --android
-```
-
-For more details on running the app, refer to the [Getting Started Guide](https://flet.dev/docs/).
-
-## Run the tests
-
-```bash
-uv run pytest
-```
-
-The integration tests in `tests/` start the real app in-process against a fake Flet client and drive it through UI events: creating, saving, opening and pinning QR codes, plus image, contact and STL export checks. Every pull request also runs them on Linux, Windows and macOS, builds every platform, and launches the packaged Linux app with `scripts/smoke-test-linux.sh` (see `.github/workflows/pr.yml`).
-
-## Build the app
->[!WARNING]
->It is heavily recommended to use Python 3.12 or above to compile the app.
-
-### Android
-
-```bash
-flet build apk -v
-```
-
-For more details on building and signing `.apk` or `.aab`, refer to the [Android Packaging Guide](https://flet.dev/docs/publish/android/).
-
-### iOS
-
-```bash
-flet build ipa -v
-```
-
-For more details on building and signing `.ipa`, refer to the [iOS Packaging Guide](https://flet.dev/docs/publish/ios/).
-
-### macOS
-
-```bash
-flet build macos -v
-```
-
-For more details on building macOS package, refer to the [macOS Packaging Guide](https://flet.dev/docs/publish/macos/).
-
-### Linux
-
-```bash
-flet build linux -v
-```
-
-For more details on building Linux package, refer to the [Linux Packaging Guide](https://flet.dev/docs/publish/linux/).
-
-### Windows
-
-```bash
-flet build windows -v
-```
-
-For more details on building Windows package, refer to the [Windows Packaging Guide](https://flet.dev/docs/publish/windows/).
-
-### Web
-
-```bash
-flet build web -v
-```
-
-For more details on building Web app, refer to the [Web Packaging Guide](https://flet.dev/docs/publish/web/).
-
-
-## Authors
-
-- [@ChoiceZero](https://www.github.com/ChoiceZero)
-
-
-## Related
-
-A desktop app is also available for Linux, Windows and Android.
-
-[Desktop app repository (QuickeR)](https://github.com/ChoiceZero/QuickeR)
-
+[MIT](LICENSE) © [ChoiceZero](https://github.com/ChoiceZero)
